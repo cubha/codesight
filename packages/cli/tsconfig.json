@@ -1,0 +1,19 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "rootDir": "./src",
+    "outDir": "./dist",
+    "paths": {
+      "@codebase-viz/types": ["../types/src/index.ts"],
+      "@codebase-viz/core": ["../core/src/index.ts"],
+      "@codebase-viz/renderer": ["../renderer/src/index.ts"]
+    }
+  },
+  "references": [
+    { "path": "../types" },
+    { "path": "../core" },
+    { "path": "../renderer" }
+  ],
+  "include": ["src"]
+}

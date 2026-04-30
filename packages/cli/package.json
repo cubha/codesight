@@ -1,0 +1,16 @@
+{
+  "name": "@codebase-viz/cli",
+  "version": "0.1.0",
+  "type": "module",
+  "bin": {
+    "codebase-viz": "./dist/index.js"
+  },
+  "dependencies": {
+    "@codebase-viz/core": "workspace:*",
+    "@codebase-viz/renderer": "workspace:*",
+    "@codebase-viz/types": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "*"
+  }
+}
