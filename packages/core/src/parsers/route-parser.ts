@@ -68,8 +68,24 @@ async function detectRenderingMode(filePath: string): Promise<RenderingMode> {
   return 'SSR'
 }
 
+async function findAppDir(repoRoot: string): Promise<{ dir: string; prefix: string } | null> {
+  for (const candidate of ['app', 'src/app']) {
+    try {
+      const fullPath = path.join(repoRoot, candidate)
+      await fs.access(fullPath)
+      return { dir: fullPath, prefix: candidate }
+    } catch {
+      // not found — try next
+    }
+  }
+  return null
+}
+
 export async function parseRoutes(repoRoot: string): Promise<RouteNode[]> {
-  const appDir = path.join(repoRoot, 'app')
+  const appDirInfo = await findAppDir(repoRoot)
+  if (appDirInfo === null) return []
+
+  const { dir: appDir, prefix: appPrefix } = appDirInfo
 
   let files: string[]
   try {
@@ -90,10 +106,10 @@ export async function parseRoutes(repoRoot: string): Promise<RouteNode[]> {
     const repoRelativeFile = path.relative(repoRoot, absFilePath).replace(/\\/g, '/')
 
     const dirRelToApp =
-      repoRelativeDir === 'app'
+      repoRelativeDir === appPrefix
         ? ''
-        : repoRelativeDir.startsWith('app/')
-          ? repoRelativeDir.slice(4)
+        : repoRelativeDir.startsWith(`${appPrefix}/`)
+          ? repoRelativeDir.slice(appPrefix.length + 1)
           : repoRelativeDir
 
     const segments = dirRelToApp === '' ? [] : dirRelToApp.split('/')
