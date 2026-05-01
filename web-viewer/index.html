@@ -125,7 +125,6 @@
       will-change: transform;
     }
     .diagram-svg svg {
-      max-width: 90vw;
       filter: drop-shadow(0 2px 32px rgba(0,0,0,.5));
     }
 
@@ -239,10 +238,10 @@
 
 <header>
   <div class="logo">Code<em>Sight</em></div>
-  <div class="badge">mini-next-app</div>
+  <div class="badge">dev-log-portfolio</div>
   <div class="header-right">
     <div class="status-dot"></div>
-    <div class="header-meta">Phase 1 · Wave3 · 51 tests pass</div>
+    <div class="header-meta">dev-log-portfolio · 14 routes · 14 tables</div>
   </div>
 </header>
 
@@ -312,42 +311,165 @@
       <div class="db-sidebar">
         <div class="sidebar-label">Tables</div>
         <div class="table-card">
-          <div class="table-head"><span class="table-head-icon">◈</span>posts</div>
+          <div class="table-head"><span class="table-head-icon">◈</span>blog_posts</div>
           <div class="col-row"><span class="col-name">id</span><span class="col-pk">PK</span><span class="col-type">uuid</span></div>
-          <div class="col-row"><span class="col-name">title</span><span></span><span class="col-type">text</span></div>
-          <div class="col-row"><span class="col-name">content</span><span></span><span class="col-type">text</span></div>
           <div class="col-row"><span class="col-name">author_id</span><span class="col-fk">FK</span><span class="col-type">uuid</span></div>
-          <div class="col-row"><span class="col-name">created_at</span><span></span><span class="col-type">timestamp</span></div>
+          <div class="col-row"><span class="col-name">slug</span><span></span><span class="col-type">text unique</span></div>
+          <div class="col-row"><span class="col-name">title</span><span></span><span class="col-type">text</span></div>
+          <div class="col-row"><span class="col-name">status</span><span></span><span class="col-type">draft/published</span></div>
+          <div class="col-row"><span class="col-name">tags</span><span></span><span class="col-type">text[]</span></div>
+          <div class="col-row"><span class="col-name">published_at</span><span></span><span class="col-type">timestamptz</span></div>
           <div class="table-refs">
             <div class="refs-label">Used by</div>
-            <div class="ref-row"><span class="ref-screen">/ page</span><span class="ref-comp">PostList · CSR</span></div>
-            <div class="ref-row"><span class="ref-screen">/blog/[slug]</span><span class="ref-comp">BlogDetail · SSR</span></div>
+            <div class="ref-row"><span class="ref-screen">/blog</span><span class="ref-comp">BlogList · SSR</span></div>
+            <div class="ref-row"><span class="ref-screen">/blog/[slug]</span><span class="ref-comp">MDX renderer · SSR</span></div>
+            <div class="ref-row"><span class="ref-screen">/admin/dashboard</span><span class="ref-comp">Stats count · SSR</span></div>
+          </div>
+        </div>
+        <div class="table-card">
+          <div class="table-head"><span class="table-head-icon">◈</span>projects</div>
+          <div class="col-row"><span class="col-name">id</span><span class="col-pk">PK</span><span class="col-type">uuid</span></div>
+          <div class="col-row"><span class="col-name">profile_id</span><span class="col-fk">FK</span><span class="col-type">uuid</span></div>
+          <div class="col-row"><span class="col-name">title</span><span></span><span class="col-type">text</span></div>
+          <div class="col-row"><span class="col-name">tech_stack</span><span></span><span class="col-type">text[]</span></div>
+          <div class="col-row"><span class="col-name">is_featured</span><span></span><span class="col-type">boolean</span></div>
+          <div class="col-row"><span class="col-name">thumbnail_url</span><span></span><span class="col-type">text</span></div>
+          <div class="col-row"><span class="col-name">status</span><span></span><span class="col-type">text</span></div>
+          <div class="table-refs">
+            <div class="refs-label">Used by</div>
+            <div class="ref-row"><span class="ref-screen">/projects</span><span class="ref-comp">ProjectList · SSR</span></div>
+            <div class="ref-row"><span class="ref-screen">/admin/projects</span><span class="ref-comp">CRUD Form · CSR</span></div>
+            <div class="ref-row"><span class="ref-screen">/admin/dashboard</span><span class="ref-comp">Stats count · SSR</span></div>
           </div>
         </div>
         <div class="table-card">
           <div class="table-head"><span class="table-head-icon">◈</span>profiles</div>
           <div class="col-row"><span class="col-name">id</span><span class="col-pk">PK</span><span class="col-type">uuid</span></div>
-          <div class="col-row"><span class="col-name">username</span><span></span><span class="col-type">varchar</span></div>
-          <div class="col-row"><span class="col-name">avatar_url</span><span></span><span class="col-type">varchar</span></div>
+          <div class="col-row"><span class="col-name">username</span><span></span><span class="col-type">text unique</span></div>
+          <div class="col-row"><span class="col-name">full_name</span><span></span><span class="col-type">text</span></div>
+          <div class="col-row"><span class="col-name">avatar_url</span><span></span><span class="col-type">text</span></div>
+          <div class="col-row"><span class="col-name">bio</span><span></span><span class="col-type">text</span></div>
+          <div class="col-row"><span class="col-name">role</span><span></span><span class="col-type">text</span></div>
           <div class="table-refs">
             <div class="refs-label">Used by</div>
-            <div class="ref-row"><span class="ref-screen">/ page</span><span class="ref-comp">PostList · CSR (join)</span></div>
+            <div class="ref-row"><span class="ref-screen">/about</span><span class="ref-comp">ProfilePhotoCard · SSR</span></div>
+            <div class="ref-row"><span class="ref-screen">/contact</span><span class="ref-comp">ContactInfo · SSR</span></div>
+            <div class="ref-row"><span class="ref-screen">/admin/profile</span><span class="ref-comp">Profile Editor · CSR</span></div>
+          </div>
+        </div>
+        <div class="table-card">
+          <div class="table-head"><span class="table-head-icon">◈</span>skills</div>
+          <div class="col-row"><span class="col-name">id</span><span class="col-pk">PK</span><span class="col-type">uuid</span></div>
+          <div class="col-row"><span class="col-name">name</span><span></span><span class="col-type">text unique</span></div>
+          <div class="col-row"><span class="col-name">category</span><span></span><span class="col-type">text</span></div>
+          <div class="col-row"><span class="col-name">icon_name</span><span></span><span class="col-type">text</span></div>
+          <div class="table-refs">
+            <div class="refs-label">Used by</div>
+            <div class="ref-row"><span class="ref-screen">/about</span><span class="ref-comp">SkillsSection · SSR</span></div>
+            <div class="ref-row"><span class="ref-screen">/admin/skills</span><span class="ref-comp">Skills CRUD · CSR</span></div>
+          </div>
+        </div>
+        <div class="table-card">
+          <div class="table-head"><span class="table-head-icon">◈</span>guestbook</div>
+          <div class="col-row"><span class="col-name">id</span><span class="col-pk">PK</span><span class="col-type">bigserial</span></div>
+          <div class="col-row"><span class="col-name">nickname</span><span></span><span class="col-type">text</span></div>
+          <div class="col-row"><span class="col-name">message</span><span></span><span class="col-type">text</span></div>
+          <div class="col-row"><span class="col-name">emoji</span><span></span><span class="col-type">text</span></div>
+          <div class="col-row"><span class="col-name">user_id</span><span></span><span class="col-type">text</span></div>
+          <div class="table-refs">
+            <div class="refs-label">Used by</div>
+            <div class="ref-row"><span class="ref-screen">/contact</span><span class="ref-comp">GuestbookList · CSR</span></div>
+          </div>
+        </div>
+        <div class="table-card">
+          <div class="table-head"><span class="table-head-icon">◈</span>inquiries</div>
+          <div class="col-row"><span class="col-name">id</span><span class="col-pk">PK</span><span class="col-type">uuid</span></div>
+          <div class="col-row"><span class="col-name">title</span><span></span><span class="col-type">text</span></div>
+          <div class="col-row"><span class="col-name">content</span><span></span><span class="col-type">text</span></div>
+          <div class="col-row"><span class="col-name">is_public</span><span></span><span class="col-type">boolean</span></div>
+          <div class="col-row"><span class="col-name">reply</span><span></span><span class="col-type">text</span></div>
+          <div class="col-row"><span class="col-name">replied_at</span><span></span><span class="col-type">timestamptz</span></div>
+          <div class="table-refs">
+            <div class="refs-label">Used by</div>
+            <div class="ref-row"><span class="ref-screen">/contact</span><span class="ref-comp">ContactInfo · SSR</span></div>
+          </div>
+        </div>
+        <div class="table-card">
+          <div class="table-head"><span class="table-head-icon">◈</span>about_profiles</div>
+          <div class="col-row"><span class="col-name">id</span><span class="col-pk">PK</span><span class="col-type">uuid</span></div>
+          <div class="col-row"><span class="col-name">story_json</span><span></span><span class="col-type">jsonb</span></div>
+          <div class="col-row"><span class="col-name">profile_photo_url</span><span></span><span class="col-type">text</span></div>
+          <div class="table-refs">
+            <div class="refs-label">Used by</div>
+            <div class="ref-row"><span class="ref-screen">/about</span><span class="ref-comp">ProfilePhotoCard · SSR</span></div>
+            <div class="ref-row"><span class="ref-screen">/admin/profile</span><span class="ref-comp">Profile Editor · CSR</span></div>
+          </div>
+        </div>
+        <div class="table-card">
+          <div class="table-head"><span class="table-head-icon">◈</span>contact_links</div>
+          <div class="col-row"><span class="col-name">id</span><span class="col-pk">PK</span><span class="col-type">uuid</span></div>
+          <div class="col-row"><span class="col-name">icon_key</span><span></span><span class="col-type">text</span></div>
+          <div class="col-row"><span class="col-name">value</span><span></span><span class="col-type">text</span></div>
+          <div class="table-refs">
+            <div class="refs-label">Used by</div>
+            <div class="ref-row"><span class="ref-screen">/about</span><span class="ref-comp">location display · SSR</span></div>
+            <div class="ref-row"><span class="ref-screen">/contact</span><span class="ref-comp">ContactInfo · SSR</span></div>
+          </div>
+        </div>
+        <div class="table-card">
+          <div class="table-head"><span class="table-head-icon">◈</span>experiences · educations · trainings</div>
+          <div class="col-row"><span class="col-name">id</span><span class="col-pk">PK</span><span class="col-type">uuid</span></div>
+          <div class="col-row"><span class="col-name">title / institution</span><span></span><span class="col-type">text</span></div>
+          <div class="col-row"><span class="col-name">start_date / end_date</span><span></span><span class="col-type">text</span></div>
+          <div class="table-refs">
+            <div class="refs-label">Used by</div>
+            <div class="ref-row"><span class="ref-screen">/about</span><span class="ref-comp">ExperienceTabsSection · SSR</span></div>
+            <div class="ref-row"><span class="ref-screen">/admin/profile</span><span class="ref-comp">Experience/Education Manager</span></div>
+          </div>
+        </div>
+        <div class="table-card">
+          <div class="table-head"><span class="table-head-icon">◈</span>page_views</div>
+          <div class="col-row"><span class="col-name">id</span><span class="col-pk">PK</span><span class="col-type">bigserial</span></div>
+          <div class="col-row"><span class="col-name">path</span><span></span><span class="col-type">text</span></div>
+          <div class="col-row"><span class="col-name">viewed_at</span><span></span><span class="col-type">timestamptz</span></div>
+          <div class="table-refs">
+            <div class="refs-label">Used by</div>
+            <div class="ref-row"><span class="ref-screen">/admin/dashboard</span><span class="ref-comp">PageViewStats · SSR</span></div>
           </div>
         </div>
         <div class="sidebar-section">
           <div class="sidebar-label">Queries</div>
           <div class="query-card">
-            <div class="query-name">PostList</div>
-            <div class="query-meta">CSR · / page · supabase.from('posts')</div>
-            <div class="query-meta" style="margin-top:3px">join: supabase.from('profiles')</div>
+            <div class="query-name">BlogList</div>
+            <div class="query-meta">SSR · /blog · supabase.from('blog_posts').eq('status','published')</div>
           </div>
           <div class="query-card">
             <div class="query-name">BlogDetail</div>
-            <div class="query-meta">SSR · /blog/[slug] · supabase.from('posts')</div>
+            <div class="query-meta">SSR · /blog/[slug] · supabase.from('blog_posts').eq('slug',slug)</div>
+          </div>
+          <div class="query-card">
+            <div class="query-name">ProjectsPage</div>
+            <div class="query-meta">SSR · /projects · supabase.from('projects').order('is_ongoing')</div>
+          </div>
+          <div class="query-card">
+            <div class="query-name">AboutPage</div>
+            <div class="query-meta">SSR · /about · about_profiles + contact_links + skills + experiences + educations</div>
+          </div>
+          <div class="query-card">
+            <div class="query-name">ContactPage</div>
+            <div class="query-meta">SSR/CSR · /contact · guestbook + guestbook_comments + profiles + contact_links</div>
+          </div>
+          <div class="query-card">
+            <div class="query-name">AdminDashboard</div>
+            <div class="query-meta">SSR · /admin · projects + skills (count) + page_views analytics</div>
           </div>
         </div>
       </div>
+      </div>
     </div>
+  </div>
+
+</div>
   </div>
 
 </div>
@@ -361,29 +483,52 @@ graph TD
     subgraph RUNTIME["⚙ Node.js 20 · Server Runtime"]
       subgraph FRAMEWORK["▲ Next.js 15 · App Router"]
         subgraph REACT["⚛ React 18 · SSR Engine"]
-          rl["(root) layout"]
+          rl["(root) layout · SSR"]
           rp["/ · home · SSR"]
-          ab["/about · SSR"]
-          pj["/projects · SSR"]
-          ct["/contact · SSR"]
-          bs["/blog/[slug] · SSR"]
-          ad["/admin · SSR"]
+          ab["/about · SSR · rev:3600"]
+          lg["/login · CSR"]
           FETCH["(SSR data fetch)"]
-          rl ~~~ rp ~~~ ab ~~~ pj ~~~ ct ~~~ bs ~~~ ad ~~~ FETCH
+
+          subgraph BLOG_G["📝 /blog"]
+            bl["/blog · SSR · dynamic"]
+            bs["/blog/[slug] · SSR"]
+            bn["/blog/new · SSR · admin"]
+            be["/blog/edit/[id] · SSR · admin"]
+          end
+
+          subgraph PROJ_G["📁 /projects"]
+            pj["/projects · SSR · rev:3600"]
+            ps["/projects/[slug] · SSG · MDX"]
+          end
+
+          subgraph CONTACT_G["📬 /contact"]
+            ct["/contact · SSR · dynamic"]
+          end
+
+          subgraph ADMIN_G["⚙ /admin"]
+            adm["/admin/dashboard · SSR"]
+            apr["/admin/profile · CSR"]
+            apj["/admin/projects · CSR"]
+            ask["/admin/skills · CSR"]
+          end
         end
         api["/api/* · Route Handlers"]
+        authcb["/auth/callback · OAuth"]
       end
     end
   end
   subgraph DATA["🗄 DATA LAYER"]
     subgraph SB["⚡ Supabase · BaaS"]
       PG[("PostgreSQL v15 · RLS")]
-      AUTH["Auth · JWT"]
+      AUTH["Auth · GitHub OAuth + Email"]
+      STORAGE["Storage · Thumbnails"]
     end
   end
   FETCH -.->|"supabase-js"| PG
-  ad -.->|"auth check"| AUTH
-  api -->|"server query"| PG`,
+  lg -.->|"auth"| AUTH
+  apj -.->|"image upload"| STORAGE
+  api -->|"server query"| PG
+  authcb -->|"OAuth callback"| AUTH`,
 
   s: `%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0d1a0d','primaryTextColor':'#86efac','primaryBorderColor':'#166534','lineColor':'#334155','secondaryColor':'#0f172a','edgeLabelBackground':'#0a0e1a','fontFamily':'JetBrains Mono'}}}%%
 graph TD
@@ -391,63 +536,167 @@ graph TD
   classDef ssr fill:#0d1a0d,stroke:#16a34a,color:#86efac,rx:4
   classDef csr fill:#2d1200,stroke:#c2410c,color:#fb923c,rx:4
   classDef api fill:#1a1a0d,stroke:#ca8a04,color:#fde047,rx:4
+  classDef ssg fill:#1a0d1a,stroke:#7c3aed,color:#c4b5fd,rx:4
 
-  ROOT["🌐 Website Root"]:::route
-
+  ROOT["🌐 Silver.dev Portfolio"]:::route
   ROOT --> rl["(root) layout"]:::ssr
   ROOT --> APIS["/api/* · Route Handlers"]:::api
-
+  ROOT --> authcb["/auth/callback"]:::api
   rl --> HDR["Header · SSR"]:::ssr
-  rl --> NAV["NavBar · SSR"]:::ssr
+  rl --> FTR["Footer · SSR"]:::ssr
 
-  rl --> rp["/ · home · SSR"]:::ssr
-  rl --> ab["/about · SSR"]:::ssr
-  rl --> pj["/projects · SSR"]:::ssr
-  rl --> ct["/contact · SSR"]:::ssr
-  rl --> bs["/blog/[slug] · SSR"]:::ssr
-  rl --> ad["/admin · SSR"]:::ssr
+  subgraph HOME_S["🏠 Home"]
+    rp["/ · home · SSR"]:::ssr
+    rp --> HS["HeroSection"]:::ssr
+    rp --> MP["MenuPreviewSection"]:::ssr
+    rp --> AI["AIWorkflowSection"]:::ssr
+    rp --> RB["RecentBlogSection"]:::ssr
+  end
 
-  rp --> PL["PostList · CSR"]:::csr
-  rp --> HERO["Hero · SSR"]:::ssr
+  subgraph ABOUT_S["👤 About"]
+    ab["/about · SSR · rev:3600"]:::ssr
+    ab --> PPH["ProfilePhotoCard"]:::ssr
+    ab --> SKS["SkillsSection"]:::ssr
+    ab --> EXP["ExperienceTabsSection
+경력/학력/교육자격증"]:::ssr
+  end
 
-  ab --> AC["AboutContent · SSR"]:::ssr
+  subgraph BLOG_S["📝 Blog"]
+    bl["/blog · SSR"]:::ssr
+    bs["/blog/[slug] · SSR"]:::ssr
+    bn["/blog/new · SSR · admin"]:::ssr
+    be["/blog/edit/[id] · SSR · admin"]:::ssr
+    bl --> BLL["BlogList"]:::ssr
+    bl --> BSD["BlogStatusDropdown · admin"]:::csr
+    bs --> MDX["MDX + TipTap renderer"]:::ssr
+    bs --> TOC["TableOfContents"]:::ssr
+    bs --> GIS["GiscusComments"]:::csr
+    bn --> BEF["BlogEditForm · new"]:::csr
+    be --> BEFE["BlogEditForm · edit"]:::csr
+  end
 
-  pj --> PJLIST["ProjectList · SSR"]:::ssr
-  pj --> PJFILT["ProjectFilter · CSR"]:::csr
+  subgraph PROJ_S["📁 Projects"]
+    pj["/projects · SSR · rev:3600"]:::ssr
+    ps["/projects/[slug] · SSG · MDX"]:::ssg
+    pj --> PRL["ProjectList"]:::ssr
+    pj --> PRC["ProjectCard + DetailModal"]:::csr
+    ps --> MDXS["MDX Static Content"]:::ssg
+  end
 
-  ct --> CF["ContactForm · CSR"]:::csr
+  subgraph CONTACT_S["📬 Contact"]
+    ct["/contact · SSR"]:::ssr
+    ct --> CI["ContactInfo"]:::ssr
+    ct --> LSW["LiveStatusWidget"]:::csr
+    ct --> GBF["GuestbookForm"]:::csr
+    ct --> GBL["GuestbookList"]:::csr
+  end
 
-  bs --> BP["BlogPost · SSR"]:::ssr
-  bs --> CL["CommentList · CSR"]:::csr
+  subgraph AUTH_S["🔐 Auth"]
+    lg["/login · CSR"]:::csr
+  end
 
-  ad --> ADMTBL["DataTable · CSR"]:::csr
-  ad --> ADMNAV["AdminNav · SSR"]:::ssr`,
+  subgraph ADMIN_S["⚙ Admin"]
+    adm["/admin/dashboard · SSR"]:::ssr
+    apr["/admin/profile · CSR"]:::csr
+    apj["/admin/projects · CSR"]:::csr
+    ask["/admin/skills · CSR"]:::csr
+    adm --> STC["Stats Cards"]:::ssr
+    adm --> PVS["PageViewStats"]:::ssr
+    apr --> PFT["ProfileForm + StoryEditor"]:::csr
+    apr --> EXM["Experience/Education Manager"]:::csr
+    apj --> PJF["Project CRUD Form"]:::csr
+    apj --> IMG["Image Upload"]:::csr
+    ask --> SKT["Skills CRUD Table"]:::csr
+  end
+
+  rl --> HOME_S
+  rl --> ABOUT_S
+  rl --> BLOG_S
+  rl --> PROJ_S
+  rl --> CONTACT_S
+  rl --> AUTH_S
+  rl --> ADMIN_S`,
 
   d: `%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0a2030','primaryTextColor':'#e2e8f0','primaryBorderColor':'#1e4060','lineColor':'#f59e0b','secondaryColor':'#0f172a','tertiaryColor':'#1a0a20','attributeBackgroundColorEven':'#0f1e30','attributeBackgroundColorOdd':'#091624','nodeBorder':'#1e4060','clusterBkg':'#0a0e1a','fontFamily':'JetBrains Mono'}}}%%
 erDiagram
-  posts ||--o{ PostList : "queried by"
-  posts ||--o{ BlogDetail : "queried by"
-  profiles ||--o{ PostList : "joined"
+  blog_posts ||--o{ BlogPage : "listed in"
+  blog_posts ||--|| BlogSlugPage : "rendered by"
+  projects ||--o{ ProjectsPage : "listed in"
+  projects ||--o{ AdminDash : "stats"
+  blog_posts ||--o{ AdminDash : "stats"
+  guestbook ||--o{ ContactPage : "shown in"
+  inquiries ||--o{ ContactPage : "submitted via"
+  profiles ||--o{ AboutPage : "displayed in"
 
-  posts {
+  blog_posts {
     uuid id PK
-    text title
-    text content
     uuid author_id FK
-    timestamp created_at
+    varchar slug
+    text title
+    text status
+    text[] tags
+    timestamptz published_at
+  }
+  projects {
+    uuid id PK
+    uuid profile_id FK
+    text title
+    text[] tech_stack
+    boolean is_featured
+    text status
+    date start_date
   }
   profiles {
     uuid id PK
     varchar username
-    varchar avatar_url
+    text full_name
+    text avatar_url
+    text role
+    text bio
   }
-  PostList {
-    string screen "/ page"
-    string render "CSR"
+  skills {
+    uuid id PK
+    text name
+    text category
+    text icon_name
   }
-  BlogDetail {
-    string screen "/blog/slug"
-    string render "SSR"
+  guestbook {
+    bigserial id PK
+    text nickname
+    text message
+    text emoji
+    text user_id
+  }
+  inquiries {
+    uuid id PK
+    text title
+    text content
+    boolean is_public
+    text reply
+  }
+  BlogPage {
+    string render SSR-dynamic
+    string data blog_posts
+  }
+  BlogSlugPage {
+    string render SSR
+    string format MDX
+  }
+  ProjectsPage {
+    string render SSR
+    string cache ISR
+  }
+  ContactPage {
+    string render SSR-dynamic
+    string data guestbook
+  }
+  AdminDash {
+    string render SSR
+    string data analytics
+  }
+  AboutPage {
+    string render SSR
+    string cache ISR
   }`
 };
 
