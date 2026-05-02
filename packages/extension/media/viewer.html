@@ -18,7 +18,7 @@
     body::before { content: ''; position: fixed; inset: 0;
       background-image: radial-gradient(circle, #1e2d4d 1px, transparent 1px);
       background-size: 28px 28px; opacity: 0.3; pointer-events: none; z-index: 0; }
-    header { position: relative; z-index: 20; display: flex; align-items: center; gap: 14px;
+    header { position: relative; z-index: 50; display: flex; align-items: center; gap: 14px;
       padding: 0 24px; height: 52px; background: rgba(6,8,16,0.92);
       border-bottom: 1px solid var(--border); backdrop-filter: blur(16px); }
     .logo { font-size: 15px; font-weight: 700; letter-spacing: -0.5px; color: var(--text-pri); }
@@ -120,6 +120,27 @@
     .tb-btn.active[data-v="all"]    { color: #e2e8f0; border-color: #475569; background: rgba(255,255,255,.06); }
     .tb-pip { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
     .tb-sep { width: 1px; height: 16px; background: var(--border); margin: 0 4px; }
+    .reanl-btn { padding: 3px 10px; font-size: 9px; letter-spacing: 0.6px; font-family: var(--font);
+      background: rgba(13,18,32,.9); border: 1px solid var(--border); color: var(--text-muted);
+      border-radius: 4px; cursor: pointer; transition: all .15s; }
+    .reanl-btn:hover { color: var(--blue); border-color: var(--blue); }
+    .exp-wrap { position: relative; }
+    .exp-trigger { padding: 3px 10px; font-size: 9px; letter-spacing: 0.6px; font-family: var(--font);
+      background: rgba(13,18,32,.9); border: 1px solid var(--border); color: var(--text-muted);
+      border-radius: 4px; cursor: pointer; transition: all .15s; display: flex; align-items: center; gap: 5px; }
+    .exp-trigger:hover, .exp-trigger.open { color: var(--text-sec); border-color: var(--text-sec); }
+    .exp-caret { font-size: 8px; opacity: 0.6; transition: transform .15s; }
+    .exp-trigger.open .exp-caret { transform: rotate(180deg); }
+    .exp-menu { position: absolute; top: calc(100% + 6px); right: 0; z-index: 999;
+      background: var(--bg-card); border: 1px solid var(--border); border-radius: 6px;
+      padding: 4px; min-width: 170px; display: none; box-shadow: 0 8px 24px rgba(0,0,0,.6); }
+    .exp-menu.open { display: block; }
+    .exp-item { display: flex; align-items: center; gap: 10px; padding: 7px 10px;
+      font-size: 10px; color: var(--text-sec); cursor: pointer; border-radius: 4px;
+      transition: background .12s; user-select: none; }
+    .exp-item:hover { background: rgba(255,255,255,.05); color: var(--text-pri); }
+    .exp-item-icon { font-size: 11px; width: 16px; text-align: center; color: var(--text-muted); }
+    .exp-item-sub { font-size: 9px; color: var(--text-muted); margin-left: auto; }
   </style>
 </head>
 <body>
@@ -128,6 +149,23 @@
   <div class="logo">Code<em>Sight</em></div>
   <div class="badge" id="h-badge">—</div>
   <div class="header-right">
+    <button class="reanl-btn" id="reanl-btn" onclick="requestReanalyze()">↺ Re-analyze</button>
+    <div class="exp-wrap">
+      <button class="exp-trigger" id="exp-btn" onclick="toggleExport(event)">
+        Export <span class="exp-caret">▾</span>
+      </button>
+      <div class="exp-menu" id="exp-menu">
+        <div class="exp-item" onclick="event.stopPropagation();closeExport();exportPng(activeTab)">
+          <span class="exp-item-icon">🖼</span>PNG<span class="exp-item-sub">현재 탭</span>
+        </div>
+        <div class="exp-item" onclick="event.stopPropagation();closeExport();exportSvg(activeTab)">
+          <span class="exp-item-icon">✦</span>SVG<span class="exp-item-sub">현재 탭</span>
+        </div>
+        <div class="exp-item" onclick="event.stopPropagation();closeExport();exportMd()">
+          <span class="exp-item-icon">↓</span>Markdown<span class="exp-item-sub">전체</span>
+        </div>
+      </div>
+    </div>
     <div class="status-dot"></div>
     <div class="header-meta" id="h-meta">analyzing...</div>
   </div>
@@ -213,8 +251,11 @@ const injected = window.__CODESIGHT_DIAGRAMS__ || {};
 
 if (meta.projectName) {
   document.getElementById('h-badge').textContent = meta.projectName;
+  const cacheLabel = meta.cachedAt
+    ? ' · cached ' + Math.round((Date.now() - meta.cachedAt) / 60000) + 'm ago'
+    : '';
   document.getElementById('h-meta').textContent =
-    meta.projectName + ' · ' + (meta.routeCount ?? '?') + ' routes · ' + (meta.tableCount ?? '?') + ' tables';
+    meta.projectName + ' · ' + (meta.routeCount ?? '?') + ' routes · ' + (meta.tableCount ?? '?') + ' tables' + cacheLabel;
 }
 
 // Map from DiagramSet keys to r/s/d
@@ -230,10 +271,12 @@ mermaid.initialize({startOnLoad: false, securityLevel: 'loose'});
 const rendered = {r:false,s:false,d:false};
 const ST = {r:{s:1,x:0,y:0}, s:{s:1,x:0,y:0}, d:{s:1,x:0,y:0}};
 const drag = {t:null,sx:0,sy:0,ox:0,oy:0};
-let dbCurrentView = 'fk';
-let dbGraphs = null;
+var dbCurrentView = 'fk';
+var dbGraphs = null;
+var activeTab = 'r';
 
 function switchTab(t) {
+  activeTab = t;
   document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
   document.querySelectorAll('.panel').forEach(el => el.classList.remove('active'));
   document.querySelector('.tab[data-t="'+t+'"]').classList.add('active');
@@ -486,6 +529,161 @@ function buildSidebar(erDiagram) {
         }).join('')+'</div>' : '';
     return '<div class="table-card"><div class="table-head"><span class="table-head-icon">◈</span>'+name+'</div>'+cols+fkHtml+usedHtml+'</div>';
   }).join('');
+}
+
+// ── VS Code API bridge ────────────────────────────────────────────────────────
+const vsApi = (typeof acquireVsCodeApi !== 'undefined') ? acquireVsCodeApi() : null;
+
+function postMsg(msg) {
+  if (vsApi) { vsApi.postMessage(msg); return; }
+  // browser fallback: blob download
+  const { format, data, filename } = msg;
+  let href;
+  if (format === 'png') { href = data; }
+  else {
+    const mime = format === 'svg' ? 'image/svg+xml' : 'text/markdown';
+    href = URL.createObjectURL(new Blob([data], {type: mime}));
+  }
+  const a = document.createElement('a');
+  a.href = href; a.download = filename;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  if (format !== 'png') setTimeout(() => URL.revokeObjectURL(href), 1000);
+}
+
+function requestReanalyze() {
+  if (vsApi) vsApi.postMessage({type:'reanalyze'});
+}
+
+// ── Export dropdown ───────────────────────────────────────────────────────────
+function toggleExport(e) {
+  e.stopPropagation();
+  const btn = document.getElementById('exp-btn');
+  const menu = document.getElementById('exp-menu');
+  const isOpen = menu.classList.contains('open');
+  btn.classList.toggle('open', !isOpen);
+  menu.classList.toggle('open', !isOpen);
+}
+function closeExport() {
+  document.getElementById('exp-btn').classList.remove('open');
+  document.getElementById('exp-menu').classList.remove('open');
+}
+document.addEventListener('click', closeExport);
+
+// ── Export ────────────────────────────────────────────────────────────────────
+
+// Returns the Mermaid source for a tab, building DB "all" view on demand
+function getDiagramSource(t) {
+  if (t === 'd') {
+    if (!DIAGRAMS.d) return null;
+    if (!dbGraphs) {
+      var data = parseDbData(DIAGRAMS.d);
+      dbGraphs = {
+        fk:      buildDbGraph(data, true,  false, false),
+        routes:  buildDbGraph(data, false, true,  false),
+        actions: buildDbGraph(data, false, false, true),
+        all:     buildDbGraph(data, true,  true,  true),
+        _data:   data,
+      };
+    }
+    return dbGraphs[dbCurrentView] || dbGraphs.fk;
+  }
+  return DIAGRAMS[t] || null;
+}
+
+// Returns SVG string for tab: uses DOM if already rendered, else renders on-demand
+async function getSvgString(t) {
+  var domSvg = document.getElementById('i-'+t)?.querySelector('svg');
+  if (domSvg) {
+    var clone = domSvg.cloneNode(true);
+    clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+    clone.style.background = '#060810';
+    return new XMLSerializer().serializeToString(clone);
+  }
+  // On-demand render
+  var diagram = getDiagramSource(t);
+  if (!diagram) return null;
+  var result = await mermaid.render('expsvg_'+t+'_'+Date.now(), diagram);
+  var tmp = document.createElement('div');
+  tmp.innerHTML = result.svg;
+  var el = tmp.querySelector('svg');
+  if (el) {
+    el.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+    el.style.background = '#060810';
+    return new XMLSerializer().serializeToString(el);
+  }
+  return result.svg;
+}
+
+async function exportSvg(t) {
+  var tab = t || activeTab;
+  try {
+    var str = await getSvgString(tab);
+    if (!str) { alert('다이어그램 데이터가 없습니다.'); return; }
+    postMsg({type:'export', format:'svg', data:str, filename:(meta.projectName||'codesight')+'-'+tab+'.svg'});
+  } catch(e) { alert('SVG 생성 실패: '+e.message); }
+}
+
+async function exportPng(t) {
+  var tab = t || activeTab;
+  try {
+    var str = await getSvgString(tab);
+    if (!str) { alert('다이어그램 데이터가 없습니다.'); return; }
+    var scale = 2;
+    var svgBlob = new Blob([str], {type:'image/svg+xml'});
+    var url = URL.createObjectURL(svgBlob);
+    await new Promise((resolve, reject) => {
+      var img = new Image();
+      img.onload = () => {
+        var w = img.naturalWidth  || 1200;
+        var h = img.naturalHeight || 800;
+        var canvas = document.createElement('canvas');
+        canvas.width = w * scale; canvas.height = h * scale;
+        var ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#060810';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        URL.revokeObjectURL(url);
+        try {
+          postMsg({type:'export', format:'png', data:canvas.toDataURL('image/png'),
+            filename:(meta.projectName||'codesight')+'-'+tab+'.png'});
+          resolve();
+        } catch(e) {
+          // canvas tainted → fall back to SVG
+          exportSvg(tab).then(resolve).catch(reject);
+        }
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('이미지 로드 실패')); };
+      img.src = url;
+    });
+  } catch(e) { alert('PNG 생성 실패: '+e.message); }
+}
+
+function exportMd() {
+  var labels = {r:'Rendering Architecture', s:'Screen–Component', d:'DB–Screen (전체)'};
+  // DB-Screen: always use "all" view (shows FK + page queries + server actions)
+  var dbDiagram = '';
+  if (DIAGRAMS.d) {
+    if (!dbGraphs) {
+      var data = parseDbData(DIAGRAMS.d);
+      dbGraphs = {
+        fk:      buildDbGraph(data, true,  false, false),
+        routes:  buildDbGraph(data, false, true,  false),
+        actions: buildDbGraph(data, false, false, true),
+        all:     buildDbGraph(data, true,  true,  true),
+        _data:   data,
+      };
+    }
+    dbDiagram = dbGraphs.all || '';
+  }
+  var diagramMap = {r: DIAGRAMS.r, s: DIAGRAMS.s, d: dbDiagram};
+  var sections = Object.entries(diagramMap)
+    .filter(([,v]) => v)
+    .map(([k,v]) => '## '+labels[k]+'\n\n```mermaid\n'+v+'\n```')
+    .join('\n\n');
+  var hdr = '# CodeSight — '+(meta.projectName||'Project')+'\n\n'+
+    '> '+(meta.routeCount??'?')+'개 라우트 · '+(meta.tableCount??'?')+'개 테이블\n';
+  postMsg({type:'export', format:'md', data:hdr+'\n'+sections+'\n',
+    filename:(meta.projectName||'codesight')+'.md'});
 }
 
 renderTab('r');
