@@ -8,6 +8,8 @@ import {
   type IREdge,
   type IRNode,
   type RouteNode,
+  type IRGraphMetadata,
+  type IRBackendService,
 } from '@codebase-viz/types'
 
 function edgeArrow(edge: IREdge): string {
@@ -63,34 +65,27 @@ function sectionLabel(key: string): string {
 
 interface InfraInfo {
   hasNextjs: boolean
-  nextVersion?: string
-  reactVersion?: string
+  hasVite: boolean
+  hasExpo: boolean
   hasSupabase: boolean
+  hasDexie: boolean
+  hasPrisma: boolean
+  hasFirebase: boolean
 }
 
-async function detectInfra(repoRoot: string): Promise<InfraInfo> {
-  try {
-    const raw = await fs.readFile(path.join(repoRoot, 'package.json'), 'utf-8')
-    const pkg = JSON.parse(raw) as {
-      dependencies?: Record<string, string>
-      devDependencies?: Record<string, string>
-    }
-    const deps = { ...pkg.dependencies, ...pkg.devDependencies }
-    const majorVer = (name: string): string | undefined => {
-      const v = deps[name]
-      return v ? v.replace(/[^0-9.]/g, '').split('.')[0] : undefined
-    }
-    const result: InfraInfo = {
-      hasNextjs: 'next' in deps,
-      hasSupabase: '@supabase/supabase-js' in deps || '@supabase/ssr' in deps,
-    }
-    const nextVer = majorVer('next')
-    const reactVer = majorVer('react')
-    if (nextVer !== undefined) result.nextVersion = nextVer
-    if (reactVer !== undefined) result.reactVersion = reactVer
-    return result
-  } catch {
-    return { hasNextjs: false, hasSupabase: false }
+function metadataToInfra(meta?: IRGraphMetadata): InfraInfo {
+  if (meta === undefined) {
+    return { hasNextjs: false, hasVite: false, hasExpo: false, hasSupabase: false, hasDexie: false, hasPrisma: false, hasFirebase: false }
+  }
+  const fw = meta.framework.toLowerCase()
+  return {
+    hasNextjs: fw === 'nextjs-app-router' || fw === 'nextjs-pages' || fw.startsWith('next'),
+    hasVite: fw === 'vite-react' || fw.includes('vite'),
+    hasExpo: fw === 'expo' || fw.includes('expo') || meta.deployTarget === 'mobile',
+    hasSupabase: meta.hasSupabase,
+    hasDexie: meta.hasDexie,
+    hasPrisma: meta.hasPrisma,
+    hasFirebase: meta.hasFirebase,
   }
 }
 
@@ -104,7 +99,7 @@ function buildRouteSectionLines(sections: Map<string, RouteNode[]>, indent: stri
         lines.push(`${indent}${sanitizeId(r.id)}["${r.path} · ${badge}"]:::${modeClass(r.renderingMode)}`)
       }
     } else {
-      lines.push(`${indent}subgraph ${secKey.toUpperCase()}_G["${sectionLabel(secKey)}"]`)
+      lines.push(`${indent}subgraph ${sanitizeId(secKey.toUpperCase())}_G["${sectionLabel(secKey)}"]`)
       for (const r of nodes) {
         const badge = r.renderingMode === 'unknown' ? '?' : r.renderingMode
         lines.push(`${i2}${sanitizeId(r.id)}["${r.path} · ${badge}"]:::${modeClass(r.renderingMode)}`)
@@ -115,8 +110,10 @@ function buildRouteSectionLines(sections: Map<string, RouteNode[]>, indent: stri
   return lines
 }
 
-function buildRenderingDiagram(graph: IRGraph, infra?: InfraInfo): string {
-  const routeNodes = graph.nodes.filter(isRouteNode)
+function buildRenderingDiagram(graph: IRGraph): string {
+  const infra = metadataToInfra(graph.metadata)
+  // Only page routes — skip loading, layout, error, template, route-handler (same as Tab 2)
+  const routeNodes = graph.nodes.filter(isRouteNode).filter(r => r.routeFileKind === 'page')
   if (routeNodes.length === 0) return 'graph TD\n  empty["(no routes found)"]'
 
   const sections = new Map<string, RouteNode[]>()
@@ -127,95 +124,219 @@ function buildRenderingDiagram(graph: IRGraph, infra?: InfraInfo): string {
     sections.set(sec, existing)
   }
 
+  const tableNodes = graph.nodes.filter(isTableNode)
+  const hasDirectDB = infra.hasSupabase || infra.hasDexie || infra.hasPrisma || infra.hasFirebase
+  const hasExternalAPI = tableNodes.length > 0 && !hasDirectDB
+  const backends = graph.metadata?.backends ?? []
+  const allCSR = routeNodes.length > 0 && routeNodes.every(r => r.renderingMode === 'CSR')
+
   const lines: string[] = [RENDERING_INIT, 'graph TD', CLASS_DEFS]
 
-  if (infra?.hasNextjs) {
-    const nextLabel = infra.nextVersion ? ` ${infra.nextVersion}` : ''
-    const reactLabel = infra.reactVersion ? ` ${infra.reactVersion}` : ''
+  // ── 1. FRONTEND LAYER ────────────────────────────────────────────────────
+  if (infra.hasNextjs && !allCSR) {
     lines.push(`  subgraph INFRA["☁ VERCEL · Edge Network"]`)
     lines.push(`    subgraph RUNTIME["⚙ Node.js · Server Runtime"]`)
-    lines.push(`      subgraph FRAMEWORK["▲ Next.js${nextLabel} · App Router"]`)
-    lines.push(`        subgraph REACT["⚛ React${reactLabel} · SSR Engine"]`)
-    if (infra.hasSupabase) {
-      lines.push(`          SSR_FETCH["(SSR data fetch)"]:::unk`)
-    }
-    const singleSection = sections.size === 1 && sections.has('root')
-    const routeIndent = singleSection ? '          ' : '          '
-    for (const l of buildRouteSectionLines(sections, routeIndent)) lines.push(l)
-    lines.push('        end')
-    lines.push('      end')
-    lines.push('    end')
-    lines.push('  end')
-    if (infra.hasSupabase) {
-      lines.push(`  subgraph DATALAYER["🗄 DATA LAYER"]`)
-      lines.push(`    subgraph SUPABASE_G["⚡ Supabase · BaaS"]`)
-      lines.push(`      PG_SB[("PostgreSQL")]`)
-      lines.push(`      SB_AUTH["Auth · OAuth"]`)
-      lines.push('    end')
-      lines.push('  end')
-      lines.push('  SSR_FETCH -.->|"supabase-js"| PG_SB')
-    }
+    lines.push(`      subgraph FRAMEWORK["▲ Next.js · App Router"]`)
+    lines.push(`        subgraph REACT["⚛ React · SSR Engine"]`)
+    if (infra.hasSupabase) lines.push(`          SSR_FETCH["(SSR data fetch)"]:::unk`)
+    for (const l of buildRouteSectionLines(sections, '          ')) lines.push(l)
+    lines.push('        end\n      end\n    end\n  end')
+  } else if (infra.hasNextjs && allCSR) {
+    lines.push(`  subgraph BROWSER["🌐 Browser · Client-Side App"]`)
+    lines.push(`    subgraph FRAMEWORK["▲ Next.js · App Router"]`)
+    lines.push(`      subgraph REACT["⚛ React · CSR Engine"]`)
+    for (const l of buildRouteSectionLines(sections, '        ')) lines.push(l)
+    lines.push('      end\n    end\n  end')
+  } else if (infra.hasVite) {
+    lines.push(`  subgraph BROWSER["🌐 Browser · Client-Side App"]`)
+    lines.push(`    subgraph BUNDLER["⚡ Vite · Dev/Build"]`)
+    lines.push(`      subgraph REACT["⚛ React · CSR Engine"]`)
+    for (const l of buildRouteSectionLines(sections, '        ')) lines.push(l)
+    lines.push('      end\n    end\n  end')
+  } else if (infra.hasExpo) {
+    lines.push(`  subgraph MOBILE["📱 Mobile · iOS / Android"]`)
+    lines.push(`    subgraph RN["⚛ React Native · Expo"]`)
+    for (const l of buildRouteSectionLines(sections, '      ')) lines.push(l)
+    lines.push('    end\n  end')
   } else {
     for (const l of buildRouteSectionLines(sections, '  ')) lines.push(l)
+  }
+
+  // ── 2. DATA / BACKEND LAYER (always outside frontend, unconditional) ─────
+  if (backends.length > 0) {
+    // Detailed backend from LLM analysis (monorepo / explicit backend detected)
+    for (let i = 0; i < backends.length; i++) {
+      const be = backends[i]!
+      const beId = `BACKEND_${i}`
+      const dbId = `DB_${i}`
+      const dbLabel = be.dbType === 'postgresql' ? '🐘 PostgreSQL' :
+                      be.dbType === 'mysql' ? '🐬 MySQL' :
+                      be.dbType === 'mongodb' ? '🍃 MongoDB' : '🗄 Database'
+      lines.push(`  subgraph ${beId}["⚙ ${be.name} · ${be.framework}"]`)
+      if (be.modules && be.modules.length > 0) {
+        lines.push(`    subgraph MODULES_${i}["Core Modules"]`)
+        for (const mod of be.modules.slice(0, 8)) {
+          lines.push(`      ${sanitizeId(mod)}_${i}["${mod}"]`)
+        }
+        lines.push('    end')
+      }
+      lines.push(`    ${dbId}[("${dbLabel}")]`)
+      if (be.modules && be.modules.length > 0) {
+        for (const mod of be.modules.slice(0, 8)) {
+          lines.push(`    ${sanitizeId(mod)}_${i} --> ${dbId}`)
+        }
+      }
+      lines.push('  end')
+      lines.push(`  REACT -.->|"REST"| ${beId}`)
+    }
+  } else if (infra.hasSupabase) {
+    const fetchSrc = (infra.hasNextjs && !allCSR) ? 'SSR_FETCH' : 'REACT'
+    lines.push(`  subgraph DATALAYER["🗄 DATA LAYER"]`)
+    lines.push(`    subgraph SUPABASE_G["⚡ Supabase · BaaS"]`)
+    lines.push(`      PG_SB[("PostgreSQL")]`)
+    if (infra.hasNextjs && !allCSR) lines.push(`      SB_AUTH["Auth · OAuth"]`)
+    lines.push('    end\n  end')
+    const edge = (infra.hasNextjs && !allCSR) ? 'supabase-js' : 'supabase-js'
+    lines.push(`  ${fetchSrc} -.->|"${edge}"| PG_SB`)
+  } else if (infra.hasDexie) {
+    lines.push(`  subgraph LOCALDATA["💾 LOCAL DATA LAYER"]`)
+    lines.push(`    subgraph DEXIE_G["📦 Dexie.js · IndexedDB"]`)
+    lines.push(`      IDB[("IndexedDB")]`)
+    lines.push('    end\n  end')
+    lines.push('  REACT -.->|"dexie"| IDB')
+  } else if (infra.hasFirebase) {
+    lines.push(`  subgraph DATALAYER["🔥 DATA LAYER"]`)
+    lines.push(`    subgraph FIREBASE_G["Firebase · BaaS"]`)
+    lines.push(`      FS[("Firestore")]`)
+    lines.push('    end\n  end')
+    lines.push('  REACT -.->|"firebase"| FS')
+  } else if (infra.hasPrisma) {
+    lines.push(`  subgraph DATALAYER["🗄 DATA LAYER"]`)
+    lines.push(`    subgraph PRISMA_G["Prisma ORM"]`)
+    lines.push(`      PG_DB[("Database")]`)
+    lines.push('    end\n  end')
+    lines.push('  REACT -.->|"prisma"| PG_DB')
+  } else if (hasExternalAPI) {
+    lines.push(`  subgraph DATALAYER["🔌 API LAYER"]`)
+    lines.push(`    subgraph API_G["⚡ REST API · Backend"]`)
+    lines.push(`      API_SVC[("Backend Service")]`)
+    lines.push('    end\n  end')
+    lines.push('  REACT -.->|"REST"| API_SVC')
   }
 
   return lines.join('\n')
 }
 
 function buildScreenComponentDiagram(graph: IRGraph): string {
-  const routeNodes = graph.nodes.filter(isRouteNode)
+  const allRouteNodes = graph.nodes.filter(isRouteNode)
   const componentNodes = graph.nodes.filter(isComponentNode)
-  const rendersEdges = graph.edges.filter(e => e.kind === 'renders')
+
+  // Only page-type routes — remove loading, layout, template, error, route-handler
+  const allPageRoutes = allRouteNodes.filter(r => r.routeFileKind === 'page')
+
+  // Build path → display route map; prefer verified (static) over inferred (LLM duplicates)
+  const pathToDisplayRoute = new Map<string, RouteNode>()
+  for (const r of allPageRoutes) {
+    const existing = pathToDisplayRoute.get(r.path)
+    if (existing === undefined || r.confidence === 'verified') {
+      pathToDisplayRoute.set(r.path, r)
+    }
+  }
+  const pageRoutes = Array.from(pathToDisplayRoute.values())
+  const pageRouteIds = new Set(pageRoutes.map(r => r.id))
+
+  // Remap renders edges: inferred/non-display routes → display route by path, deduplicate
+  const seenEdgeKeys = new Set<string>()
+  const rendersEdges = graph.edges
+    .filter(e => e.kind === 'renders')
+    .map(e => {
+      if (pageRouteIds.has(e.from)) return e
+      // Try to find source route in graph nodes
+      const src = allRouteNodes.find(r => r.id === e.from)
+      if (src !== undefined) {
+        const target = pathToDisplayRoute.get(src.path)
+        return target !== undefined ? { ...e, from: target.id } : null
+      }
+      // Source was rejected by verifier — parse URL path from ID: "route:<file>:<routePath>"
+      const colonIdx = e.from.indexOf(':', 'route:'.length)
+      if (e.from.startsWith('route:') && colonIdx !== -1) {
+        const routePath = e.from.slice(colonIdx + 1)
+        const target = pathToDisplayRoute.get(routePath)
+        return target !== undefined ? { ...e, from: target.id } : null
+      }
+      return null
+    })
+    .filter((e): e is IREdge => {
+      if (e === null) return false
+      const key = `${e.from}:${e.to}`
+      if (seenEdgeKeys.has(key)) return false
+      seenEdgeKeys.add(key)
+      return true
+    })
+
   const importsEdges = graph.edges.filter(e => e.kind === 'imports')
 
-  // Only show components that have at least one renders edge pointing to them
   const connectedCompIds = new Set(rendersEdges.map(e => e.to))
   const connectedComponents = componentNodes.filter(c => connectedCompIds.has(c.id))
 
-  const lines: string[] = [RENDERING_INIT, 'graph LR', CLASS_DEFS]
+  // Build route → components map for inline grouping
+  const routeToComps = new Map<string, string[]>()
+  for (const edge of rendersEdges) {
+    if (!connectedCompIds.has(edge.to)) continue
+    const list = routeToComps.get(edge.from) ?? []
+    list.push(edge.to)
+    routeToComps.set(edge.from, list)
+  }
 
-  // Group routes by section
+  const lines: string[] = [RENDERING_INIT, 'graph TB', CLASS_DEFS]
+
+  // Group page routes by section
+  // Each section subgraph uses direction LR so route → components flow horizontally
   const sections = new Map<string, RouteNode[]>()
-  for (const r of routeNodes) {
+  for (const r of pageRoutes) {
     const sec = getTopSection(r.path)
     const existing = sections.get(sec) ?? []
     existing.push(r)
     sections.set(sec, existing)
   }
 
-  if (sections.size > 1) {
-    for (const [secKey, nodes] of sections) {
-      const subId = `${secKey.toUpperCase()}_S`
-      lines.push(`  subgraph ${subId}["${sectionLabel(secKey)}"]`)
-      for (const r of nodes) {
-        const nodeId = sanitizeId(r.id)
-        const badge = r.renderingMode === 'unknown' ? '?' : r.renderingMode
-        lines.push(`    ${nodeId}["${r.path} · ${badge}"]:::${modeClass(r.renderingMode)}`)
+  const compNodeRendered = new Set<string>()
+  const edgesForSection: string[] = []
+
+  for (const [secKey, nodes] of sections) {
+    const subId = `${sanitizeId(secKey.toUpperCase())}_S`
+    lines.push(`  subgraph ${subId}["${sectionLabel(secKey)}"]`)
+    lines.push(`    direction LR`)
+    for (const r of nodes) {
+      const routeNodeId = sanitizeId(r.id)
+      const badge = r.renderingMode === 'unknown' ? '?' : r.renderingMode
+      lines.push(`    ${routeNodeId}["${r.path} · ${badge}"]:::${modeClass(r.renderingMode)}`)
+      const comps = routeToComps.get(r.id) ?? []
+      for (const compId of comps) {
+        if (compNodeRendered.has(compId)) continue
+        compNodeRendered.add(compId)
+        const comp = connectedComponents.find(c => c.id === compId)
+        if (comp === undefined) continue
+        const compNodeId = sanitizeId(comp.id)
+        const label = comp.runtime === 'client' ? `${comp.name} [CSR]` : comp.name
+        lines.push(`    ${compNodeId}["${label}"]`)
       }
-      lines.push('  end')
     }
-  } else {
-    for (const r of routeNodes) {
-      const nodeId = sanitizeId(r.id)
-      lines.push(`  ${nodeId}["${r.path} [${r.routeFileKind}]"]:::${modeClass(r.renderingMode)}`)
-    }
-  }
-
-  for (const c of connectedComponents) {
-    const nodeId = sanitizeId(c.id)
-    const label = c.runtime === 'client' ? `${c.name} [CSR]` : c.name
-    lines.push(`  ${nodeId}["${label}"]`)
-  }
-
-  for (const edge of rendersEdges) {
-    const fromId = sanitizeId(edge.from)
-    const toId = sanitizeId(edge.to)
-    if (connectedCompIds.has(edge.to)) {
-      lines.push(`  ${fromId} ${edgeArrow(edge)} ${toId}`)
+    lines.push(`  end`)
+    // Collect edges inside this section
+    for (const r of nodes) {
+      const comps = routeToComps.get(r.id) ?? []
+      for (const compId of comps) {
+        const edge = rendersEdges.find(e => e.from === r.id && e.to === compId)
+        if (edge !== undefined) {
+          edgesForSection.push(`  ${sanitizeId(r.id)} ${edgeArrow(edge)} ${sanitizeId(compId)}`)
+        }
+      }
     }
   }
 
-  // imports edges between connected components only
+  for (const e of edgesForSection) lines.push(e)
+
   const connectedIdSet = new Set(connectedComponents.map(c => c.id))
   for (const edge of importsEdges) {
     if (connectedIdSet.has(edge.from) && connectedIdSet.has(edge.to)) {
@@ -223,7 +344,7 @@ function buildScreenComponentDiagram(graph: IRGraph): string {
     }
   }
 
-  if (routeNodes.length === 0 && connectedComponents.length === 0) {
+  if (pageRoutes.length === 0 && connectedComponents.length === 0) {
     lines.push('  empty["(no screen/component data)"]')
   }
 
@@ -311,8 +432,7 @@ function wrapMermaid(diagram: string): string {
 export async function renderMermaid(graph: IRGraph, outputDir: string): Promise<void> {
   await fs.mkdir(outputDir, { recursive: true })
 
-  const infra = await detectInfra(graph.repoRoot)
-  const renderingDiagram = buildRenderingDiagram(graph, infra)
+  const renderingDiagram = buildRenderingDiagram(graph)
   const screenComponentDiagram = buildScreenComponentDiagram(graph)
   const dbScreenDiagram = buildDbScreenDiagram(graph)
 

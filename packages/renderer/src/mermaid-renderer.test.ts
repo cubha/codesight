@@ -73,7 +73,7 @@ describe('renderMermaid', () => {
 
     await renderMermaid(graph, OUTPUT_DIR)
     const content = await fs.readFile(path.join(OUTPUT_DIR, 'screen-component.md'), 'utf8')
-    expect(content).toContain('graph LR')
+    expect(content).toContain('graph TB')
   })
 
   it('db-screen.md는 erDiagram을 포함한다', async () => {
@@ -145,6 +145,13 @@ describe('renderMermaid', () => {
     const graph = createIRGraph({
       analyzerVersion: 'codebase-viz@0.1.0',
       repoRoot: FIXTURES_ROOT,
+      metadata: {
+        framework: 'nextjs-app-router',
+        hasSupabase: true,
+        hasPrisma: false,
+        hasDexie: false,
+        hasFirebase: false,
+      },
       nodes: [route],
       edges: [],
     })

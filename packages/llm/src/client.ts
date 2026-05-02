@@ -5,29 +5,48 @@ const SYSTEM_PROMPT = `You are a code architecture analyzer. Analyze the provide
 
 Return ONLY valid JSON matching this schema:
 {
-  "framework": string,  // "nextjs-app-router" | "nextjs-pages" | "vite-react" | "nuxt" | "sveltekit" | "expo" | "unknown"
+  "framework": string,       // "nextjs-app-router" | "nextjs-pages" | "vite-react" | "nuxt" | "sveltekit" | "expo" | "nestjs" | or any detected framework
+  "deployTarget": string,    // "browser" | "server" | "mobile" | "edge" — where the frontend runs
+  "hasSupabase": boolean,    // true if @supabase/supabase-js or supabase client is used
+  "hasPrisma": boolean,      // true if @prisma/client is used
+  "hasDexie": boolean,       // true if dexie (IndexedDB wrapper) is used
+  "hasFirebase": boolean,    // true if firebase SDK is used
   "routes": [
     {
-      "path": string,       // URL path e.g. "/blog/[slug]"
-      "file": string,       // repo-relative file path
-      "mode": string,       // "SSR" | "CSR" | "SSG" | "ISR" | "unknown"
+      "path": string,        // URL path e.g. "/blog/[slug]"
+      "file": string,        // repo-relative file path
+      "mode": string,        // "SSR" | "CSR" | "SSG" | "ISR" | "unknown"
       "components": string[] // component names rendered on this route
     }
   ],
   "tables": [
     {
-      "name": string,      // table/collection/model name
-      "usedBy": string[]   // component names that query this table
+      "name": string,        // table/collection/entity name
+      "usedBy": string[]     // FRONTEND component names that query this resource (API calls, direct DB queries). Do NOT include backend module names.
+    }
+  ],
+  "backendServices": [
+    {
+      "name": string,        // e.g. "NestJS API"
+      "framework": string,   // "nestjs" | "express" | "fastify" | "hono" | "django" | "rails"
+      "modules": string[],   // top-level module/domain names (e.g. ["AuthModule", "CrmModule"])
+      "entities": string[],  // DB entity/table names this backend manages
+      "dbType": string       // "postgresql" | "mysql" | "mongodb" | "sqlite"
     }
   ],
   "inferenceNotes": string[] // brief reasoning notes
 }
 
 Rules:
-- Only include routes that are actual pages/screens (not API routes)
-- Only include tables/collections that are actually queried in the code
+- Detect framework from package.json deps and config files; don't rely only on the hint provided
+- If files from multiple apps are provided (monorepo), set "framework" to the PRIMARY frontend framework and list backend apps in "backendServices"
+- deployTarget: "browser" for SPAs (Vite/CRA/Next.js-CSR), "server" for SSR (Next.js/Nuxt), "mobile" for Expo/React Native
+- Only include routes that are actual UI pages/screens (not API endpoints)
+- tables: what the FRONTEND queries via API calls or direct DB — set usedBy to frontend component names only
+- backendServices: NestJS/Express/FastAPI apps found in the codebase — list their modules and entity names
 - Set mode to "CSR" if "use client" directive is present, "SSR" for server components
-- ISR if revalidate is set, SSG if generateStaticParams with no revalidate`
+- ISR if revalidate is set, SSG if generateStaticParams with no revalidate
+- If no backend is found, set backendServices to []`
 
 export interface LLMClientOptions {
   apiKey: string
