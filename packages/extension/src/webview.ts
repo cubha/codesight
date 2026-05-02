@@ -4,10 +4,26 @@ import * as fs from 'node:fs'
 import type { IRGraph } from '@codebase-viz/types'
 import type { DiagramSet } from '@codebase-viz/renderer'
 
+interface ViewerParams {
+  projectName: string
+  routeCount: number
+  tableCount: number
+  diagrams: DiagramSet
+  cachedAt?: number
+}
+
+interface ExportMessage {
+  type: 'export'
+  format: 'svg' | 'png' | 'md'
+  data: string
+  filename: string
+}
+
 export class CodeSightPanel {
   private static instance: CodeSightPanel | undefined
   private readonly panel: vscode.WebviewPanel
   private disposables: vscode.Disposable[] = []
+  private reanalyzeCallback: (() => void) | undefined
 
   private constructor(
     private readonly extensionUri: vscode.Uri,
@@ -15,6 +31,17 @@ export class CodeSightPanel {
   ) {
     this.panel = panel
     this.panel.onDidDispose(() => this.dispose(), null, this.disposables)
+    this.panel.webview.onDidReceiveMessage(
+      (msg: { type: string } & Partial<ExportMessage>) => {
+        if (msg.type === 'export') {
+          void this.handleExport(msg as ExportMessage)
+        } else if (msg.type === 'reanalyze') {
+          this.reanalyzeCallback?.()
+        }
+      },
+      null,
+      this.disposables,
+    )
   }
 
   static createOrShow(extensionUri: vscode.Uri): CodeSightPanel {
@@ -42,6 +69,10 @@ export class CodeSightPanel {
     CodeSightPanel.instance?.dispose()
   }
 
+  setReanalyzeCallback(cb: () => void): void {
+    this.reanalyzeCallback = cb
+  }
+
   showLoading(): void {
     this.panel.webview.html = this.buildLoadingHtml()
   }
@@ -51,13 +82,55 @@ export class CodeSightPanel {
   }
 
   updateGraph(graph: IRGraph, diagrams: DiagramSet): void {
-    this.panel.webview.html = this.buildViewerHtml(graph, diagrams)
+    this.panel.webview.html = this.buildViewerHtmlImpl({
+      projectName: graph.projectName ?? path.basename(graph.repoRoot),
+      routeCount: graph.nodes.filter(n => n.kind === 'route').length,
+      tableCount: graph.nodes.filter(n => n.kind === 'table').length,
+      diagrams,
+    })
   }
 
-  private buildViewerHtml(graph: IRGraph, diagrams: DiagramSet): string {
-    const webview = this.panel.webview
+  showCached(data: { projectName: string; routeCount: number; tableCount: number; diagrams: DiagramSet; savedAt: number }): void {
+    this.panel.webview.html = this.buildViewerHtmlImpl({
+      projectName: data.projectName,
+      routeCount: data.routeCount,
+      tableCount: data.tableCount,
+      diagrams: data.diagrams,
+      cachedAt: data.savedAt,
+    })
+  }
 
-    // Local resource URIs (served by VS Code webview — avoids CDN block)
+  private async handleExport(msg: ExportMessage): Promise<void> {
+    const filterMap: Record<string, Record<string, string[]>> = {
+      svg: { 'SVG Image': ['svg'] },
+      png: { 'PNG Image': ['png'] },
+      md: { Markdown: ['md'] },
+    }
+    const workspaceUri = vscode.workspace.workspaceFolders?.[0]?.uri
+    const defaultUri = workspaceUri
+      ? vscode.Uri.joinPath(workspaceUri, msg.filename)
+      : vscode.Uri.file(msg.filename)
+
+    const uri = await vscode.window.showSaveDialog({
+      defaultUri,
+      filters: filterMap[msg.format] ?? {},
+    })
+    if (uri === undefined) return
+
+    let bytes: Uint8Array
+    if (msg.format === 'png') {
+      const b64 = msg.data.replace(/^data:image\/png;base64,/, '')
+      bytes = Buffer.from(b64, 'base64')
+    } else {
+      bytes = Buffer.from(msg.data, 'utf8')
+    }
+
+    await vscode.workspace.fs.writeFile(uri, bytes)
+    void vscode.window.showInformationMessage(`CodeSight: 저장 완료 — ${path.basename(uri.fsPath)}`)
+  }
+
+  private buildViewerHtmlImpl(params: ViewerParams): string {
+    const webview = this.panel.webview
     const mermaidUri = webview.asWebviewUri(
       vscode.Uri.joinPath(this.extensionUri, 'media', 'mermaid.min.js'),
     )
@@ -70,16 +143,14 @@ export class CodeSightPanel {
       template = undefined
     }
 
-    const projectName = graph.projectName ?? path.basename(graph.repoRoot)
-    const routeCount = graph.nodes.filter(n => n.kind === 'route').length
-    const tableCount = graph.nodes.filter(n => n.kind === 'table').length
+    const { projectName, routeCount, tableCount, diagrams, cachedAt } = params
     const cspSource = webview.cspSource
 
     const injection = [
       `<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' 'unsafe-eval' ${cspSource}; style-src 'unsafe-inline'; font-src data:; img-src ${cspSource} data: blob:;">`,
       `<script>`,
       `window.__CODESIGHT_DIAGRAMS__ = ${JSON.stringify(diagrams)};`,
-      `window.__CODESIGHT_META__ = ${JSON.stringify({ projectName, routeCount, tableCount })};`,
+      `window.__CODESIGHT_META__ = ${JSON.stringify({ projectName, routeCount, tableCount, cachedAt })};`,
       `</script>`,
     ].join('\n')
 
@@ -90,10 +161,7 @@ export class CodeSightPanel {
           'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js',
           mermaidUri.toString(),
         )
-        .replace(
-          /<link[^>]*fonts\.googleapis\.com[^>]*>/g,
-          '',
-        )
+        .replace(/<link[^>]*fonts\.googleapis\.com[^>]*>/g, '')
     }
 
     return this.buildFallbackHtml(diagrams, projectName, mermaidUri.toString())
