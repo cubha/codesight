@@ -114,6 +114,27 @@ type IREdgeBase = {
 
 export type IREdge = IREdgeBase & ConfidenceInfo
 
+// ─── IRGraphMetadata ──────────────────────────────────────────────────────────
+// Carries stack/infra info from detectStack() or LLM through the pipeline.
+// Populated in CLI; consumed by renderer (replaces detectInfra() re-parsing).
+export interface IRBackendService {
+  name: string               // e.g. "NestJS API"
+  framework: string          // "nestjs" | "express" | "fastify"
+  modules?: string[]         // e.g. ["AuthModule", "CrmModule"]
+  entities?: string[]        // DB entity/table names
+  dbType?: string            // "postgresql" | "mysql" | "mongodb"
+}
+
+export interface IRGraphMetadata {
+  framework: string          // e.g. "nextjs-app-router", "vite-react", "expo", or LLM-returned string
+  deployTarget?: string      // "browser" | "server" | "mobile" | "edge"
+  hasSupabase: boolean
+  hasPrisma: boolean
+  hasDexie: boolean
+  hasFirebase: boolean
+  backends?: IRBackendService[]  // backend services detected by LLM
+}
+
 // ─── IRGraph (root) ───────────────────────────────────────────────────────────
 export interface IRGraph {
   schemaVersion: '0.1'
@@ -121,6 +142,7 @@ export interface IRGraph {
   repoRoot: string           // absolute path; used to resolve provenance.file
   projectName?: string
   generatedAt: string        // ISO 8601
+  metadata?: IRGraphMetadata // stack/infra info for renderer; set by CLI
   nodes: IRNode[]
   edges: IREdge[]
   warnings?: Array<{

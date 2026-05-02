@@ -73,6 +73,8 @@ export async function detectStack(repoRoot: string): Promise<StackInfo> {
     framework = 'sveltekit'
   } else if ('vite' in deps && ('react' in deps || '@types/react' in deps)) {
     framework = 'vite-react'
+  } else if ('@nestjs/core' in deps || '@nestjs/common' in deps) {
+    framework = 'nestjs'
   }
 
   const appDirs = await detectMonorepoApps(repoRoot)

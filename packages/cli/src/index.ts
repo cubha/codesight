@@ -18,17 +18,25 @@ export async function analyze(
   outputDir: string,
   llmOptions?: { apiKey: string; model?: string },
 ): Promise<void> {
-  const [routeNodes, { nodes: componentNodes, edges: componentEdges }, tableNodes] =
+  const [routeNodes, { nodes: componentNodes, edges: componentEdges }, tableNodes, stack] =
     await Promise.all([
       parseRoutes(repoRoot),
       parseComponents(repoRoot),
       parseTables(repoRoot),
+      detectStack(repoRoot),
     ])
 
   const staticGraph = createIRGraph({
     analyzerVersion: 'codebase-viz@0.1.0',
     repoRoot,
     projectName: path.basename(repoRoot),
+    metadata: {
+      framework: stack.framework,
+      hasSupabase: stack.hasSupabase,
+      hasPrisma: stack.hasPrisma,
+      hasDexie: stack.hasDexie,
+      hasFirebase: false,
+    },
     nodes: [...routeNodes, ...componentNodes, ...tableNodes],
     edges: componentEdges,
   })
@@ -42,8 +50,7 @@ export async function analyze(
   }
 
   if (llmOptions !== undefined) {
-    const stack = await detectStack(repoRoot)
-    const fileContents = await collectFiles(repoRoot, stack.framework)
+    const fileContents = await collectFiles(repoRoot, stack)
 
     const llmResult = await analyzWithLLM(llmOptions, {
       projectName: path.basename(repoRoot),
@@ -57,7 +64,21 @@ export async function analyze(
     const allLLMNodes = [...llmRoutes, ...llmComponents, ...llmTables]
     const { verified } = await verifyNodes(allLLMNodes, repoRoot)
 
-    finalGraph = mergeGraphs(finalGraph, verified, llmEdges)
+    const llmMeta = {
+      framework: llmResult.framework || stack.framework,
+      hasSupabase: llmResult.hasSupabase ?? stack.hasSupabase,
+      hasPrisma: llmResult.hasPrisma ?? stack.hasPrisma,
+      hasDexie: llmResult.hasDexie ?? stack.hasDexie,
+      hasFirebase: llmResult.hasFirebase ?? false,
+      ...(llmResult.deployTarget !== undefined ? { deployTarget: llmResult.deployTarget } : {}),
+      ...(llmResult.backendServices !== undefined && llmResult.backendServices.length > 0
+        ? { backends: llmResult.backendServices }
+        : {}),
+    }
+    finalGraph = {
+      ...mergeGraphs(finalGraph, verified, llmEdges),
+      metadata: llmMeta,
+    }
   }
 
   await renderMermaid(finalGraph, outputDir)
