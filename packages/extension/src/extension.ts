@@ -34,8 +34,8 @@ export function activate(context: vscode.ExtensionContext): void {
 
       try {
         panel.showLoading()
-        const graph = await runAnalysis(workspaceRoot, apiKey !== undefined ? { apiKey, model } : undefined)
-        panel.updateGraph(graph)
+        const { graph, diagrams } = await runAnalysis(workspaceRoot, apiKey !== undefined ? { apiKey, model } : undefined)
+        panel.updateGraph(graph, diagrams)
 
         if (!enableLLM) {
           void vscode.window.showInformationMessage(
