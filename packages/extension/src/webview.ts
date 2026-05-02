@@ -55,6 +55,13 @@ export class CodeSightPanel {
   }
 
   private buildViewerHtml(graph: IRGraph, diagrams: DiagramSet): string {
+    const webview = this.panel.webview
+
+    // Local resource URIs (served by VS Code webview — avoids CDN block)
+    const mermaidUri = webview.asWebviewUri(
+      vscode.Uri.joinPath(this.extensionUri, 'media', 'mermaid.min.js'),
+    )
+
     const viewerPath = path.join(this.extensionUri.fsPath, 'media', 'viewer.html')
     let template: string | undefined
     try {
@@ -66,9 +73,10 @@ export class CodeSightPanel {
     const projectName = graph.projectName ?? path.basename(graph.repoRoot)
     const routeCount = graph.nodes.filter(n => n.kind === 'route').length
     const tableCount = graph.nodes.filter(n => n.kind === 'table').length
+    const cspSource = webview.cspSource
 
     const injection = [
-      `<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src data: blob:; connect-src https:;">`,
+      `<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' 'unsafe-eval' ${cspSource}; style-src 'unsafe-inline'; font-src data:; img-src ${cspSource} data: blob:;">`,
       `<script>`,
       `window.__CODESIGHT_DIAGRAMS__ = ${JSON.stringify(diagrams)};`,
       `window.__CODESIGHT_META__ = ${JSON.stringify({ projectName, routeCount, tableCount })};`,
@@ -76,10 +84,19 @@ export class CodeSightPanel {
     ].join('\n')
 
     if (template !== undefined) {
-      return template.replace('<head>', `<head>\n${injection}`)
+      return template
+        .replace('<head>', `<head>\n${injection}`)
+        .replace(
+          'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js',
+          mermaidUri.toString(),
+        )
+        .replace(
+          /<link[^>]*fonts\.googleapis\.com[^>]*>/g,
+          '',
+        )
     }
 
-    return this.buildFallbackHtml(diagrams, projectName)
+    return this.buildFallbackHtml(diagrams, projectName, mermaidUri.toString())
   }
 
   private buildLoadingHtml(): string {
@@ -96,11 +113,10 @@ pre{background:#1a0800;padding:1rem;border-radius:4px;overflow:auto;border:1px s
 <body><div>Analysis failed</div><pre>${message}</pre></body></html>`
   }
 
-  private buildFallbackHtml(diagrams: DiagramSet, projectName: string): string {
+  private buildFallbackHtml(diagrams: DiagramSet, projectName: string, mermaidSrc: string): string {
     const diagramsJson = JSON.stringify(diagrams)
     return `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src data: blob:;">
-<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<script src="${mermaidSrc}"></script>
 <style>
 body{font-family:monospace;background:#060810;color:#e2e8f0;margin:0;padding:0;height:100vh;overflow:hidden;}
 header{padding:0 24px;height:52px;background:rgba(6,8,16,.92);border-bottom:1px solid #162035;display:flex;align-items:center;gap:14px;}
@@ -121,9 +137,9 @@ svg{max-width:100%;}
   <div class="tab" onclick="switchTab(2)">DB–Screen</div>
 </div>
 <div class="panels">
-  <div class="panel active" id="p0"><div id="d0"></div></div>
-  <div class="panel" id="p1"><div id="d1"></div></div>
-  <div class="panel" id="p2"><div id="d2"></div></div>
+  <div class="panel active" id="p0"><div id="d0">Rendering...</div></div>
+  <div class="panel" id="p1"><div id="d1">Rendering...</div></div>
+  <div class="panel" id="p2"><div id="d2">Rendering...</div></div>
 </div>
 <script>
 const D = ${diagramsJson};
