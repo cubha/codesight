@@ -36,6 +36,17 @@ export function activate(context: vscode.ExtensionContext): void {
         panel.showLoading()
         const graph = await runAnalysis(workspaceRoot, apiKey !== undefined ? { apiKey, model } : undefined)
         panel.updateGraph(graph)
+
+        if (!enableLLM) {
+          void vscode.window.showInformationMessage(
+            'CodeSight: Static analysis complete. Enable LLM analysis for richer results (routing modes, components, backend services).',
+            'Set API Key',
+          ).then(action => {
+            if (action === 'Set API Key') {
+              void vscode.commands.executeCommand('codesight.setApiKey')
+            }
+          })
+        }
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err)
         void vscode.window.showErrorMessage(`CodeSight: Analysis failed — ${message}`)
