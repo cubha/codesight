@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CodeSight</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+  <style>
+    :root {
+      --bg-deep:    #060810;
+      --bg-surface: #0a0e1a;
+      --bg-card:    #0d1220;
+      --border:     #162035;
+      --border-sub: #0f172a;
+      --text-pri:   #e2e8f0;
+      --text-sec:   #94a3b8;
+      --text-muted: #475569;
+      --blue:  #38bdf8;
+      --green: #4ade80;
+      --amber: #f59e0b;
+      --font:  'JetBrains Mono', monospace;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      height: 100%;
+      overflow: hidden;
+      font-family: var(--font);
+      background: var(--bg-deep);
+      color: var(--text-pri);
+    }
+
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background-image: radial-gradient(circle, #1e2d4d 1px, transparent 1px);
+      background-size: 28px 28px;
+      opacity: 0.3;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    header {
+      position: relative; z-index: 20;
+      display: flex; align-items: center; gap: 14px;
+      padding: 0 24px; height: 52px;
+      background: rgba(6,8,16,0.92);
+      border-bottom: 1px solid var(--border);
+      backdrop-filter: blur(16px);
+    }
+    .logo { font-size: 15px; font-weight: 700; letter-spacing: -0.5px; color: var(--text-pri); }
+    .logo em { font-style: normal; color: var(--blue); }
+    .badge {
+      font-size: 10px; font-weight: 500; letter-spacing: 0.8px;
+      background: rgba(56,189,248,.08); border: 1px solid rgba(56,189,248,.22);
+      color: var(--blue); padding: 2px 9px; border-radius: 3px;
+    }
+    .header-right { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+    .status-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); box-shadow: 0 0 6px var(--green); }
+    .header-meta { font-size: 10px; color: var(--text-muted); letter-spacing: 0.3px; }
+
+    .tabs {
+      position: relative; z-index: 20;
+      display: flex; padding: 0 24px;
+      background: rgba(6,8,16,0.88);
+      border-bottom: 1px solid var(--border);
+      backdrop-filter: blur(12px);
+    }
+    .tab {
+      position: relative;
+      padding: 13px 18px; font-size: 11px; font-weight: 500; letter-spacing: 0.4px;
+      color: var(--text-muted); cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: color .2s, border-color .2s;
+      user-select: none;
+    }
+    .tab:hover { color: var(--text-sec); }
+    .tab[data-t="r"].active { color: var(--blue);  border-bottom-color: var(--blue);  }
+    .tab[data-t="s"].active { color: var(--green); border-bottom-color: var(--green); }
+    .tab[data-t="d"].active { color: var(--amber); border-bottom-color: var(--amber); }
+    .tab-pip {
+      display: inline-block; width: 5px; height: 5px; border-radius: 50%;
+      margin-right: 8px; vertical-align: middle; opacity: 0.7;
+    }
+    .tab[data-t="r"] .tab-pip { background: var(--blue); }
+    .tab[data-t="s"] .tab-pip { background: var(--green); }
+    .tab[data-t="d"] .tab-pip { background: var(--amber); }
+
+    .panels {
+      position: relative; z-index: 5;
+      height: calc(100vh - 52px - 44px);
+    }
+    .panel {
+      position: absolute; inset: 0;
+      opacity: 0; pointer-events: none;
+      transition: opacity .22s;
+    }
+    .panel.active { opacity: 1; pointer-events: auto; }
+
+    .canvas-wrap {
+      width: 100%; height: 100%;
+      overflow: hidden; cursor: grab; position: relative;
+    }
+    .canvas-wrap:active { cursor: grabbing; }
+    .canvas-inner {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform-origin: center center;
+      will-change: transform;
+    }
+    .diagram-svg svg {
+      filter: drop-shadow(0 2px 32px rgba(0,0,0,.5));
+    }
+
+    .zoom-ctrl {
+      position: absolute; bottom: 20px; right: 20px;
+      display: flex; flex-direction: column; gap: 4px; z-index: 30;
+    }
+    .z-btn {
+      width: 32px; height: 32px;
+      background: rgba(13,18,32,.9); border: 1px solid var(--border);
+      color: var(--text-sec); font-family: var(--font); font-size: 15px;
+      cursor: pointer; border-radius: 4px;
+      display: flex; align-items: center; justify-content: center;
+      transition: background .15s, color .15s; backdrop-filter: blur(8px);
+    }
+    .z-btn:hover { background: var(--border); color: var(--text-pri); }
+
+    .diagram-msg {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      height: 100%; gap: 12px; color: var(--text-muted); font-size: 12px;
+    }
+    .diagram-msg .icon { font-size: 28px; opacity: .4; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Code<em>Sight</em></div>
+  <div class="badge" id="h-badge">—</div>
+  <div class="header-right">
+    <div class="status-dot"></div>
+    <div class="header-meta" id="h-meta">analyzing...</div>
+  </div>
+</header>
+
+<div class="tabs">
+  <div class="tab active" data-t="r" onclick="switchTab('r')">
+    <span class="tab-pip"></span>Rendering Architecture
+  </div>
+  <div class="tab" data-t="s" onclick="switchTab('s')">
+    <span class="tab-pip"></span>Screen–Component
+  </div>
+  <div class="tab" data-t="d" onclick="switchTab('d')">
+    <span class="tab-pip"></span>DB–Screen
+  </div>
+</div>
+
+<div class="panels">
+  <div id="p-r" class="panel active">
+    <div class="canvas-wrap" id="w-r">
+      <div class="canvas-inner" id="i-r">
+        <div class="diagram-svg" id="d-r">
+          <div class="diagram-msg"><div class="icon">⏳</div><div>Rendering...</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="zoom-ctrl">
+      <button class="z-btn" onclick="zm('r',1.2)">+</button>
+      <button class="z-btn" onclick="zm('r',.833)">−</button>
+      <button class="z-btn" onclick="rz('r')" style="font-size:11px">⌂</button>
+    </div>
+  </div>
+
+  <div id="p-s" class="panel">
+    <div class="canvas-wrap" id="w-s">
+      <div class="canvas-inner" id="i-s">
+        <div class="diagram-svg" id="d-s">
+          <div class="diagram-msg"><div class="icon">⏳</div><div>Rendering...</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="zoom-ctrl">
+      <button class="z-btn" onclick="zm('s',1.2)">+</button>
+      <button class="z-btn" onclick="zm('s',.833)">−</button>
+      <button class="z-btn" onclick="rz('s')" style="font-size:11px">⌂</button>
+    </div>
+  </div>
+
+  <div id="p-d" class="panel">
+    <div class="canvas-wrap" id="w-d">
+      <div class="canvas-inner" id="i-d">
+        <div class="diagram-svg" id="d-d">
+          <div class="diagram-msg"><div class="icon">⏳</div><div>Rendering...</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="zoom-ctrl">
+      <button class="z-btn" onclick="zm('d',1.2)">+</button>
+      <button class="z-btn" onclick="zm('d',.833)">−</button>
+      <button class="z-btn" onclick="rz('d')" style="font-size:11px">⌂</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const meta = window.__CODESIGHT_META__ || {};
+const diagrams = window.__CODESIGHT_DIAGRAMS__ || {};
+
+if (meta.projectName) {
+  document.getElementById('h-badge').textContent = meta.projectName;
+  document.getElementById('h-meta').textContent =
+    `${meta.projectName} · ${meta.routeCount ?? '?'} routes · ${meta.tableCount ?? '?'} tables`;
+}
+
+mermaid.initialize({
+  startOnLoad: false,
+  securityLevel: 'loose',
+  flowchart: { useMaxWidth: false },
+  er: { useMaxWidth: false },
+});
+
+const KEY_MAP = { r: 'rendering', s: 'screenComponent', d: 'dbScreen' };
+
+async function renderAll() {
+  for (const [id, key] of Object.entries(KEY_MAP)) {
+    const def = diagrams[key];
+    const container = document.getElementById(`d-${id}`);
+    if (!container) continue;
+    if (!def || def.trim() === '') {
+      container.innerHTML = '<div class="diagram-msg"><div class="icon">∅</div><div>No data</div></div>';
+      continue;
+    }
+    try {
+      const { svg } = await mermaid.render(`m-${id}`, def);
+      container.innerHTML = svg;
+      fitToView(id);
+    } catch (e) {
+      container.innerHTML = `<div class="diagram-msg"><div class="icon">⚠</div><div>Render error: ${e.message}</div></div>`;
+    }
+  }
+}
+
+function fitToView(id) {
+  const container = document.getElementById(`d-${id}`);
+  const svg = container?.querySelector('svg');
+  if (!svg) return;
+
+  const wrapW = document.getElementById(`w-${id}`)?.clientWidth ?? window.innerWidth;
+  const wrapH = document.getElementById(`w-${id}`)?.clientHeight ?? (window.innerHeight - 96);
+  const svgW = svg.getBoundingClientRect().width  || parseFloat(svg.getAttribute('width'))  || 800;
+  const svgH = svg.getBoundingClientRect().height || parseFloat(svg.getAttribute('height')) || 600;
+  const scale = Math.min((wrapW * 0.88) / svgW, (wrapH * 0.88) / svgH, 1.2);
+
+  ST[id].s = scale;
+  ST[id].x = 0;
+  ST[id].y = 0;
+  applyT(id);
+}
+
+document.fonts.ready.then(() => renderAll());
+
+function switchTab(id) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelector(`.tab[data-t="${id}"]`).classList.add('active');
+  document.getElementById(`p-${id}`).classList.add('active');
+}
+
+const ST = { r:{s:1,x:0,y:0}, s:{s:1,x:0,y:0}, d:{s:1,x:0,y:0} };
+
+function applyT(id) {
+  const {s,x,y} = ST[id];
+  const inner = document.getElementById(`i-${id}`);
+  if (inner) inner.style.transform = `translate(calc(-50% + ${x}px), calc(-50% + ${y}px)) scale(${s})`;
+}
+function zm(id, f) {
+  ST[id].s = Math.min(4, Math.max(0.2, ST[id].s * f));
+  applyT(id);
+}
+function rz(id) { ST[id] = {s:1,x:0,y:0}; applyT(id); }
+
+['r','s','d'].forEach(id => {
+  const wrap = document.getElementById(`w-${id}`);
+  if (!wrap) return;
+  wrap.addEventListener('wheel', e => {
+    e.preventDefault();
+    zm(id, e.deltaY < 0 ? 1.1 : 1/1.1);
+  }, { passive: false });
+  let drag = false, lx = 0, ly = 0;
+  wrap.addEventListener('mousedown', e => { drag = true; lx = e.clientX; ly = e.clientY; });
+  window.addEventListener('mouseup', () => { drag = false; });
+  window.addEventListener('mousemove', e => {
+    if (!drag) return;
+    ST[id].x += e.clientX - lx;
+    ST[id].y += e.clientY - ly;
+    lx = e.clientX; ly = e.clientY;
+    applyT(id);
+  });
+});
+</script>
+</body>
+</html>

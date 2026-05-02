@@ -454,3 +454,17 @@ export async function renderMermaid(graph: IRGraph, outputDir: string): Promise<
     'utf8',
   )
 }
+
+export interface DiagramSet {
+  rendering: string
+  screenComponent: string
+  dbScreen: string
+}
+
+export function buildDiagrams(graph: IRGraph): DiagramSet {
+  return {
+    rendering: buildRenderingDiagram(graph),
+    screenComponent: buildScreenComponentDiagram(graph),
+    dbScreen: buildDbScreenDiagram(graph),
+  }
+}

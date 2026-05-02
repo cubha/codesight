@@ -1,7 +1,7 @@
 import * as path from 'node:path'
 import * as os from 'node:os'
 import { parseRoutes, parseComponents, parseTables, mapScreenToTable, mapServerFilesToTable } from '@codebase-viz/core'
-import { renderMermaid } from '@codebase-viz/renderer'
+import { renderMermaid, buildDiagrams, type DiagramSet } from '@codebase-viz/renderer'
 import { createIRGraph, type IRGraph } from '@codebase-viz/types'
 import {
   detectStack,
@@ -17,10 +17,15 @@ export interface LLMOptions {
   model?: string
 }
 
+export interface AnalysisResult {
+  graph: IRGraph
+  diagrams: DiagramSet
+}
+
 export async function runAnalysis(
   repoRoot: string,
   llmOptions?: LLMOptions,
-): Promise<IRGraph> {
+): Promise<AnalysisResult> {
   const [routeNodes, { nodes: componentNodes, edges: componentEdges }, tableNodes, stack] =
     await Promise.all([
       parseRoutes(repoRoot),
@@ -87,7 +92,7 @@ export async function runAnalysis(
   const outputDir = path.join(repoRoot, '.codesight')
   await renderMermaid(finalGraph, outputDir).catch(() => { /* best-effort */ })
 
-  return finalGraph
+  return { graph: finalGraph, diagrams: buildDiagrams(finalGraph) }
 }
 
 export async function getCacheDir(): Promise<string> {
