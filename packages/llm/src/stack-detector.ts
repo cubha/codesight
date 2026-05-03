@@ -15,8 +15,8 @@ interface FrameworkProfile {
 const FRAMEWORK_PROFILES: Record<FrameworkKind, FrameworkProfile> = {
   'nextjs-app-router': { adapterId: 'nextjs-app-router', parsingLevel: 'L1', llmRecommended: false },
   'nextjs-pages':      { adapterId: 'nextjs-pages',      parsingLevel: 'L1', llmRecommended: false },
-  'nuxt':              { adapterId: 'nuxt',              parsingLevel: 'L1', llmRecommended: true  },
-  'sveltekit':         { adapterId: 'sveltekit',         parsingLevel: 'L1', llmRecommended: true  },
+  'nuxt':              { adapterId: 'nuxt',              parsingLevel: 'L1', llmRecommended: false },
+  'sveltekit':         { adapterId: 'sveltekit',         parsingLevel: 'L1', llmRecommended: false },
   'expo':              { adapterId: 'expo',              parsingLevel: 'L1', llmRecommended: true  },
   'vite-react':        { adapterId: 'vite-react',        parsingLevel: 'L2', llmRecommended: true  },
   'nestjs':            { adapterId: 'nestjs',            parsingLevel: 'L2', llmRecommended: true  },

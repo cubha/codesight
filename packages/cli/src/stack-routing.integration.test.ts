@@ -29,6 +29,42 @@ describe('Stack routing integration — Phase A', () => {
     expect(result.tableNodes.length).toBeGreaterThan(0)
   })
 
+  it('mini-nuxt-app: NuxtAdapter 정상 동작 (Phase B)', async () => {
+    const repoRoot = path.join(FIXTURES, 'mini-nuxt-app')
+    const stack = await detectStack(repoRoot)
+    expect(stack.framework).toBe('nuxt')
+    expect(stack.adapterId).toBe('nuxt')
+    expect(stack.parsingLevel).toBe('L1')
+    expect(stack.llmRecommended).toBe(false)
+
+    const adapter = registry.get(stack.adapterId)
+    expect(adapter).toBeDefined()
+    const result = await adapter!.analyze({
+      repoRoot,
+      stack,
+      analyzerVersion: 'codebase-viz@0.1.0',
+    })
+    expect(result.routeNodes.length).toBeGreaterThan(0)
+  })
+
+  it('mini-sveltekit-app: SvelteKitAdapter 정상 동작 (Phase B)', async () => {
+    const repoRoot = path.join(FIXTURES, 'mini-sveltekit-app')
+    const stack = await detectStack(repoRoot)
+    expect(stack.framework).toBe('sveltekit')
+    expect(stack.adapterId).toBe('sveltekit')
+    expect(stack.parsingLevel).toBe('L1')
+    expect(stack.llmRecommended).toBe(false)
+
+    const adapter = registry.get(stack.adapterId)
+    expect(adapter).toBeDefined()
+    const result = await adapter!.analyze({
+      repoRoot,
+      stack,
+      analyzerVersion: 'codebase-viz@0.1.0',
+    })
+    expect(result.routeNodes.length).toBeGreaterThan(0)
+  })
+
   it('mini-nest-app: NestJS 감지하지만 어댑터 미등록 (Phase C 예정)', async () => {
     const repoRoot = path.join(FIXTURES, 'mini-nest-app')
     const stack = await detectStack(repoRoot)

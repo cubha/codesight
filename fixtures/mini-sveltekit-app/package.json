@@ -1,0 +1,9 @@
+{
+  "name": "mini-sveltekit-app",
+  "version": "0.0.1",
+  "type": "module",
+  "devDependencies": {
+    "@sveltejs/kit": "^2.0.0",
+    "svelte": "^4.2.0"
+  }
+}
