@@ -1,6 +1,6 @@
 # CodeSight
 
-**Visualize your Next.js + Supabase codebase — rendering architecture, component trees, and DB schema — directly inside VS Code.**
+**AI-powered codebase visualizer — rendering architecture, component trees, and DB schema — directly inside VS Code.**
 
 CodeSight analyzes your project and renders three interactive Mermaid diagrams in a side panel, giving you an instant architectural overview without reading hundreds of files.
 
@@ -16,15 +16,14 @@ CodeSight analyzes your project and renders three interactive Mermaid diagrams i
 
 **Smart analysis modes**
 
-- **Static only** (no API key required) — parses your file system, routes, and Supabase calls
-- **LLM-enhanced** (BYOK — Bring Your Own Key) — feeds your code to Claude for richer results: routing modes, component roles, backend services
+- **Static only** (no API key required) — parses your file system, routes, and DB calls out of the box
+- **LLM-enhanced** (BYOK — Bring Your Own Key) — feeds your code to Claude for deep analysis: routing modes, component roles, backend services, and more across various stacks
 
 **Quality-of-life**
 
 - Results are **cached permanently** — reopening VS Code shows the last analysis instantly
 - **Re-analyze** button in the viewer header forces a fresh scan
 - **Export dropdown** (PNG / SVG / Markdown) — save any diagram with one click
-- Works with Next.js 14 / 15 App Router projects
 
 ---
 
@@ -105,8 +104,8 @@ CodeSight uses **Anthropic Claude** for deep semantic analysis. You supply the A
 
 - VS Code 1.90+
 - Node.js 20+ (for the analysis engine)
-- Next.js 14 or 15 project with App Router
-- Supabase (optional — DB–Screen tab requires Supabase usage)
+- Any web project (Next.js / React / etc.) — LLM mode covers broader stacks
+- Supabase (optional — DB–Screen tab works best with Supabase usage)
 
 ---
 

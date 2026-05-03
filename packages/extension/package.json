@@ -1,9 +1,9 @@
 {
   "name": "codesight",
   "displayName": "CodeSight",
-  "description": "Visualize your Next.js + Supabase project — rendering architecture, component trees, and DB schema.",
+  "description": "AI-powered codebase visualizer: rendering architecture, component trees, and DB schema. Works statically out of the box; bring your Anthropic API key for deep LLM analysis.",
   "version": "0.1.0",
-  "publisher": "codesight",
+  "publisher": "cubha",
   "license": "MIT",
   "icon": "media/icon.png",
   "galleryBanner": {
