@@ -2,7 +2,7 @@
   "name": "codebase-arch-viz",
   "displayName": "Codebase Architecture Visualizer",
   "description": "Routes for 7 frameworks out of the box. Full diagrams for Next.js + Supabase; add Claude API key to fill components & DB on other stacks.",
-  "version": "0.4.3",
+  "version": "0.4.4",
   "publisher": "cubha",
   "license": "MIT",
   "icon": "media/icon.png",

@@ -1,12 +1,14 @@
 # Codebase Architecture Visualizer
 
 [![VS Marketplace](https://img.shields.io/visual-studio-marketplace/v/cubha.codebase-arch-viz?label=VS%20Marketplace&color=blue)](https://marketplace.visualstudio.com/items?itemName=cubha.codebase-arch-viz)
+[![Open VSX](https://img.shields.io/open-vsx/v/cubha/codebase-arch-viz?label=Open%20VSX&color=a60ee5)](https://open-vsx.org/extension/cubha/codebase-arch-viz)
 [![Downloads](https://img.shields.io/visual-studio-marketplace/d/cubha.codebase-arch-viz)](https://marketplace.visualstudio.com/items?itemName=cubha.codebase-arch-viz)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green)](https://github.com/cubha/codesight/blob/master/LICENSE)
 
 **Instant route diagrams for 7 frameworks — no API key needed.**
+Available on **VS Code**, **Cursor**, **VSCodium**, and any editor that uses the Open VSX registry.
 
-CodeSight analyzes your project and renders three interactive diagrams directly inside VS Code: route hierarchy, component trees, and DB schema.
+CodeSight analyzes your project and renders three interactive diagrams directly inside your editor: route hierarchy, component trees, and DB schema.
 
 - **Routes**: extracted statically for all 7 frameworks (Next.js, Nuxt, SvelteKit, NestJS, Django, FastAPI, Spring Boot) — no API key required
 - **Components & DB schema**: fully covered out of the box for **Next.js + Supabase** and **NestJS** (components only); for other stacks, add a Claude API key to fill those tabs
@@ -86,15 +88,20 @@ Static analysis runs first. LLM enrichment is additive — it fills in the gaps 
 
 ## 🚀 Getting Started
 
+### Install
+
+- **VS Code** — search **"Codebase Architecture Visualizer"** in the Extensions panel, or install from the [Marketplace](https://marketplace.visualstudio.com/items?itemName=cubha.codebase-arch-viz)
+- **Cursor / VSCodium / Gitpod / code-server** — search **"Codebase Architecture Visualizer"** in the Extensions panel (served via [Open VSX](https://open-vsx.org/extension/cubha/codebase-arch-viz))
+
 ### 1. Open a project
 
-Open your project folder in VS Code (`File → Open Folder`).
+Open your project folder in your editor (`File → Open Folder`).
 
 ### 2. Run the analysis
 
 Click the **CodeSight icon** in the Activity Bar (left sidebar) → click **▶ Analyze Project**.
 
-Or use the Command Palette (`Ctrl+Shift+P` / `Cmd+Shift+P`):
+Or use the Command Palette (`Ctrl+Shift+P` / `Cmd+Shift+P` — same shortcut in VS Code and Cursor):
 ```
 CodeSight: Analyze Project
 ```
@@ -153,7 +160,7 @@ CodeSight uses **Anthropic Claude** for deeper semantic enrichment on top of sta
 
 ## 📋 Requirements
 
-- VS Code 1.90+
+- VS Code 1.90+ (or Cursor / VSCodium based on the same version)
 - Node.js 20+
 - Supabase (optional — DB–Screen tab works best with Supabase usage in Next.js projects)
 
