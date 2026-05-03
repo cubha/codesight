@@ -1,6 +1,6 @@
 {
-  "name": "codesight",
-  "displayName": "CodeSight",
+  "name": "codebase-arch-viz",
+  "displayName": "Codebase Architecture Visualizer",
   "description": "AI-powered codebase visualizer: rendering architecture, component trees, and DB schema. Works statically out of the box; bring your Anthropic API key for deep LLM analysis.",
   "version": "0.1.0",
   "publisher": "cubha",
