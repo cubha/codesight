@@ -114,7 +114,8 @@ CodeSight uses **Anthropic Claude** for deep semantic analysis. You supply the A
 
 - VS Code 1.90+
 - Node.js 20+ (for the analysis engine)
-- Any web project — LLM mode covers a wide range of stacks
+- **Static analysis** (no API key required): Next.js App Router, Nuxt, SvelteKit, NestJS, Django, FastAPI, Spring Boot
+- **LLM mode** (Anthropic API key): any web project — covers frameworks beyond the list above
 - Supabase (optional — DB–Screen tab works best with Supabase usage)
 
 ---
