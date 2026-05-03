@@ -1,12 +1,19 @@
 # Codebase Architecture Visualizer
 
-**AI-powered codebase visualizer — rendering architecture, component trees, and DB schema — directly inside VS Code.**
+[![VS Marketplace](https://img.shields.io/visual-studio-marketplace/v/cubha.codebase-arch-viz?label=VS%20Marketplace&color=blue)](https://marketplace.visualstudio.com/items?itemName=cubha.codebase-arch-viz)
+[![Downloads](https://img.shields.io/visual-studio-marketplace/d/cubha.codebase-arch-viz)](https://marketplace.visualstudio.com/items?itemName=cubha.codebase-arch-viz)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green)](https://github.com/cubha/codesight/blob/master/LICENSE)
 
-Understand your codebase at a glance. CodeSight analyzes your project and renders three interactive Mermaid diagrams in a side panel, giving you an instant architectural overview without reading hundreds of files.
+**Instant route diagrams for 7 frameworks — no API key needed.**
+
+CodeSight analyzes your project and renders three interactive diagrams directly inside VS Code: route hierarchy, component trees, and DB schema.
+
+- **Routes**: extracted statically for all 7 frameworks (Next.js, Nuxt, SvelteKit, NestJS, Django, FastAPI, Spring Boot) — no API key required
+- **Components & DB schema**: fully covered out of the box for **Next.js + Supabase** and **NestJS** (components only); for other stacks, add a Claude API key to fill those tabs
 
 ---
 
-## How It Looks
+## 🖼️ How It Looks
 
 ### Sidebar Panel
 Control everything from the sidebar — analyze, re-analyze, open the viewer, export diagrams, and manage your API key.
@@ -25,26 +32,28 @@ See which pages and server actions query each table, with FK relations and full 
 
 ---
 
-## Supported Frameworks
+## 🌐 Supported Frameworks
 
-Static analysis works **without an API key** for all 7 frameworks below. Each framework has a dedicated parser that extracts routes, components, and dependencies directly from your source code.
+Static **route** analysis works without an API key for all 7 frameworks below. Components and DB schema are extracted statically for Next.js + Supabase (full coverage) and NestJS (components only) — for other stacks, an API key unlocks those two tabs via LLM enrichment.
 
-| Framework | Detection | What's extracted | API key needed? |
+| Framework | Detection | Static (no key) | Components & DB |
 |---|---|---|---|
-| **Next.js App Router** | `package.json` → `next` + `app/` dir | Routes (page/layout/route-handler), components, DB queries | No |
-| **Nuxt** | `package.json` → `nuxt` | Pages from `pages/` directory, dynamic segments | No |
-| **SvelteKit** | `package.json` → `@sveltejs/kit` | Routes from `src/routes/`, +page/+layout/+server | No |
-| **NestJS** | `package.json` → `@nestjs/core` | Controllers, modules, services, HTTP routes from decorators | No |
-| **Django** | `requirements.txt` → `django` or `manage.py` | URL patterns from `urls.py` via `path()` / `re_path()` | No |
-| **FastAPI** | `requirements.txt` → `fastapi` | Route decorators (`@app.get`, `@router.post`, etc.) | No |
-| **Spring Boot** | `pom.xml` / `build.gradle` | `@RestController` + `@GetMapping` / `@PostMapping` etc. | No |
-| **Other frameworks** | — | LLM mode covers Express, Flask, Rails, Go, and more | Yes (BYOK) |
+| **Next.js App Router** | `next` + `app/` dir | Routes + SSR/CSR/SSG/ISR labels + components (.tsx import graph) | DB ✓ for Supabase types |
+| **Nuxt** | `nuxt` in deps | Pages from `pages/` + dynamic segments | LLM recommended |
+| **SvelteKit** | `@sveltejs/kit` | Routes from `src/routes/` + SSR/CSR/SSG | LLM recommended |
+| **NestJS** | `@nestjs/core` | Controllers, modules, services, routes, dependency graph | DB: LLM recommended |
+| **Django** | `urls.py` / `manage.py` | URL patterns from `path()` / `re_path()` | LLM recommended |
+| **FastAPI** | `fastapi` in requirements | Route decorators (`@app.get`, `@router.post`, etc.) | LLM recommended |
+| **Spring Boot** | `pom.xml` / `build.gradle` | `@RestController` + `@GetMapping` / `@PostMapping` etc. | LLM recommended |
+| **Other** (Express, Flask, Rails, Go, …) | — | — | Full LLM mode |
 
 **Route path notation**: all adapters emit unified `:param` format (e.g. `/users/:id`, `/blog/:slug*`) for consistent diagram labels.
 
+**Coverage roadmap**: native parsers for Prisma / Drizzle / TypeORM (DB) and Vue / Svelte SFC (components) are planned to expand the API-key-free coverage to non–Next.js stacks.
+
 ---
 
-## Features
+## ✨ Features
 
 | Tab | What you see |
 |---|---|
@@ -60,12 +69,12 @@ Static analysis works **without an API key** for all 7 frameworks below. Each fr
 
 **Two analysis modes**
 
-| Mode | How it works | API key |
+| Mode | What you get | API key |
 |---|---|---|
-| **Static analysis** | Framework-specific parser reads routes, decorators, and file structure directly | Not required |
-| **LLM-enhanced** (BYOK) | Static result is fed to Claude for deeper semantic enrichment — routing modes, component roles, backend services | Required |
+| **Static analysis** | Routes for all 7 frameworks. Plus components & DB for Next.js + Supabase, components for NestJS | Not required |
+| **LLM-enhanced** (BYOK) | Adds components & DB for stacks the static parser doesn't yet cover; infers route paths in dynamic patterns | Required |
 
-Static analysis runs first for the 7 supported frameworks. LLM enrichment is optional and additive — it never replaces the static result, only augments it.
+Static analysis runs first. LLM enrichment is additive — it fills in the gaps the static parser leaves (e.g. components and DB schema on Nuxt/SvelteKit/Django/FastAPI/Spring Boot) but never overwrites verified static results.
 
 **Quality-of-life**
 - Results are **cached permanently** — reopening VS Code shows the last analysis instantly, no re-run needed
@@ -75,7 +84,7 @@ Static analysis runs first for the 7 supported frameworks. LLM enrichment is opt
 
 ---
 
-## Getting Started
+## 🚀 Getting Started
 
 ### 1. Open a project
 
@@ -96,12 +105,14 @@ The viewer opens beside your editor with three tabs. Use the sidebar to re-analy
 
 ---
 
-## LLM Analysis (BYOK)
+## 🤖 LLM Analysis (BYOK)
 
-CodeSight uses **Anthropic Claude** for deep semantic enrichment on top of static analysis. You supply the API key — it is stored securely in VS Code's SecretStorage and never sent to any server other than Anthropic's API.
+CodeSight uses **Anthropic Claude** for deeper semantic enrichment on top of static analysis. You supply the API key — it is stored securely in VS Code's SecretStorage and never sent to any server other than Anthropic's API.
 
 **When to use LLM mode**
-- Your framework is not in the static-support list above (Express, Flask, Rails, Go, etc.)
+- You're using Nuxt / SvelteKit / Django / FastAPI / Spring Boot and want components & DB schema in the diagrams
+- You're using a DB layer other than Supabase types (Prisma, Drizzle, TypeORM, SQLAlchemy, JPA, etc.)
+- Your framework is not in the static-support list (Express, Flask, Rails, Go, etc.)
 - You want richer labels: SSR/CSR modes, component roles, backend service annotations
 - You want route paths inferred even when they're dynamically constructed
 
@@ -121,7 +132,7 @@ CodeSight uses **Anthropic Claude** for deep semantic enrichment on top of stati
 
 ---
 
-## Settings
+## ⚙️ Settings
 
 | Setting | Default | Description |
 |---|---|---|
@@ -130,7 +141,7 @@ CodeSight uses **Anthropic Claude** for deep semantic enrichment on top of stati
 
 ---
 
-## Commands
+## 🔧 Commands
 
 | Command | Description |
 |---|---|
@@ -140,7 +151,7 @@ CodeSight uses **Anthropic Claude** for deep semantic enrichment on top of stati
 
 ---
 
-## Requirements
+## 📋 Requirements
 
 - VS Code 1.90+
 - Node.js 20+
@@ -150,7 +161,7 @@ No additional runtimes required. Python and Java AST parsing is handled via bund
 
 ---
 
-## Privacy
+## 🔒 Privacy
 
 - Your code is **never sent anywhere** in static-only mode
 - In LLM mode, relevant source files are sent to the **Anthropic API using your own key**
@@ -159,6 +170,6 @@ No additional runtimes required. Python and Java AST parsing is handled via bund
 
 ---
 
-## Source
+## 📦 Source
 
 [github.com/cubha/codesight](https://github.com/cubha/codesight) — MIT License

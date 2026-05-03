@@ -1,8 +1,8 @@
 {
   "name": "codebase-arch-viz",
   "displayName": "Codebase Architecture Visualizer",
-  "description": "AI-powered codebase visualizer: rendering architecture, component trees, and DB schema. Works statically out of the box; bring your Anthropic API key for deep LLM analysis.",
-  "version": "0.4.0",
+  "description": "Routes for 7 frameworks out of the box. Full diagrams for Next.js + Supabase; add Claude API key to fill components & DB on other stacks.",
+  "version": "0.4.3",
   "publisher": "cubha",
   "license": "MIT",
   "icon": "media/icon.png",
@@ -28,11 +28,15 @@
   "keywords": [
     "architecture",
     "visualization",
-    "nextjs",
-    "react",
     "diagram",
-    "supabase",
-    "mermaid"
+    "mermaid",
+    "nextjs",
+    "nuxt",
+    "sveltekit",
+    "nestjs",
+    "django",
+    "fastapi",
+    "spring"
   ],
   "activationEvents": [
     "onStartupFinished",
