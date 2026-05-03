@@ -48,7 +48,7 @@ async function doAnalyze(
 ): Promise<void> {
   const config = vscode.workspace.getConfiguration('codesight')
   const enableLLM = config.get<boolean>('enableLLM', false)
-  const model = config.get<string>('model', 'claude-sonnet-4-5')
+  const model = config.get<string>('model', 'claude-sonnet-4-6')
 
   let apiKey: string | undefined
   if (enableLLM) {
