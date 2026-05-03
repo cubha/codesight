@@ -8,6 +8,9 @@ export type FrameworkKind =
   | 'sveltekit'
   | 'expo'
   | 'nestjs'
+  | 'django'
+  | 'fastapi'
+  | 'springboot'
   | 'unknown'
 
 export interface StackInfo {

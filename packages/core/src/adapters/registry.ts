@@ -3,6 +3,9 @@ import { nextJsAdapter } from './nextjs/index.js'
 import { nuxtAdapter } from './nuxt/index.js'
 import { svelteKitAdapter } from './sveltekit/index.js'
 import { nestJsAdapter } from './nestjs/index.js'
+import { djangoAdapter } from './django/index.js'
+import { fastApiAdapter } from './fastapi/index.js'
+import { springBootAdapter } from './springboot/index.js'
 
 export class AdapterRegistry {
   private readonly adapters = new Map<string, IAdapter>()
@@ -31,5 +34,8 @@ export function createDefaultRegistry(): AdapterRegistry {
   registry.register(nuxtAdapter)
   registry.register(svelteKitAdapter)
   registry.register(nestJsAdapter)
+  registry.register(djangoAdapter)
+  registry.register(fastApiAdapter)
+  registry.register(springBootAdapter)
   return registry
 }

@@ -20,6 +20,9 @@ const FRAMEWORK_PROFILES: Record<FrameworkKind, FrameworkProfile> = {
   'expo':              { adapterId: 'expo',              parsingLevel: 'L1', llmRecommended: true  },
   'vite-react':        { adapterId: 'vite-react',        parsingLevel: 'L2', llmRecommended: true  },
   'nestjs':            { adapterId: 'nestjs',            parsingLevel: 'L2', llmRecommended: false },
+  'django':            { adapterId: 'django',            parsingLevel: 'L1', llmRecommended: false },
+  'fastapi':           { adapterId: 'fastapi',           parsingLevel: 'L2', llmRecommended: false },
+  'springboot':        { adapterId: 'springboot',        parsingLevel: 'L2', llmRecommended: false },
   'unknown':           {                                  parsingLevel: 'L3', llmRecommended: true  },
 }
 
@@ -87,6 +90,16 @@ export async function detectStack(repoRoot: string): Promise<StackInfo> {
     framework = 'vite-react'
   } else if ('@nestjs/core' in deps || '@nestjs/common' in deps) {
     framework = 'nestjs'
+  } else {
+    const reqContent = await fs.readFile(path.join(repoRoot, 'requirements.txt'), 'utf8').catch(() => '')
+    const reqLower = reqContent.toLowerCase()
+    if (reqLower.includes('fastapi')) {
+      framework = 'fastapi'
+    } else if (reqLower.includes('django') || await hasPath(repoRoot, 'manage.py')) {
+      framework = 'django'
+    } else if (await hasPath(repoRoot, 'pom.xml') || await hasPath(repoRoot, 'build.gradle') || await hasPath(repoRoot, 'build.gradle.kts')) {
+      framework = 'springboot'
+    }
   }
 
   const appDirs = await detectMonorepoApps(repoRoot)
