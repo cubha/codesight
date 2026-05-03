@@ -2,6 +2,7 @@ import type { IAdapter } from '@codebase-viz/types'
 import { nextJsAdapter } from './nextjs/index.js'
 import { nuxtAdapter } from './nuxt/index.js'
 import { svelteKitAdapter } from './sveltekit/index.js'
+import { nestJsAdapter } from './nestjs/index.js'
 
 export class AdapterRegistry {
   private readonly adapters = new Map<string, IAdapter>()
@@ -29,5 +30,6 @@ export function createDefaultRegistry(): AdapterRegistry {
   registry.register(nextJsAdapter)
   registry.register(nuxtAdapter)
   registry.register(svelteKitAdapter)
+  registry.register(nestJsAdapter)
   return registry
 }

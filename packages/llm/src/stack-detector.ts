@@ -19,7 +19,7 @@ const FRAMEWORK_PROFILES: Record<FrameworkKind, FrameworkProfile> = {
   'sveltekit':         { adapterId: 'sveltekit',         parsingLevel: 'L1', llmRecommended: false },
   'expo':              { adapterId: 'expo',              parsingLevel: 'L1', llmRecommended: true  },
   'vite-react':        { adapterId: 'vite-react',        parsingLevel: 'L2', llmRecommended: true  },
-  'nestjs':            { adapterId: 'nestjs',            parsingLevel: 'L2', llmRecommended: true  },
+  'nestjs':            { adapterId: 'nestjs',            parsingLevel: 'L2', llmRecommended: false },
   'unknown':           {                                  parsingLevel: 'L3', llmRecommended: true  },
 }
 

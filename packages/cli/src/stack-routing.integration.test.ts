@@ -65,16 +65,23 @@ describe('Stack routing integration — Phase A', () => {
     expect(result.routeNodes.length).toBeGreaterThan(0)
   })
 
-  it('mini-nest-app: NestJS 감지하지만 어댑터 미등록 (Phase C 예정)', async () => {
+  it('mini-nest-app: NestJsAdapter 정상 동작 (Phase C)', async () => {
     const repoRoot = path.join(FIXTURES, 'mini-nest-app')
     const stack = await detectStack(repoRoot)
     expect(stack.framework).toBe('nestjs')
     expect(stack.adapterId).toBe('nestjs')
     expect(stack.parsingLevel).toBe('L2')
-    expect(stack.llmRecommended).toBe(true)
+    expect(stack.llmRecommended).toBe(false)
 
     const adapter = registry.get(stack.adapterId)
-    expect(adapter).toBeUndefined()
+    expect(adapter).toBeDefined()
+    const result = await adapter!.analyze({
+      repoRoot,
+      stack,
+      analyzerVersion: 'codebase-viz@0.1.0',
+    })
+    expect(result.routeNodes.length).toBeGreaterThan(0)
+    expect(result.componentNodes.length).toBeGreaterThan(0)
   })
 
   it('mini-spring-app: package.json 없음 → unknown, L3', async () => {
