@@ -1,19 +1,28 @@
 {
   "name": "codesight",
   "displayName": "CodeSight",
-  "description": "Visualize your project's rendering architecture, screen-component tree, and DB schema.",
+  "description": "Visualize your Next.js + Supabase project — rendering architecture, component trees, and DB schema.",
   "version": "0.1.0",
   "publisher": "codesight",
   "license": "MIT",
+  "icon": "media/icon.png",
+  "galleryBanner": {
+    "color": "#060810",
+    "theme": "dark"
+  },
   "repository": {
     "type": "git",
-    "url": "https://github.com/codesight/codesight"
+    "url": "https://github.com/cubha/codesight"
   },
+  "bugs": {
+    "url": "https://github.com/cubha/codesight/issues"
+  },
+  "homepage": "https://github.com/cubha/codesight#readme",
   "engines": {
     "vscode": "^1.90.0"
   },
   "categories": ["Visualization", "Other"],
-  "keywords": ["architecture", "visualization", "nextjs", "react", "diagram"],
+  "keywords": ["architecture", "visualization", "nextjs", "react", "diagram", "supabase", "mermaid"],
   "activationEvents": ["onCommand:codesight.analyze"],
   "main": "./dist/extension.js",
   "contributes": {
@@ -36,7 +45,7 @@
       "properties": {
         "codesight.model": {
           "type": "string",
-          "default": "claude-sonnet-4-5",
+          "default": "claude-sonnet-4-6",
           "description": "Claude model to use for LLM analysis (requires API key)"
         },
         "codesight.enableLLM": {
