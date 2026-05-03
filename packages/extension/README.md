@@ -1,8 +1,27 @@
-# CodeSight
+# Codebase Architecture Visualizer
 
 **AI-powered codebase visualizer — rendering architecture, component trees, and DB schema — directly inside VS Code.**
 
-CodeSight analyzes your project and renders three interactive Mermaid diagrams in a side panel, giving you an instant architectural overview without reading hundreds of files.
+Understand your codebase at a glance. CodeSight analyzes your project and renders three interactive Mermaid diagrams in a side panel, giving you an instant architectural overview without reading hundreds of files.
+
+---
+
+## How It Looks
+
+### Sidebar Panel
+Control everything from the sidebar — analyze, re-analyze, open the viewer, export diagrams, and manage your API key.
+
+![Sidebar Panel](https://raw.githubusercontent.com/cubha/codesight/master/packages/extension/media/screenshot-sidebar.png)
+
+### Rendering Architecture
+Visualize your route hierarchy with SSR / CSR / ISR / SSG labels per route, infrastructure layers, and data layer at a glance.
+
+![Rendering Architecture](https://raw.githubusercontent.com/cubha/codesight/master/packages/extension/media/screenshot-rendering.png)
+
+### DB–Screen
+See which pages and server actions query each table, with FK relations and full column schema in the right panel. Toggle between FK / Page queries / Server actions / All views.
+
+![DB Screen](https://raw.githubusercontent.com/cubha/codesight/master/packages/extension/media/screenshot-dbscreen.png)
 
 ---
 
@@ -10,68 +29,59 @@ CodeSight analyzes your project and renders three interactive Mermaid diagrams i
 
 | Tab | What you see |
 |---|---|
-| **Rendering Architecture** | Route hierarchy with SSR / CSR / ISR / SSG labels per route |
+| **Rendering Architecture** | Route hierarchy with SSR / CSR / ISR / SSG labels, infrastructure and data layers |
 | **Screen–Component** | Which components each route renders, with import chains |
-| **DB–Screen** | Tables, columns, FK relations, and which pages/server actions query each table |
+| **DB–Screen** | Tables, columns, FK relations, and which pages / server actions query each table |
+
+**Sidebar panel**
+- Shows project name, route/table count, and last cached time
+- **Analyze** button (first run) → **Re-analyze** button (after cached)
+- **Open Viewer** opens the diagram panel (active only when cache exists)
+- **Export** — PNG / SVG / Markdown with one click
 
 **Smart analysis modes**
-
 - **Static only** (no API key required) — parses your file system, routes, and DB calls out of the box
-- **LLM-enhanced** (BYOK — Bring Your Own Key) — feeds your code to Claude for deep analysis: routing modes, component roles, backend services, and more across various stacks
+- **LLM-enhanced** (BYOK) — feeds your code to Claude for deep analysis: routing modes, component roles, backend services, and more
 
 **Quality-of-life**
-
-- Results are **cached permanently** — reopening VS Code shows the last analysis instantly
-- **Re-analyze** button in the viewer header forces a fresh scan
-- **Export dropdown** (PNG / SVG / Markdown) — save any diagram with one click
+- Results are **cached permanently** — reopening VS Code shows the last analysis instantly, no re-run needed
+- **Re-analyze** forces a fresh scan when you've made changes
+- Offline-friendly — Mermaid is bundled locally, no CDN required
 
 ---
 
 ## Getting Started
 
-### 1. Open a Next.js project
+### 1. Open a project
 
 Open your project folder in VS Code (`File → Open Folder`).
 
 ### 2. Run the analysis
 
-Open the Command Palette (`Ctrl+Shift+P` / `Cmd+Shift+P`) and run:
+Click the **CodeSight icon** in the Activity Bar (left sidebar) → click **▶ Analyze Project**.
 
+Or use the Command Palette (`Ctrl+Shift+P` / `Cmd+Shift+P`):
 ```
 CodeSight: Analyze Project
 ```
 
-A side panel opens with the three diagram tabs.
+### 3. Explore the diagrams
 
-### 3. (Optional) Enable LLM analysis
-
-For richer results, set your Anthropic API key:
-
-```
-CodeSight: Set Anthropic API Key
-```
-
-Then toggle **LLM analysis** in Settings:
-
-```
-codesight.enableLLM: true
-```
-
-Your key is stored in VS Code's **SecretStorage** — it never leaves your machine.
+The viewer opens beside your editor with three tabs. Use the sidebar to re-analyze, open the viewer again, or export.
 
 ---
 
 ## LLM Analysis (BYOK)
 
-CodeSight uses **Anthropic Claude** for deep semantic analysis. You supply the API key; CodeSight never stores it on any server.
+CodeSight uses **Anthropic Claude** for deep semantic analysis. You supply the API key — it is stored securely in VS Code's SecretStorage and never sent to any server other than Anthropic's API.
 
-**Getting a key**
+**Setup**
 
-1. Sign up at [console.anthropic.com](https://console.anthropic.com)
-2. Create an API key under API Keys
-3. Paste it via `CodeSight: Set Anthropic API Key`
+1. Get an API key at [console.anthropic.com](https://console.anthropic.com)
+2. Click **🔑 Set API Key** in the CodeSight sidebar
+3. Toggle **Enable LLM Analysis** in the sidebar
 
-**Model selection** (`codesight.model`)
+**Model selection** (`codesight.model` setting)
 
 | Value | Description |
 |---|---|
@@ -104,7 +114,7 @@ CodeSight uses **Anthropic Claude** for deep semantic analysis. You supply the A
 
 - VS Code 1.90+
 - Node.js 20+ (for the analysis engine)
-- Any web project (Next.js / React / etc.) — LLM mode covers broader stacks
+- Any web project — LLM mode covers a wide range of stacks
 - Supabase (optional — DB–Screen tab works best with Supabase usage)
 
 ---
@@ -112,8 +122,8 @@ CodeSight uses **Anthropic Claude** for deep semantic analysis. You supply the A
 ## Privacy
 
 - Your code is **never sent anywhere** in static-only mode
-- In LLM mode, relevant source files are sent to the Anthropic API using **your own key**
-- Anthropic's data handling policies apply: [anthropic.com/privacy](https://www.anthropic.com/privacy)
+- In LLM mode, relevant source files are sent to the **Anthropic API using your own key**
+- Anthropic's data handling: [anthropic.com/privacy](https://www.anthropic.com/privacy)
 - Analysis results are cached locally in `.codesight/cache.json` in your project
 
 ---

@@ -2,7 +2,7 @@
   "name": "codebase-arch-viz",
   "displayName": "Codebase Architecture Visualizer",
   "description": "AI-powered codebase visualizer: rendering architecture, component trees, and DB schema. Works statically out of the box; bring your Anthropic API key for deep LLM analysis.",
-  "version": "0.1.0",
+  "version": "0.2.6",
   "publisher": "cubha",
   "license": "MIT",
   "icon": "media/icon.png",
@@ -21,11 +21,59 @@
   "engines": {
     "vscode": "^1.90.0"
   },
-  "categories": ["Visualization", "Other"],
-  "keywords": ["architecture", "visualization", "nextjs", "react", "diagram", "supabase", "mermaid"],
-  "activationEvents": ["onCommand:codesight.analyze"],
+  "categories": [
+    "Visualization",
+    "Other"
+  ],
+  "keywords": [
+    "architecture",
+    "visualization",
+    "nextjs",
+    "react",
+    "diagram",
+    "supabase",
+    "mermaid"
+  ],
+  "activationEvents": [
+    "onStartupFinished",
+    "onCommand:codesight.analyze",
+    "onView:codesight.sidebar",
+    "onView:codesight.panelView"
+  ],
   "main": "./dist/extension.js",
   "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "codesight-sidebar",
+          "title": "CodeSight",
+          "icon": "media/icon-activity.svg"
+        }
+      ],
+      "panel": [
+        {
+          "id": "codesight-panel",
+          "title": "CodeSight",
+          "icon": "media/icon-activity.svg"
+        }
+      ]
+    },
+    "views": {
+      "codesight-sidebar": [
+        {
+          "type": "webview",
+          "id": "codesight.sidebar",
+          "name": "CodeSight"
+        }
+      ],
+      "codesight-panel": [
+        {
+          "type": "webview",
+          "id": "codesight.panelView",
+          "name": "Analysis"
+        }
+      ]
+    },
     "commands": [
       {
         "command": "codesight.analyze",

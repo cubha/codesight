@@ -1,14 +1,26 @@
 import * as fs from 'node:fs/promises'
 import * as path from 'node:path'
-import type { FrameworkKind } from './schema.js'
+import type { FrameworkKind, StackInfo, ParsingLevel } from '@codebase-viz/types'
 
-export interface StackInfo {
-  framework: FrameworkKind
-  hasSupabase: boolean
-  hasPrisma: boolean
-  hasDexie: boolean
-  isMonorepo: boolean
-  appDirs: string[]
+export type { StackInfo } from '@codebase-viz/types'
+
+interface FrameworkProfile {
+  adapterId?: string          // undefined → no static adapter; LLM-only
+  parsingLevel: ParsingLevel
+  llmRecommended: boolean     // true if static adapter is missing or partial
+}
+
+// Single source of truth for framework → adapter mapping.
+// Add a new entry whenever a new IAdapter is registered (Phase B/C/D).
+const FRAMEWORK_PROFILES: Record<FrameworkKind, FrameworkProfile> = {
+  'nextjs-app-router': { adapterId: 'nextjs-app-router', parsingLevel: 'L1', llmRecommended: false },
+  'nextjs-pages':      { adapterId: 'nextjs-pages',      parsingLevel: 'L1', llmRecommended: false },
+  'nuxt':              { adapterId: 'nuxt',              parsingLevel: 'L1', llmRecommended: true  },
+  'sveltekit':         { adapterId: 'sveltekit',         parsingLevel: 'L1', llmRecommended: true  },
+  'expo':              { adapterId: 'expo',              parsingLevel: 'L1', llmRecommended: true  },
+  'vite-react':        { adapterId: 'vite-react',        parsingLevel: 'L2', llmRecommended: true  },
+  'nestjs':            { adapterId: 'nestjs',            parsingLevel: 'L2', llmRecommended: true  },
+  'unknown':           {                                  parsingLevel: 'L3', llmRecommended: true  },
 }
 
 async function readJson(filePath: string): Promise<Record<string, unknown> | null> {
@@ -80,6 +92,8 @@ export async function detectStack(repoRoot: string): Promise<StackInfo> {
   const appDirs = await detectMonorepoApps(repoRoot)
   const isMonorepo = appDirs.length > 1
 
+  const profile = FRAMEWORK_PROFILES[framework]
+
   return {
     framework,
     hasSupabase: '@supabase/supabase-js' in deps || '@supabase/ssr' in deps,
@@ -87,5 +101,8 @@ export async function detectStack(repoRoot: string): Promise<StackInfo> {
     hasDexie: 'dexie' in deps,
     isMonorepo,
     appDirs,
+    ...(profile.adapterId !== undefined ? { adapterId: profile.adapterId } : {}),
+    parsingLevel: profile.parsingLevel,
+    llmRecommended: profile.llmRecommended,
   }
 }

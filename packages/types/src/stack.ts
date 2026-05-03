@@ -1,0 +1,23 @@
+export type ParsingLevel = 'L1' | 'L2' | 'L3'
+
+export type FrameworkKind =
+  | 'nextjs-app-router'
+  | 'nextjs-pages'
+  | 'vite-react'
+  | 'nuxt'
+  | 'sveltekit'
+  | 'expo'
+  | 'nestjs'
+  | 'unknown'
+
+export interface StackInfo {
+  framework: FrameworkKind
+  hasSupabase: boolean
+  hasPrisma: boolean
+  hasDexie: boolean
+  isMonorepo: boolean
+  appDirs: string[]
+  adapterId?: string          // undefined → no static adapter; LLM-only
+  parsingLevel: ParsingLevel
+  llmRecommended: boolean
+}

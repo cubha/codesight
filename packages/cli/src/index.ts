@@ -1,9 +1,9 @@
 import * as path from 'node:path'
 import * as process from 'node:process'
 import { pathToFileURL } from 'node:url'
-import { parseRoutes, parseComponents, parseTables, mapScreenToTable, mapServerFilesToTable } from '@codebase-viz/core'
+import { createDefaultRegistry } from '@codebase-viz/core'
 import { renderMermaid } from '@codebase-viz/renderer'
-import { createIRGraph } from '@codebase-viz/types'
+import { createIRGraph, EMPTY_ADAPTER_RESULT } from '@codebase-viz/types'
 import {
   detectStack,
   collectFiles,
@@ -18,15 +18,15 @@ export async function analyze(
   outputDir: string,
   llmOptions?: { apiKey: string; model?: string },
 ): Promise<void> {
-  const [routeNodes, { nodes: componentNodes, edges: componentEdges }, tableNodes, stack] =
-    await Promise.all([
-      parseRoutes(repoRoot),
-      parseComponents(repoRoot),
-      parseTables(repoRoot),
-      detectStack(repoRoot),
-    ])
+  const stack = await detectStack(repoRoot)
+  const registry = createDefaultRegistry()
+  const adapter = registry.get(stack.adapterId)
 
-  const staticGraph = createIRGraph({
+  const result = adapter !== undefined
+    ? await adapter.analyze({ repoRoot, stack, analyzerVersion: 'codebase-viz@0.1.0' })
+    : EMPTY_ADAPTER_RESULT
+
+  let finalGraph = createIRGraph({
     analyzerVersion: 'codebase-viz@0.1.0',
     repoRoot,
     projectName: path.basename(repoRoot),
@@ -37,17 +37,18 @@ export async function analyze(
       hasDexie: stack.hasDexie,
       hasFirebase: false,
     },
-    nodes: [...routeNodes, ...componentNodes, ...tableNodes],
-    edges: componentEdges,
+    nodes: [
+      ...result.routeNodes,
+      ...result.componentNodes,
+      ...result.tableNodes,
+      ...(result.serverNodes ?? []),
+    ],
+    edges: [
+      ...result.componentEdges,
+      ...result.mapperEdges,
+      ...(result.serverEdges ?? []),
+    ],
   })
-
-  const mapperEdges = await mapScreenToTable(staticGraph)
-  const { nodes: serverNodes, edges: serverEdges } = await mapServerFilesToTable(repoRoot, tableNodes)
-  let finalGraph = {
-    ...staticGraph,
-    nodes: [...staticGraph.nodes, ...serverNodes],
-    edges: [...staticGraph.edges, ...mapperEdges, ...serverEdges],
-  }
 
   if (llmOptions !== undefined) {
     const fileContents = await collectFiles(repoRoot, stack)

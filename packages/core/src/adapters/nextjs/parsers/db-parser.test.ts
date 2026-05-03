@@ -104,7 +104,7 @@ describe('parseTables', () => {
   it('parses fixture mini-next-app types/supabase.ts', async () => {
     const fixtureRoot = path.resolve(
       new URL(import.meta.url).pathname,
-      '../../../../..',
+      '../../../../../../..',
       'fixtures/mini-next-app',
     )
     const tables = await parseTables(fixtureRoot)

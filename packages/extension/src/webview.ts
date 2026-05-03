@@ -44,6 +44,10 @@ export class CodeSightPanel {
     )
   }
 
+  static getInstance(): CodeSightPanel | undefined {
+    return CodeSightPanel.instance
+  }
+
   static createOrShow(extensionUri: vscode.Uri): CodeSightPanel {
     if (CodeSightPanel.instance !== undefined) {
       CodeSightPanel.instance.panel.reveal(vscode.ViewColumn.Beside)
@@ -79,6 +83,10 @@ export class CodeSightPanel {
 
   showError(message: string): void {
     this.panel.webview.html = this.buildErrorHtml(message)
+  }
+
+  triggerExport(format: 'png' | 'svg' | 'md'): void {
+    this.panel.webview.postMessage({ type: 'triggerExport', format })
   }
 
   updateGraph(graph: IRGraph, diagrams: DiagramSet): void {

@@ -120,27 +120,6 @@
     .tb-btn.active[data-v="all"]    { color: #e2e8f0; border-color: #475569; background: rgba(255,255,255,.06); }
     .tb-pip { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
     .tb-sep { width: 1px; height: 16px; background: var(--border); margin: 0 4px; }
-    .reanl-btn { padding: 3px 10px; font-size: 9px; letter-spacing: 0.6px; font-family: var(--font);
-      background: rgba(13,18,32,.9); border: 1px solid var(--border); color: var(--text-muted);
-      border-radius: 4px; cursor: pointer; transition: all .15s; }
-    .reanl-btn:hover { color: var(--blue); border-color: var(--blue); }
-    .exp-wrap { position: relative; }
-    .exp-trigger { padding: 3px 10px; font-size: 9px; letter-spacing: 0.6px; font-family: var(--font);
-      background: rgba(13,18,32,.9); border: 1px solid var(--border); color: var(--text-muted);
-      border-radius: 4px; cursor: pointer; transition: all .15s; display: flex; align-items: center; gap: 5px; }
-    .exp-trigger:hover, .exp-trigger.open { color: var(--text-sec); border-color: var(--text-sec); }
-    .exp-caret { font-size: 8px; opacity: 0.6; transition: transform .15s; }
-    .exp-trigger.open .exp-caret { transform: rotate(180deg); }
-    .exp-menu { position: absolute; top: calc(100% + 6px); right: 0; z-index: 999;
-      background: var(--bg-card); border: 1px solid var(--border); border-radius: 6px;
-      padding: 4px; min-width: 170px; display: none; box-shadow: 0 8px 24px rgba(0,0,0,.6); }
-    .exp-menu.open { display: block; }
-    .exp-item { display: flex; align-items: center; gap: 10px; padding: 7px 10px;
-      font-size: 10px; color: var(--text-sec); cursor: pointer; border-radius: 4px;
-      transition: background .12s; user-select: none; }
-    .exp-item:hover { background: rgba(255,255,255,.05); color: var(--text-pri); }
-    .exp-item-icon { font-size: 11px; width: 16px; text-align: center; color: var(--text-muted); }
-    .exp-item-sub { font-size: 9px; color: var(--text-muted); margin-left: auto; }
   </style>
 </head>
 <body>
@@ -149,23 +128,6 @@
   <div class="logo">Code<em>Sight</em></div>
   <div class="badge" id="h-badge">—</div>
   <div class="header-right">
-    <button class="reanl-btn" id="reanl-btn" onclick="requestReanalyze()">↺ Re-analyze</button>
-    <div class="exp-wrap">
-      <button class="exp-trigger" id="exp-btn" onclick="toggleExport(event)">
-        Export <span class="exp-caret">▾</span>
-      </button>
-      <div class="exp-menu" id="exp-menu">
-        <div class="exp-item" onclick="event.stopPropagation();closeExport();exportPng(activeTab)">
-          <span class="exp-item-icon">🖼</span>PNG<span class="exp-item-sub">현재 탭</span>
-        </div>
-        <div class="exp-item" onclick="event.stopPropagation();closeExport();exportSvg(activeTab)">
-          <span class="exp-item-icon">✦</span>SVG<span class="exp-item-sub">현재 탭</span>
-        </div>
-        <div class="exp-item" onclick="event.stopPropagation();closeExport();exportMd()">
-          <span class="exp-item-icon">↓</span>Markdown<span class="exp-item-sub">전체</span>
-        </div>
-      </div>
-    </div>
     <div class="status-dot"></div>
     <div class="header-meta" id="h-meta">analyzing...</div>
   </div>
@@ -550,24 +512,16 @@ function postMsg(msg) {
   if (format !== 'png') setTimeout(() => URL.revokeObjectURL(href), 1000);
 }
 
-function requestReanalyze() {
-  if (vsApi) vsApi.postMessage({type:'reanalyze'});
-}
-
-// ── Export dropdown ───────────────────────────────────────────────────────────
-function toggleExport(e) {
-  e.stopPropagation();
-  const btn = document.getElementById('exp-btn');
-  const menu = document.getElementById('exp-menu');
-  const isOpen = menu.classList.contains('open');
-  btn.classList.toggle('open', !isOpen);
-  menu.classList.toggle('open', !isOpen);
-}
-function closeExport() {
-  document.getElementById('exp-btn').classList.remove('open');
-  document.getElementById('exp-menu').classList.remove('open');
-}
-document.addEventListener('click', closeExport);
+// ── Messages from extension ───────────────────────────────────────────────────
+window.addEventListener('message', function(event) {
+  var msg = event.data;
+  if (!msg || !msg.type) return;
+  if (msg.type === 'triggerExport') {
+    if (msg.format === 'png') exportPng(activeTab);
+    else if (msg.format === 'svg') exportSvg(activeTab);
+    else if (msg.format === 'md') exportMd();
+  }
+});
 
 // ── Export ────────────────────────────────────────────────────────────────────
 

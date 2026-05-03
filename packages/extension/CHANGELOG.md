@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.2.0] — 2026-05-03
+
+### Added
+- Activity Bar 사이드바 패널 — Analyze, API Key 설정, LLM 토글, 분석 상태 표시
+- 하단 패널 (CodeSight Analysis 탭) — 분석 로그 및 결과 요약
+
 ## [0.1.0] — 2026-05-03
 
 Initial release.

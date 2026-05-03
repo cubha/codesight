@@ -31,12 +31,4 @@ export interface LLMAnalysisResult {
   inferenceNotes: string[]
 }
 
-export type FrameworkKind =
-  | 'nextjs-app-router'
-  | 'nextjs-pages'
-  | 'vite-react'
-  | 'nuxt'
-  | 'sveltekit'
-  | 'expo'
-  | 'nestjs'
-  | 'unknown'
+export type { FrameworkKind } from '@codebase-viz/types'

@@ -7,7 +7,7 @@ import { mapScreenToTable, mapServerFilesToTable } from './screen-mapper.js'
 import { createIRGraph } from '@codebase-viz/types'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
-const FIXTURE = path.resolve(__dirname, '../../../../fixtures/mini-next-app')
+const FIXTURE = path.resolve(__dirname, '../../../../../../fixtures/mini-next-app')
 
 describe('mapScreenToTable', () => {
   it('PostList.tsx → posts 테이블 queries 엣지를 생성한다', async () => {

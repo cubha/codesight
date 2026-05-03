@@ -33,4 +33,25 @@ describe('detectStack', () => {
     // fa-support has apps/ dir → isMonorepo
     expect(info.appDirs.length).toBeGreaterThanOrEqual(0) // may or may not have apps/
   })
+
+  it('Next.js App Router는 adapterId/L1/llmRecommended=false 매핑된다', async () => {
+    const info = await detectStack(path.join(FIXTURES, 'mini-next-app'))
+    expect(info.adapterId).toBe('nextjs-app-router')
+    expect(info.parsingLevel).toBe('L1')
+    expect(info.llmRecommended).toBe(false)
+  })
+
+  it('unknown 스택은 adapterId 없음/L3/llmRecommended=true', async () => {
+    const info = await detectStack('/tmp/non-existent-project-xyz')
+    expect(info.adapterId).toBeUndefined()
+    expect(info.parsingLevel).toBe('L3')
+    expect(info.llmRecommended).toBe(true)
+  })
+
+  it('vite-react는 adapterId=vite-react/L2/llmRecommended=true', async () => {
+    const info = await detectStack('/mnt/d/workspace/dev-note')
+    expect(info.adapterId).toBe('vite-react')
+    expect(info.parsingLevel).toBe('L2')
+    expect(info.llmRecommended).toBe(true)
+  })
 })

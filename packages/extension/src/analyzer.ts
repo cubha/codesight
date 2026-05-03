@@ -1,8 +1,8 @@
 import * as path from 'node:path'
 import * as os from 'node:os'
-import { parseRoutes, parseComponents, parseTables, mapScreenToTable, mapServerFilesToTable } from '@codebase-viz/core'
+import { createDefaultRegistry } from '@codebase-viz/core'
 import { renderMermaid, buildDiagrams, type DiagramSet } from '@codebase-viz/renderer'
-import { createIRGraph, type IRGraph } from '@codebase-viz/types'
+import { createIRGraph, EMPTY_ADAPTER_RESULT, type IRGraph } from '@codebase-viz/types'
 import {
   detectStack,
   collectFiles,
@@ -26,15 +26,15 @@ export async function runAnalysis(
   repoRoot: string,
   llmOptions?: LLMOptions,
 ): Promise<AnalysisResult> {
-  const [routeNodes, { nodes: componentNodes, edges: componentEdges }, tableNodes, stack] =
-    await Promise.all([
-      parseRoutes(repoRoot),
-      parseComponents(repoRoot),
-      parseTables(repoRoot),
-      detectStack(repoRoot),
-    ])
+  const stack = await detectStack(repoRoot)
+  const registry = createDefaultRegistry()
+  const adapter = registry.get(stack.adapterId)
 
-  const staticGraph = createIRGraph({
+  const result = adapter !== undefined
+    ? await adapter.analyze({ repoRoot, stack, analyzerVersion: 'codebase-viz@0.1.0' })
+    : EMPTY_ADAPTER_RESULT
+
+  let finalGraph: IRGraph = createIRGraph({
     analyzerVersion: 'codebase-viz@0.1.0',
     repoRoot,
     projectName: path.basename(repoRoot),
@@ -45,17 +45,18 @@ export async function runAnalysis(
       hasDexie: stack.hasDexie,
       hasFirebase: false,
     },
-    nodes: [...routeNodes, ...componentNodes, ...tableNodes],
-    edges: componentEdges,
+    nodes: [
+      ...result.routeNodes,
+      ...result.componentNodes,
+      ...result.tableNodes,
+      ...(result.serverNodes ?? []),
+    ],
+    edges: [
+      ...result.componentEdges,
+      ...result.mapperEdges,
+      ...(result.serverEdges ?? []),
+    ],
   })
-
-  const mapperEdges = await mapScreenToTable(staticGraph)
-  const { nodes: serverNodes, edges: serverEdges } = await mapServerFilesToTable(repoRoot, tableNodes)
-  let finalGraph: IRGraph = {
-    ...staticGraph,
-    nodes: [...staticGraph.nodes, ...serverNodes],
-    edges: [...staticGraph.edges, ...mapperEdges, ...serverEdges],
-  }
 
   if (llmOptions !== undefined) {
     const fileContents = await collectFiles(repoRoot, stack)

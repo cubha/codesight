@@ -209,7 +209,16 @@ export async function collectFiles(
   stackOrFramework: StackInfo | FrameworkKind,
 ): Promise<Record<string, string>> {
   const stack: StackInfo = typeof stackOrFramework === 'string'
-    ? { framework: stackOrFramework, hasSupabase: false, hasPrisma: false, hasDexie: false, isMonorepo: false, appDirs: [] }
+    ? {
+        framework: stackOrFramework,
+        hasSupabase: false,
+        hasPrisma: false,
+        hasDexie: false,
+        isMonorepo: false,
+        appDirs: [],
+        parsingLevel: 'L3',
+        llmRecommended: true,
+      }
     : stackOrFramework
 
   const collected: Record<string, string> = {}
