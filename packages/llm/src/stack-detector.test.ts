@@ -86,6 +86,12 @@ describe('detectStack', () => {
     expect(info.framework).toBe('angular')
     expect(info.adapterId).toBe('angular')
   })
+
+  it('React Router 프로젝트를 react-router로 감지한다', async () => {
+    const info = await detectStack(path.join(FIXTURES, 'mini-react-router-app'))
+    expect(info.framework).toBe('react-router')
+    expect(info.adapterId).toBe('react-router')
+  })
 })
 
 describe('detectStack — ORM 플래그 감지', () => {
