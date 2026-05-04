@@ -12,11 +12,13 @@ export class NestJsAdapter implements IAdapter {
   readonly parsingLevel = 'L2' as const
 
   async analyze(ctx: AdapterContext): Promise<AdapterResult> {
-    const { repoRoot, analyzerVersion } = ctx
+    const { repoRoot, analyzerVersion, stack } = ctx
+    const hasAnyTsOrm = stack.hasPrisma || stack.hasDrizzle || stack.hasTypeOrm
+
     const [controllerResult, moduleResult, tableNodes] = await Promise.all([
       parseControllers(repoRoot, analyzerVersion),
       parseModulesAndProviders(repoRoot, analyzerVersion),
-      detectTsOrmTables(repoRoot, analyzerVersion),
+      hasAnyTsOrm ? detectTsOrmTables(repoRoot, analyzerVersion) : Promise.resolve([]),
     ])
     return {
       routeNodes: controllerResult.routes,
