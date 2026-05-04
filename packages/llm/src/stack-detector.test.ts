@@ -36,10 +36,10 @@ describe('detectStack', () => {
     expect(info.appDirs.length).toBeGreaterThanOrEqual(0) // may or may not have apps/
   })
 
-  it('Next.js App Router는 adapterId/L1/llmRecommended=false 매핑된다', async () => {
+  it('Next.js App Router는 adapterId/L3/llmRecommended=false 매핑된다', async () => {
     const info = await detectStack(path.join(FIXTURES, 'mini-next-app'))
     expect(info.adapterId).toBe('nextjs-app-router')
-    expect(info.parsingLevel).toBe('L1')
+    expect(info.parsingLevel).toBe('L3')
     expect(info.llmRecommended).toBe(false)
   })
 
@@ -50,10 +50,10 @@ describe('detectStack', () => {
     expect(info.llmRecommended).toBe(true)
   })
 
-  it('vite-react는 adapterId=vite-react/L2/llmRecommended=true', async () => {
+  it('vite-react는 adapterId=vite-react/L3/llmRecommended=true', async () => {
     const info = await detectStack('/mnt/d/workspace/dev-note')
     expect(info.adapterId).toBe('vite-react')
-    expect(info.parsingLevel).toBe('L2')
+    expect(info.parsingLevel).toBe('L3')
     expect(info.llmRecommended).toBe(true)
   })
 

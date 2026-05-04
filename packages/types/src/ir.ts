@@ -70,6 +70,7 @@ type RouteNodeBase = {
   dynamicSegmentType: DynamicSegmentType
   isGroupRoute: boolean      // true for (group) directories
   renderingMode: RenderingMode
+  httpMethod?: string           // e.g. 'GET', 'POST' — populated by backend adapters
   provenance: Provenance
 }
 

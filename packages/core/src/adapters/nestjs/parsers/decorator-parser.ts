@@ -142,6 +142,7 @@ export async function parseControllers(
             dynamicSegmentType: getDynamicSegmentType(routePath),
             isGroupRoute: false,
             renderingMode: 'SSR',
+            httpMethod: httpDecorator.getName().toUpperCase(),
             provenance: routeProvenance,
             confidence: 'verified',
           }),

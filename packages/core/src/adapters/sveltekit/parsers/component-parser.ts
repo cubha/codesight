@@ -13,7 +13,7 @@ import {
 
 const EXCLUDE_DIRS = new Set(['.git', 'node_modules', '.svelte-kit', 'dist', 'build'])
 const SVELTE_SCRIPT_RE = /<script(?:\s(?!context)[^>]*)?>(?<content>[\s\S]*?)<\/script>/
-const SERVER_FILE_RE = /^(.+)\.server\.(ts|js)$/
+const SERVER_FILE_RE = /^(\+(?:page|layout))\.server\.(ts|js)$/
 
 interface CollectedFiles {
   svelteFiles: string[]
@@ -178,7 +178,7 @@ export async function parseSvelteComponents(
     if (svelteBasenames.has(svelteKey)) continue
 
     const relPath = path.relative(repoRoot, filePath).replace(/\\/g, '/')
-    const name = baseName // e.g. '+page.server'
+    const name = baseName // e.g. '+page'
 
     const provenance: Provenance = {
       file: relPath,

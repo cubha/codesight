@@ -1,5 +1,46 @@
 # Changelog
 
+## [0.7.0] — 2026-05-04
+
+### Added
+
+**HTTP method labels in Rendering Architecture:**
+- NestJS: `@Get` → `GET`, `@Post` → `POST`, etc. shown as prefix in route nodes
+- FastAPI: `@router.get` / `@app.post` → `GET` / `POST` labels
+- Spring Boot: `@GetMapping` → `GET`, `@PostMapping` → `POST`, etc.
+
+**SvelteKit component runtime detection:**
+- `+page.svelte` alone → `runtime: client`
+- `+page.svelte` + `+page.server.ts` → `runtime: shared`
+- `+page.server.ts` alone → `runtime: server`
+
+**Remix nested folder route support:**
+- Recursive scan of `app/routes/` subdirectories
+- `users/_index.tsx` → `/users`, `users/$id.tsx` → `/users/:id`
+
+**ORM column quality improvements:**
+- Django ORM: `null=True` → `nullable: true`, `ForeignKey('User')` → type `ForeignKey→User`, `Meta.db_table` as table name
+- SQLAlchemy: `nullable=True/False`, actual column type (`String`, `Integer`, …), `__tablename__` as table name
+- JPA: `@Column(nullable=false/true)`, `@JoinColumn(name="col")` as FK column
+
+**DB–Screen mapper connections:**
+- SvelteKit and NestJS routes/components now linked to ORM tables in DB–Screen tab via `mapper-utils.ts`
+
+**Config-driven parser selection:**
+- All adapters now read `ctx.stack` flags (`hasPrisma`, `hasDrizzle`, `hasTypeOrm`, `hasSQLAlchemy`, `hasDjangoORM`, `hasSpringDataJpa`) to skip irrelevant parsers
+- 5 new `StackInfo` flags: `hasDrizzle`, `hasTypeOrm`, `hasSQLAlchemy`, `hasDjangoORM`, `hasSpringDataJpa`
+
+### Changed
+
+- `ParsingLevel` labels corrected to reflect actual extraction depth:
+  - Next.js App Router: `L1` → `L3` (routes + components + DB)
+  - Nuxt, SvelteKit, Django: `L1` → `L2` (routes + components or DB)
+  - Flask, Vue SPA, Angular: `L2` → `L1` (routes only)
+  - vite-react: `L2` → `L3` (LLM-only = comprehensive)
+- Backend adapter error handling: `Promise.all` `.catch(() => [])` guards on all parsers
+
+---
+
 ## [0.6.0] — 2026-05-04
 
 ### Added

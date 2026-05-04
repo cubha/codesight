@@ -4,7 +4,7 @@
 
 Routes, components, and DB relationships — extracted statically from **12 frameworks**, optionally enriched by LLM, rendered as three live diagram tabs inside VS Code.
 
-> Marketplace: [`cubha.codebase-arch-viz`](https://marketplace.visualstudio.com/items?itemName=cubha.codebase-arch-viz) · Current release: **v0.6.0**
+> Marketplace: [`cubha.codebase-arch-viz`](https://marketplace.visualstudio.com/items?itemName=cubha.codebase-arch-viz) · Current release: **v0.7.0**
 
 ---
 
@@ -28,25 +28,25 @@ Results are cached in `.codesight/cache.json`. Re-analyze on demand.
 
 | Framework | Parsing | Detection signal | What's extracted |
 |---|---|---|---|
-| Next.js App Router | L1 | `package.json` → `next` + `app/` dir | Routes, components (`.tsx`), DB (Supabase + Prisma) |
-| Next.js Pages Router | L1 | `package.json` → `next` (no `app/` dir) | `pages/` file-based routes, dynamic `[param]` |
-| Nuxt | L1 | `package.json` → `nuxt` | Pages + SFC component import graph |
-| SvelteKit | L1 | `package.json` → `@sveltejs/kit` | `+page`/`+layout`/`+server` routes + SFC import graph + Drizzle tables |
-| Vue SPA | L2 | `package.json` → `vue` (no nuxt) | `createRouter()` routes array — lazy imports included |
-| Remix | L1 | `package.json` → `@remix-run/react` | `app/routes/` file-based, `$param` → `:param` |
+| Next.js App Router | **L3** | `package.json` → `next` + `app/` dir | Routes, components (`.tsx`), DB (Supabase + Prisma + Drizzle + TypeORM) |
+| Next.js Pages Router | L1 | `package.json` → `next` (no `app/` dir) | `pages/` file-based routes + SSG/ISR/SSR detection |
+| Nuxt | **L2** | `package.json` → `nuxt` | Pages + `.vue` SFC import graph |
+| SvelteKit | **L2** | `package.json` → `@sveltejs/kit` | `+page`/`+layout`/`+server` routes + SFC import graph (client/shared/server runtime) + Drizzle/Prisma tables |
+| Vue SPA | L1 | `package.json` → `vue` (no nuxt) | `createRouter()` routes array — lazy imports included |
+| Remix | L1 | `package.json` → `@remix-run/react` | `app/routes/` recursive scan, `$param` → `:param` |
 
 ### Backend
 
 | Framework | Parsing | Detection signal | What's extracted |
 |---|---|---|---|
-| NestJS | L2 | `package.json` → `@nestjs/core` | Controllers, services, modules, TypeORM entities |
-| Django | L1 | `requirements.txt` → `django` or `manage.py` | URL patterns + View/ViewSet classes + Django ORM models |
-| FastAPI | L2 | `requirements.txt` → `fastapi` | Routes + Pydantic schemas + SQLAlchemy models |
-| Flask | L2 | `requirements.txt` → `flask` | `@app.route` + Blueprint `url_prefix` best-effort |
-| Spring Boot | L2 | `pom.xml` / `build.gradle` | Controllers + `@Service`/`@Repository` + JPA `@Entity` |
-| Angular | L2 | `package.json` → `@angular/core` | `provideRouter` / `RouterModule.forRoot` routes, `loadChildren` path literals |
+| NestJS | **L2** | `package.json` → `@nestjs/core` | Controllers (GET/POST labels) + services + modules + TypeORM entities |
+| Django | **L2** | `requirements.txt` → `django` or `manage.py` | URL patterns + View/ViewSet classes + Django ORM models (nullable/FK/db_table) |
+| FastAPI | **L2** | `requirements.txt` → `fastapi` | Routes (GET/POST labels) + Pydantic schemas + SQLAlchemy models (nullable/type/__tablename__) |
+| Flask | L1 | `requirements.txt` → `flask` | `@app.route` + Blueprint `url_prefix` best-effort |
+| Spring Boot | **L2** | `pom.xml` / `build.gradle` | Controllers (GET/POST labels) + `@Service`/`@Repository` + JPA `@Entity` (@JoinColumn/nullable) |
+| Angular | L1 | `package.json` → `@angular/core` | `provideRouter` / `RouterModule.forRoot` routes, `loadChildren` path literals |
 
-**L1** = file-system / URL-conf traversal · **L2** = AST/decorator analysis
+**L1** = routes only · **L2** = routes + components or DB · **L3** = all 3 tabs
 
 Frameworks not in this list (Express, Hono, Rails, Go, etc.) fall back to **L3 — LLM primary** mode when an Anthropic API key is provided.
 

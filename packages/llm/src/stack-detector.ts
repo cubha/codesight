@@ -13,20 +13,24 @@ interface FrameworkProfile {
 // Single source of truth for framework → adapter mapping.
 // Add a new entry whenever a new IAdapter is registered (Phase B/C/D).
 const FRAMEWORK_PROFILES: Record<FrameworkKind, FrameworkProfile> = {
-  'nextjs-app-router': { adapterId: 'nextjs-app-router', parsingLevel: 'L1', llmRecommended: false },
-  'nextjs-pages':      { adapterId: 'nextjs-pages',      parsingLevel: 'L1', llmRecommended: false },
-  'nuxt':              { adapterId: 'nuxt',              parsingLevel: 'L1', llmRecommended: false },
-  'sveltekit':         { adapterId: 'sveltekit',         parsingLevel: 'L1', llmRecommended: false },
-  'expo':              { adapterId: 'expo',              parsingLevel: 'L1', llmRecommended: true  },
-  'vite-react':        { adapterId: 'vite-react',        parsingLevel: 'L2', llmRecommended: true  },
+  // L3: routes + components + DB (all 3 tabs)
+  'nextjs-app-router': { adapterId: 'nextjs-app-router', parsingLevel: 'L3', llmRecommended: false },
+  // L2: routes + components or routes + DB
+  'nuxt':              { adapterId: 'nuxt',              parsingLevel: 'L2', llmRecommended: false },
+  'sveltekit':         { adapterId: 'sveltekit',         parsingLevel: 'L2', llmRecommended: false },
   'nestjs':            { adapterId: 'nestjs',            parsingLevel: 'L2', llmRecommended: false },
-  'django':            { adapterId: 'django',            parsingLevel: 'L1', llmRecommended: false },
+  'django':            { adapterId: 'django',            parsingLevel: 'L2', llmRecommended: false },
   'fastapi':           { adapterId: 'fastapi',           parsingLevel: 'L2', llmRecommended: false },
-  'flask':             { adapterId: 'flask',             parsingLevel: 'L2', llmRecommended: false },
   'springboot':        { adapterId: 'springboot',        parsingLevel: 'L2', llmRecommended: false },
-  'vue-spa':           { adapterId: 'vue-spa',           parsingLevel: 'L2', llmRecommended: false },
+  // L1: routes only
+  'nextjs-pages':      { adapterId: 'nextjs-pages',      parsingLevel: 'L1', llmRecommended: false },
+  'flask':             { adapterId: 'flask',             parsingLevel: 'L1', llmRecommended: false },
+  'vue-spa':           { adapterId: 'vue-spa',           parsingLevel: 'L1', llmRecommended: false },
   'remix':             { adapterId: 'remix',             parsingLevel: 'L1', llmRecommended: false },
-  'angular':           { adapterId: 'angular',           parsingLevel: 'L2', llmRecommended: false },
+  'angular':           { adapterId: 'angular',           parsingLevel: 'L1', llmRecommended: false },
+  'expo':              { adapterId: 'expo',              parsingLevel: 'L1', llmRecommended: true  },
+  // L3: LLM-only (no static adapter)
+  'vite-react':        { adapterId: 'vite-react',        parsingLevel: 'L3', llmRecommended: true  },
   'unknown':           {                                  parsingLevel: 'L3', llmRecommended: true  },
 }
 

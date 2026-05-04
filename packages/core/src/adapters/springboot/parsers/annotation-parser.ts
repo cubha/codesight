@@ -15,6 +15,11 @@ const EXCLUDE_DIRS = new Set(['.git', 'node_modules', 'target', 'build', '.gradl
 const HTTP_MAPPING_ANNOTATIONS = new Set([
   'GetMapping', 'PostMapping', 'PutMapping', 'DeleteMapping', 'PatchMapping',
 ])
+
+const MAPPING_TO_METHOD: Record<string, string> = {
+  GetMapping: 'GET', PostMapping: 'POST', PutMapping: 'PUT',
+  DeleteMapping: 'DELETE', PatchMapping: 'PATCH', RequestMapping: 'GET',
+}
 const CONTROLLER_ANNOTATIONS = new Set(['RestController', 'Controller'])
 
 async function findJavaFiles(repoRoot: string): Promise<string[]> {
@@ -196,6 +201,7 @@ export async function parseAnnotations(
 
                   const urlPath = normalizeUrlPath(rawPath)
 
+                  const springHttpMethod = MAPPING_TO_METHOD[ann.name]
                   routes.push(
                     createRouteNode({
                       id: makeNodeId('route', relPath, `${urlPath}:${ann.name}`),
@@ -205,6 +211,7 @@ export async function parseAnnotations(
                       dynamicSegmentType: getDynamicSegmentType(urlPath),
                       isGroupRoute: false,
                       renderingMode: 'SSR',
+                      ...(springHttpMethod !== undefined ? { httpMethod: springHttpMethod } : {}),
                       provenance: astToProvenance(
                         relPath,
                         { row, column: ann.col },

@@ -286,6 +286,7 @@ function buildRoutesFromDecorated(
         dynamicSegmentType: getDynamicSegmentType(urlPath),
         isGroupRoute: false,
         renderingMode: 'SSR',
+        httpMethod: dr.httpMethod.toUpperCase(),
         provenance: astToProvenance(relPath, { row: dr.row, column: dr.col }, 'fastapi@0.1', analyzerVersion),
         confidence: 'verified',
       }),
