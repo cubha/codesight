@@ -4,6 +4,9 @@ import {
   type AdapterResult,
 } from '@codebase-viz/types'
 import { parseRoutes } from './parsers/route-parser.js'
+import { parseSvelteComponents } from './parsers/component-parser.js'
+import { detectTsOrmTables } from '../../db/index.js'
+import { buildMapperEdges } from '../_shared/mapper-utils.js'
 
 export class SvelteKitAdapter implements IAdapter {
   readonly id = 'sveltekit'
@@ -11,9 +14,22 @@ export class SvelteKitAdapter implements IAdapter {
   readonly parsingLevel = 'L1' as const
 
   async analyze(ctx: AdapterContext): Promise<AdapterResult> {
-    const { repoRoot, analyzerVersion } = ctx
-    const routeNodes = await parseRoutes(repoRoot, analyzerVersion)
-    return { routeNodes, componentNodes: [], componentEdges: [], tableNodes: [], mapperEdges: [] }
+    const { repoRoot, analyzerVersion, stack } = ctx
+    const hasAnyTsOrm = stack.hasPrisma || stack.hasDrizzle || stack.hasTypeOrm
+
+    const [routeNodes, components, tableNodes] = await Promise.all([
+      parseRoutes(repoRoot, analyzerVersion),
+      parseSvelteComponents(repoRoot, analyzerVersion),
+      hasAnyTsOrm ? detectTsOrmTables(repoRoot, analyzerVersion) : Promise.resolve([]),
+    ])
+    const mapperEdges = buildMapperEdges(routeNodes, components.nodes, tableNodes, analyzerVersion)
+    return {
+      routeNodes,
+      componentNodes: components.nodes,
+      componentEdges: components.edges,
+      tableNodes,
+      mapperEdges,
+    }
   }
 }
 

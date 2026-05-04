@@ -15,7 +15,7 @@ describe('Stack routing integration — Phase A', () => {
     const repoRoot = path.join(FIXTURES, 'mini-next-app')
     const stack = await detectStack(repoRoot)
     expect(stack.adapterId).toBe('nextjs-app-router')
-    expect(stack.parsingLevel).toBe('L1')
+    expect(stack.parsingLevel).toBe('L3')
     expect(stack.llmRecommended).toBe(false)
 
     const adapter = registry.get(stack.adapterId)
@@ -34,7 +34,7 @@ describe('Stack routing integration — Phase A', () => {
     const stack = await detectStack(repoRoot)
     expect(stack.framework).toBe('nuxt')
     expect(stack.adapterId).toBe('nuxt')
-    expect(stack.parsingLevel).toBe('L1')
+    expect(stack.parsingLevel).toBe('L2')
     expect(stack.llmRecommended).toBe(false)
 
     const adapter = registry.get(stack.adapterId)
@@ -52,7 +52,7 @@ describe('Stack routing integration — Phase A', () => {
     const stack = await detectStack(repoRoot)
     expect(stack.framework).toBe('sveltekit')
     expect(stack.adapterId).toBe('sveltekit')
-    expect(stack.parsingLevel).toBe('L1')
+    expect(stack.parsingLevel).toBe('L2')
     expect(stack.llmRecommended).toBe(false)
 
     const adapter = registry.get(stack.adapterId)
@@ -89,7 +89,7 @@ describe('Stack routing integration — Phase A', () => {
     const stack = await detectStack(repoRoot)
     expect(stack.framework).toBe('django')
     expect(stack.adapterId).toBe('django')
-    expect(stack.parsingLevel).toBe('L1')
+    expect(stack.parsingLevel).toBe('L2')
     expect(stack.llmRecommended).toBe(false)
 
     const adapter = registry.get(stack.adapterId)

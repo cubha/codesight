@@ -96,7 +96,8 @@ function buildRouteSectionLines(sections: Map<string, RouteNode[]>, indent: stri
     if (secKey === 'root') {
       for (const r of nodes) {
         const badge = r.renderingMode === 'unknown' ? '?' : r.renderingMode
-        lines.push(`${indent}${sanitizeId(r.id)}["${r.path} · ${badge}"]:::${modeClass(r.renderingMode)}`)
+        const methodPrefix = r.httpMethod !== undefined ? `${r.httpMethod} ` : ''
+        lines.push(`${indent}${sanitizeId(r.id)}["${methodPrefix}${r.path} · ${badge}"]:::${modeClass(r.renderingMode)}`)
       }
     } else {
       lines.push(`${indent}subgraph ${sanitizeId(secKey.toUpperCase())}_G["${sectionLabel(secKey)}"]`)

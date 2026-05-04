@@ -2,9 +2,9 @@
 
 **VS Code extension that visualizes codebase architecture as interactive Mermaid diagrams.**
 
-Routes, components, and DB relationships — extracted statically from 7 frameworks, optionally enriched by LLM, rendered as three live diagram tabs inside VS Code.
+Routes, components, and DB relationships — extracted statically from **12 frameworks**, optionally enriched by LLM, rendered as three live diagram tabs inside VS Code.
 
-> Marketplace: [`cubha.codebase-arch-viz`](https://marketplace.visualstudio.com/items?itemName=cubha.codebase-arch-viz) · Current release: **v0.4.0**
+> Marketplace: [`cubha.codebase-arch-viz`](https://marketplace.visualstudio.com/items?itemName=cubha.codebase-arch-viz) · Current release: **v0.7.0**
 
 ---
 
@@ -16,7 +16,7 @@ Open a project in VS Code → click **Analyze**. CodeSight produces:
 |---|---|
 | **Rendering Architecture** | Route hierarchy with SSR / CSR / ISR / SSG labels per route |
 | **Screen–Component** | Route → component import graph |
-| **DB–Screen** | Supabase table schema + which pages/actions query each table |
+| **DB–Screen** | Table schema (Supabase, Prisma, Drizzle, TypeORM, Django ORM, SQLAlchemy, JPA) + which pages query each table |
 
 Results are cached in `.codesight/cache.json`. Re-analyze on demand.
 
@@ -24,19 +24,45 @@ Results are cached in `.codesight/cache.json`. Re-analyze on demand.
 
 ## Supported Frameworks (static analysis, no API key)
 
+### Frontend / Full-stack
+
 | Framework | Parsing | Detection signal | What's extracted |
 |---|---|---|---|
-| Next.js App Router | L1 | `package.json` → `next` + `app/` dir | Routes (page/layout/route-handler), components, DB queries |
-| Nuxt | L1 | `package.json` → `nuxt` | Pages from `pages/`, dynamic `:param` paths |
-| SvelteKit | L1 | `package.json` → `@sveltejs/kit` | `+page`/`+layout`/`+server` from `src/routes/` |
-| NestJS | L2 | `package.json` → `@nestjs/core` | `@Controller` / HTTP method decorators via ts-morph AST |
-| Django | L1 | `requirements.txt` → `django` or `manage.py` | `path()` / `re_path()` from `urls.py` via tree-sitter |
-| FastAPI | L2 | `requirements.txt` → `fastapi` | `@app.get` / `@router.post` decorators via tree-sitter |
-| Spring Boot | L2 | `pom.xml` / `build.gradle` | `@RestController` + `@GetMapping` etc. via tree-sitter |
+| Next.js App Router | **L3** | `package.json` → `next` + `app/` dir | Routes, components (`.tsx`), DB (Supabase + Prisma + Drizzle + TypeORM) |
+| Next.js Pages Router | L1 | `package.json` → `next` (no `app/` dir) | `pages/` file-based routes + SSG/ISR/SSR detection |
+| Nuxt | **L2** | `package.json` → `nuxt` | Pages + `.vue` SFC import graph |
+| SvelteKit | **L2** | `package.json` → `@sveltejs/kit` | `+page`/`+layout`/`+server` routes + SFC import graph (client/shared/server runtime) + Drizzle/Prisma tables |
+| Vue SPA | L1 | `package.json` → `vue` (no nuxt) | `createRouter()` routes array — lazy imports included |
+| Remix | L1 | `package.json` → `@remix-run/react` | `app/routes/` recursive scan, `$param` → `:param` |
 
-**L1** = file-system / URL-conf traversal · **L2** = AST/decorator analysis
+### Backend
 
-Frameworks not in this list (Express, Flask, Rails, Go, etc.) fall back to **L3 — LLM primary** mode when an Anthropic API key is provided.
+| Framework | Parsing | Detection signal | What's extracted |
+|---|---|---|---|
+| NestJS | **L2** | `package.json` → `@nestjs/core` | Controllers (GET/POST labels) + services + modules + TypeORM entities |
+| Django | **L2** | `requirements.txt` → `django` or `manage.py` | URL patterns + View/ViewSet classes + Django ORM models (nullable/FK/db_table) |
+| FastAPI | **L2** | `requirements.txt` → `fastapi` | Routes (GET/POST labels) + Pydantic schemas + SQLAlchemy models (nullable/type/__tablename__) |
+| Flask | L1 | `requirements.txt` → `flask` | `@app.route` + Blueprint `url_prefix` best-effort |
+| Spring Boot | **L2** | `pom.xml` / `build.gradle` | Controllers (GET/POST labels) + `@Service`/`@Repository` + JPA `@Entity` (@JoinColumn/nullable) |
+| Angular | L1 | `package.json` → `@angular/core` | `provideRouter` / `RouterModule.forRoot` routes, `loadChildren` path literals |
+
+**L1** = routes only · **L2** = routes + components or DB · **L3** = all 3 tabs
+
+Frameworks not in this list (Express, Hono, Rails, Go, etc.) fall back to **L3 — LLM primary** mode when an Anthropic API key is provided.
+
+---
+
+## DB Coverage
+
+| ORM / DB | Frameworks | How |
+|---|---|---|
+| Supabase types | Next.js App Router | `src/types/supabase.ts` type alias |
+| Prisma | Next.js, NestJS, SvelteKit | `schema.prisma` via `@mrleebo/prisma-ast` |
+| Drizzle | SvelteKit, Next.js | `pgTable()` / `sqliteTable()` calls via ts-morph |
+| TypeORM | NestJS | `@Entity` / `@Column` decorators via ts-morph |
+| Django ORM | Django | `models.Model` subclasses via tree-sitter |
+| SQLAlchemy | FastAPI | `Base` subclasses + `Column()` via tree-sitter |
+| JPA | Spring Boot | `@Entity` / `@Column` via tree-sitter |
 
 ---
 
@@ -60,21 +86,26 @@ All nodes carry `provenance` (file + line) and `confidence` (`verified` | `infer
 ```
 packages/
   types/      @codebase-viz/types     IR type definitions (RouteNode, ComponentNode, IRGraph, …)
-  core/       @codebase-viz/core      Adapter registry + 7 framework adapters + WASM runtime
+  core/       @codebase-viz/core      Adapter registry + 12 framework adapters + WASM runtime
   llm/        @codebase-viz/llm       Stack detector + LLM enrichment pipeline
   renderer/   @codebase-viz/renderer  Mermaid / Markdown output (buildDiagrams)
   cli/        @codebase-viz/cli       CLI entry point (analyze command)
   extension/  codebase-arch-viz       VS Code Extension (publisher: cubha)
 
 fixtures/
-  mini-next-app/        Next.js App Router sandbox
-  mini-nuxt-app/        Nuxt sandbox
-  mini-sveltekit-app/   SvelteKit sandbox
-  mini-nest-app/        NestJS sandbox
-  mini-django-app/      Django sandbox
-  mini-fastapi-app/     FastAPI sandbox
-  mini-spring-app/      Spring Boot sandbox
-  mini-vanilla/         Unknown framework (L3 fallback test)
+  mini-next-app/          Next.js App Router sandbox
+  mini-nextpages-app/     Next.js Pages Router sandbox
+  mini-nuxt-app/          Nuxt sandbox
+  mini-sveltekit-app/     SvelteKit sandbox
+  mini-vue-spa-app/       Vue SPA sandbox
+  mini-remix-app/         Remix sandbox
+  mini-nest-app/          NestJS sandbox (TypeORM entity included)
+  mini-django-app/        Django sandbox (views + models)
+  mini-fastapi-app/       FastAPI sandbox (schemas + SQLAlchemy models)
+  mini-flask-app/         Flask sandbox (blueprints)
+  mini-spring-app/        Spring Boot sandbox (services + JPA entities)
+  mini-angular-app/       Angular sandbox
+  mini-vanilla/           Unknown framework (L3 fallback test)
 ```
 
 ---
@@ -90,7 +121,7 @@ pnpm install
 # Type-check all packages
 pnpm typecheck
 
-# Run all tests (149 tests)
+# Run all tests (201 tests)
 pnpm test
 
 # Or use the project verify script (tsc + vitest)
@@ -155,7 +186,8 @@ npx vsce publish --no-dependencies -p <PAT>
 |---|---|
 | v0.1.0 | Initial release — Next.js + Supabase static analysis + LLM mode |
 | v0.2.x | Sidebar panel, bottom panel, persistent cache, export dropdown |
-| v0.4.0 | Multi-stack adapters (Nuxt, SvelteKit, NestJS, Django, FastAPI, Spring Boot) + WASM runtime + unified `:param` notation |
+| v0.4.0 | Multi-stack adapters (Nuxt, SvelteKit, NestJS, Django, FastAPI, Spring Boot) + WASM runtime |
+| v0.6.0 | 5 new frameworks (Flask, Next.js Pages, Vue SPA, Remix, Angular) + DB Multi-ORM (Prisma/Drizzle/TypeORM/Django ORM/SQLAlchemy/JPA) + SFC/backend component graphs |
 
 ---
 
