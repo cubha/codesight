@@ -26,6 +26,7 @@ const FRAMEWORK_PROFILES: Record<FrameworkKind, FrameworkProfile> = {
   'nextjs-pages':      { adapterId: 'nextjs-pages',      parsingLevel: 'L1', llmRecommended: false },
   'flask':             { adapterId: 'flask',             parsingLevel: 'L1', llmRecommended: false },
   'vue-spa':           { adapterId: 'vue-spa',           parsingLevel: 'L1', llmRecommended: false },
+  'react-router':      { adapterId: 'react-router',      parsingLevel: 'L1', llmRecommended: false },
   'remix':             { adapterId: 'remix',             parsingLevel: 'L1', llmRecommended: false },
   'angular':           { adapterId: 'angular',           parsingLevel: 'L1', llmRecommended: false },
   'expo':              { adapterId: 'expo',              parsingLevel: 'L1', llmRecommended: true  },
@@ -98,8 +99,10 @@ export async function detectStack(repoRoot: string): Promise<StackInfo> {
     framework = 'vite-react'
   } else if ('@nestjs/core' in deps || '@nestjs/common' in deps) {
     framework = 'nestjs'
-  } else if ('@remix-run/react' in deps || ('react-router' in deps && !('next' in deps))) {
+  } else if ('@remix-run/react' in deps) {
     framework = 'remix'
+  } else if ('react-router-dom' in deps && !('@remix-run/react' in deps)) {
+    framework = 'react-router'
   } else if ('@angular/core' in deps) {
     framework = 'angular'
   } else if ('vue' in deps && !('nuxt' in deps)) {

@@ -7,6 +7,7 @@ import {
 import { parseAnnotations } from './parsers/annotation-parser.js'
 import { parseSpringComponents } from './parsers/component-parser.js'
 import { parseJpaEntities } from './parsers/orm-parser.js'
+import { buildMapperEdges } from '../_shared/mapper-utils.js'
 
 export class SpringBootAdapter implements IAdapter {
   readonly id = 'springboot'
@@ -20,11 +21,13 @@ export class SpringBootAdapter implements IAdapter {
       parseSpringComponents(repoRoot, analyzerVersion).catch(() => []),
       parseJpaEntities(repoRoot, analyzerVersion).catch(() => []),
     ])
+    const mapperEdges = buildMapperEdges(routeNodes, componentNodes, tableNodes, analyzerVersion)
     return {
       ...EMPTY_ADAPTER_RESULT,
       routeNodes,
       componentNodes,
       tableNodes,
+      mapperEdges,
     }
   }
 }

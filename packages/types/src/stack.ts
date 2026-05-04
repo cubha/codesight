@@ -13,6 +13,7 @@ export type FrameworkKind =
   | 'flask'
   | 'springboot'
   | 'vue-spa'
+  | 'react-router'
   | 'remix'
   | 'angular'
   | 'unknown'

@@ -351,6 +351,7 @@ export async function parseDecorators(
             dynamicSegmentType: getDynamicSegmentType(composedPath),
             isGroupRoute: route.isGroupRoute,
             renderingMode: route.renderingMode,
+            ...(route.httpMethod !== undefined ? { httpMethod: route.httpMethod } : {}),
             provenance: route.provenance,
             confidence: 'inferred',
             inferenceChain: [inferenceTag],

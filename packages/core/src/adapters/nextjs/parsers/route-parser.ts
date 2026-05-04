@@ -21,6 +21,16 @@ const ROUTE_FILES: Record<string, RouteFileKind> = {
   'route.ts': 'route-handler',
 }
 
+const HTTP_METHOD_RE = /export\s+(?:async\s+)?function\s+(GET|POST|PUT|DELETE|PATCH|HEAD|OPTIONS)\b/g
+
+function extractHttpMethods(content: string): string[] {
+  const methods: string[] = []
+  for (const m of content.matchAll(HTTP_METHOD_RE)) {
+    if (m[1] !== undefined) methods.push(m[1])
+  }
+  return methods
+}
+
 async function walkDir(dir: string): Promise<string[]> {
   const entries = await fs.readdir(dir, { withFileTypes: true })
   const results: string[] = []
@@ -122,19 +132,60 @@ export async function parseRoutes(repoRoot: string): Promise<RouteNode[]> {
       analyzerVersion: 'codebase-viz@0.1.0',
     }
 
-    nodes.push(
-      createRouteNode({
-        id: makeNodeId('route', repoRelativeDir, routeFileKind),
-        path: buildUrlPath(dirRelToApp),
-        filePath: repoRelativeFile,
-        routeFileKind,
-        dynamicSegmentType: getDynamicSegmentType(segments),
-        isGroupRoute: segments.some(s => /^\(.*\)$/.test(s)),
-        renderingMode: await detectRenderingMode(absFilePath),
-        provenance,
-        confidence: 'verified',
-      })
-    )
+    const urlPath = buildUrlPath(dirRelToApp)
+    const dynType = getDynamicSegmentType(segments)
+    const isGroup = segments.some(s => /^\(.*\)$/.test(s))
+
+    if (routeFileKind === 'route-handler') {
+      const content = await fs.readFile(absFilePath, 'utf-8').catch(() => '')
+      const methods = extractHttpMethods(content)
+      if (methods.length > 0) {
+        for (const method of methods) {
+          nodes.push(
+            createRouteNode({
+              id: makeNodeId('route', repoRelativeDir, `${routeFileKind}:${method}`),
+              path: urlPath,
+              filePath: repoRelativeFile,
+              routeFileKind,
+              dynamicSegmentType: dynType,
+              isGroupRoute: isGroup,
+              renderingMode: 'SSR',
+              httpMethod: method,
+              provenance,
+              confidence: 'verified',
+            })
+          )
+        }
+      } else {
+        nodes.push(
+          createRouteNode({
+            id: makeNodeId('route', repoRelativeDir, routeFileKind),
+            path: urlPath,
+            filePath: repoRelativeFile,
+            routeFileKind,
+            dynamicSegmentType: dynType,
+            isGroupRoute: isGroup,
+            renderingMode: 'SSR',
+            provenance,
+            confidence: 'verified',
+          })
+        )
+      }
+    } else {
+      nodes.push(
+        createRouteNode({
+          id: makeNodeId('route', repoRelativeDir, routeFileKind),
+          path: urlPath,
+          filePath: repoRelativeFile,
+          routeFileKind,
+          dynamicSegmentType: dynType,
+          isGroupRoute: isGroup,
+          renderingMode: await detectRenderingMode(absFilePath),
+          provenance,
+          confidence: 'verified',
+        })
+      )
+    }
   }
 
   return nodes

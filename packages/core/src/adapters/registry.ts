@@ -9,6 +9,7 @@ import { fastApiAdapter } from './fastapi/index.js'
 import { flaskAdapter } from './flask/index.js'
 import { springBootAdapter } from './springboot/index.js'
 import { vueSpaAdapter } from './vue-spa/index.js'
+import { reactRouterAdapter } from './reactrouter/index.js'
 import { remixAdapter } from './remix/index.js'
 import { angularAdapter } from './angular/index.js'
 
@@ -45,6 +46,7 @@ export function createDefaultRegistry(): AdapterRegistry {
   registry.register(flaskAdapter)
   registry.register(springBootAdapter)
   registry.register(vueSpaAdapter)
+  registry.register(reactRouterAdapter)
   registry.register(remixAdapter)
   registry.register(angularAdapter)
   return registry
