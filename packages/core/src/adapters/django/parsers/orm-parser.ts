@@ -42,6 +42,76 @@ function extractStringContent(node: import('web-tree-sitter').SyntaxNode): strin
   return undefined
 }
 
+const RELATION_FIELDS = new Set(['ForeignKey', 'OneToOneField'])
+
+function extractNullable(argListNode: import('web-tree-sitter').SyntaxNode | null): boolean {
+  if (argListNode === null) return false
+  for (let i = 0; i < argListNode.namedChildCount; i++) {
+    const arg = argListNode.namedChild(i)
+    if (arg === null || arg.type !== 'keyword_argument') continue
+    const nameNode = arg.childForFieldName('name')
+    const valueNode = arg.childForFieldName('value')
+    if (nameNode?.text === 'null' && valueNode?.text === 'True') return true
+  }
+  return false
+}
+
+function extractRelationTarget(argListNode: import('web-tree-sitter').SyntaxNode | null): string | undefined {
+  if (argListNode === null) return undefined
+  for (let i = 0; i < argListNode.namedChildCount; i++) {
+    const arg = argListNode.namedChild(i)
+    if (arg === null) continue
+    // keyword_argument는 건너뜀 (positional argument만)
+    if (arg.type === 'keyword_argument') continue
+    // string 노드
+    if (arg.type === 'string') {
+      const content = extractStringContent(arg)
+      if (content !== undefined) {
+        // 'app.Model' 형태에서 마지막 세그먼트만
+        const parts = content.split('.')
+        return parts[parts.length - 1]
+      }
+    }
+    // identifier 노드
+    if (arg.type === 'identifier') {
+      return arg.text
+    }
+    // attribute 노드 (e.g. auth.User)
+    if (arg.type === 'attribute') {
+      const parts = arg.text.split('.')
+      return parts[parts.length - 1]
+    }
+  }
+  return undefined
+}
+
+function extractDbTable(bodyNode: import('web-tree-sitter').SyntaxNode): string | undefined {
+  for (let i = 0; i < bodyNode.childCount; i++) {
+    const child = bodyNode.child(i)
+    if (child === null || child.type !== 'class_definition') continue
+    const nameNode = child.childForFieldName('name')
+    if (nameNode === null || nameNode.text !== 'Meta') continue
+    // Meta 클래스 바디 탐색
+    const metaBody = child.childForFieldName('body')
+    if (metaBody === null) continue
+    for (let j = 0; j < metaBody.childCount; j++) {
+      const stmt = metaBody.child(j)
+      if (stmt === null || stmt.type !== 'expression_statement') continue
+      const assign = stmt.child(0)
+      if (assign === null || assign.type !== 'assignment') continue
+      const left = assign.childForFieldName('left')
+      const right = assign.childForFieldName('right')
+      if (left === null || right === null) continue
+      if (left.text !== 'db_table') continue
+      // string 노드에서 값 추출
+      if (right.type === 'string') {
+        return extractStringContent(right)
+      }
+    }
+  }
+  return undefined
+}
+
 export async function parseDjangoOrmModels(
   repoRoot: string,
   analyzerVersion: string,
@@ -88,7 +158,13 @@ export async function parseDjangoOrmModels(
       const columns: ColumnDef[] = []
 
       const body = node.childForFieldName('body')
+      let tableName = className
+
       if (body !== null) {
+        // Meta 클래스에서 db_table 추출
+        const dbTable = extractDbTable(body)
+        if (dbTable !== undefined) tableName = dbTable
+
         for (let j = 0; j < body.childCount; j++) {
           const stmt = body.child(j)
           if (stmt === null || stmt.type !== 'expression_statement') continue
@@ -116,7 +192,16 @@ export async function parseDjangoOrmModels(
 
           if (fieldTypeName === undefined || !DJANGO_FIELD_TYPES.has(fieldTypeName)) continue
 
-          columns.push({ name: fieldName, type: fieldTypeName, nullable: false })
+          const argListNode = right.childForFieldName('arguments')
+          const nullable = extractNullable(argListNode)
+
+          let resolvedType = fieldTypeName
+          if (RELATION_FIELDS.has(fieldTypeName)) {
+            const target = extractRelationTarget(argListNode)
+            if (target !== undefined) resolvedType = `${fieldTypeName}→${target}`
+          }
+
+          columns.push({ name: fieldName, type: resolvedType, nullable })
         }
       }
 
@@ -129,8 +214,8 @@ export async function parseDjangoOrmModels(
 
       tables.push(
         createTableNode({
-          id: makeNodeId('table', relPath, className),
-          name: className,
+          id: makeNodeId('table', relPath, tableName),
+          name: tableName,
           columns,
           provenance,
           confidence: 'inferred',

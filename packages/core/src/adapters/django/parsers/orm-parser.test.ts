@@ -116,4 +116,49 @@ class Profile(models.Model):
     expect(tables).toHaveLength(1)
     expect(tables[0]?.name).toBe('Profile')
   })
+
+  it('null=True가 있는 필드는 nullable: true, 없으면 nullable: false', async () => {
+    await writeFile('api/models.py', `
+from django.db import models
+
+class User(models.Model):
+    name = models.CharField(max_length=100, null=True)
+    email = models.EmailField()
+`)
+    const tables = await parseDjangoOrmModels(tmpDir, 'test')
+    expect(tables).toHaveLength(1)
+    const cols = tables[0]?.columns ?? []
+    expect(cols.find(c => c.name === 'name')?.nullable).toBe(true)
+    expect(cols.find(c => c.name === 'email')?.nullable).toBe(false)
+  })
+
+  it('ForeignKey 첫 번째 인자에서 대상 모델명 추출', async () => {
+    await writeFile('api/models.py', `
+from django.db import models
+
+class Post(models.Model):
+    author = models.ForeignKey('User', on_delete=models.CASCADE)
+    related = models.OneToOneField(Profile, on_delete=models.CASCADE)
+`)
+    const tables = await parseDjangoOrmModels(tmpDir, 'test')
+    expect(tables).toHaveLength(1)
+    const cols = tables[0]?.columns ?? []
+    expect(cols.find(c => c.name === 'author')?.type).toBe('ForeignKey→User')
+    expect(cols.find(c => c.name === 'related')?.type).toBe('OneToOneField→Profile')
+  })
+
+  it('Meta 클래스 db_table 값을 테이블명으로 사용', async () => {
+    await writeFile('api/models.py', `
+from django.db import models
+
+class User(models.Model):
+    name = models.CharField(max_length=100)
+
+    class Meta:
+        db_table = 'auth_users'
+`)
+    const tables = await parseDjangoOrmModels(tmpDir, 'test')
+    expect(tables).toHaveLength(1)
+    expect(tables[0]?.name).toBe('auth_users')
+  })
 })
