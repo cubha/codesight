@@ -13,11 +13,13 @@ export class SvelteKitAdapter implements IAdapter {
   readonly parsingLevel = 'L1' as const
 
   async analyze(ctx: AdapterContext): Promise<AdapterResult> {
-    const { repoRoot, analyzerVersion } = ctx
+    const { repoRoot, analyzerVersion, stack } = ctx
+    const hasAnyTsOrm = stack.hasPrisma || stack.hasDrizzle || stack.hasTypeOrm
+
     const [routeNodes, components, tableNodes] = await Promise.all([
       parseRoutes(repoRoot, analyzerVersion),
       parseSvelteComponents(repoRoot, analyzerVersion),
-      detectTsOrmTables(repoRoot, analyzerVersion),
+      hasAnyTsOrm ? detectTsOrmTables(repoRoot, analyzerVersion) : Promise.resolve([]),
     ])
     return {
       routeNodes,

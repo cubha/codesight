@@ -17,13 +17,14 @@ export class NextJsAdapter implements IAdapter {
   readonly parsingLevel = 'L1' as const
 
   async analyze(ctx: AdapterContext): Promise<AdapterResult> {
-    const { repoRoot, analyzerVersion } = ctx
+    const { repoRoot, analyzerVersion, stack } = ctx
+    const hasAnyTsOrm = stack.hasPrisma || stack.hasDrizzle || stack.hasTypeOrm
 
     const [routeNodes, components, supabaseTables, ormTables] = await Promise.all([
       parseRoutes(repoRoot),
       parseComponents(repoRoot),
-      parseTables(repoRoot),
-      detectTsOrmTables(repoRoot, analyzerVersion),
+      stack.hasSupabase ? parseTables(repoRoot) : Promise.resolve([]),
+      hasAnyTsOrm ? detectTsOrmTables(repoRoot, analyzerVersion) : Promise.resolve([]),
     ])
     const tableNodes = [...supabaseTables, ...ormTables]
 
