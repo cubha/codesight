@@ -83,9 +83,14 @@ export async function parseNuxtComponents(
       const spec = imp.getModuleSpecifierValue()
       if (!spec.startsWith('.') && !spec.startsWith('~/') && !spec.startsWith('@/')) continue
 
+      // Only create edges for explicit .vue imports — extensionless or non-.vue are unverifiable
+      const specExt = path.extname(spec)
+      if (specExt !== '.vue') continue
+
       let resolvedRel: string
       if (spec.startsWith('~/') || spec.startsWith('@/')) {
-        resolvedRel = spec.replace(/^[~@]\//, '') + (spec.endsWith('.vue') ? '' : '.vue')
+        resolvedRel = spec.replace(/^[~@]\//, '')
+        if (!resolvedRel.endsWith('.vue')) resolvedRel += '.vue'
       } else {
         const resolved = path.resolve(path.dirname(filePath), spec)
         resolvedRel = path.relative(repoRoot, resolved).replace(/\\/g, '/')

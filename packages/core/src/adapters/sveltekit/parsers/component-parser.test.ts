@@ -51,6 +51,40 @@ describe('parseSvelteComponents', () => {
   })
 })
 
+describe('parseSvelteComponents — dangling import 방지 (B-3)', () => {
+  it('$lib/utils.ts import는 edge 생성 안 함', async () => {
+    const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'cv-sk-b3-'))
+    await fs.mkdir(path.join(tmpDir, 'src', 'routes'), { recursive: true })
+    await fs.writeFile(
+      path.join(tmpDir, 'src', 'routes', '+page.svelte'),
+      `<script>
+import { format } from '$lib/utils.ts'
+import helper from './helper.js'
+</script>
+<p>hello</p>`,
+    )
+    const result = await parseSvelteComponents(tmpDir, 'test')
+    expect(result.edges).toHaveLength(0)
+    await fs.rm(tmpDir, { recursive: true, force: true })
+  })
+
+  it('$lib/Button.svelte import는 edge 생성', async () => {
+    const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'cv-sk-b3v-'))
+    await fs.mkdir(path.join(tmpDir, 'src', 'routes'), { recursive: true })
+    await fs.writeFile(
+      path.join(tmpDir, 'src', 'routes', '+page.svelte'),
+      `<script>
+import Button from '$lib/Button.svelte'
+</script>
+<Button />`,
+    )
+    const result = await parseSvelteComponents(tmpDir, 'test')
+    expect(result.edges).toHaveLength(1)
+    expect(result.edges[0]?.kind).toBe('imports')
+    await fs.rm(tmpDir, { recursive: true, force: true })
+  })
+})
+
 describe('runtime 판정', () => {
   it('+page.svelte 단독 → runtime: client', async () => {
     const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'cv-rt-client-'))

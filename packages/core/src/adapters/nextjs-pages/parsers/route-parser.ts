@@ -12,14 +12,29 @@ import {
 const PAGE_EXTENSIONS = new Set(['.tsx', '.ts', '.jsx', '.js'])
 const EXCLUDE_DIRS = new Set(['.git', 'node_modules', '.next', 'dist', 'build'])
 
-function fileToRoute(relToPages: string): { urlPath: string; dynamicSegmentType: DynamicSegmentType } | null {
+function fileToRoute(relToPages: string): {
+  urlPath: string
+  dynamicSegmentType: DynamicSegmentType
+  routeFileKind: 'page' | 'route-handler'
+} | null {
   const ext = path.extname(relToPages)
   if (!PAGE_EXTENSIONS.has(ext)) return null
 
   let p = relToPages.slice(0, -ext.length)
 
-  // Skip API routes
-  if (p.startsWith('api/') || p.startsWith('api\\')) return null
+  // API routes → route-handler
+  const isApiRoute = p.startsWith('api/') || p.startsWith('api\\')
+  if (isApiRoute) {
+    // [param] → :param, [...param] → :param*, [[...param]] → :param?
+    p = p
+      .replace(/\[\[\.\.\.(\w+)\]\]/g, ':$1?')
+      .replace(/\[\.\.\.(\w+)\]/g, ':$1*')
+      .replace(/\[(\w+)\]/g, ':$1')
+    const urlPath = '/' + p.replace(/\\/g, '/')
+    const clean = urlPath.replace(/\/+$/, '') || '/'
+    const dynamicSegmentType: DynamicSegmentType = clean.includes(':') ? 'dynamic' : 'static'
+    return { urlPath: clean, dynamicSegmentType, routeFileKind: 'route-handler' as const }
+  }
 
   // index → /
   p = p.replace(/\/index$/, '').replace(/\\index$/, '').replace(/^index$/, '')
@@ -36,7 +51,7 @@ function fileToRoute(relToPages: string): { urlPath: string; dynamicSegmentType:
   const dynamicSegmentType: DynamicSegmentType =
     clean.includes(':') ? 'dynamic' : 'static'
 
-  return { urlPath: clean, dynamicSegmentType }
+  return { urlPath: clean, dynamicSegmentType, routeFileKind: 'page' as const }
 }
 
 function detectRenderingMode(source: string): RenderingMode {
@@ -105,10 +120,10 @@ export async function parseNextPagesRoutes(
 
     routes.push(
       createRouteNode({
-        id: makeNodeId('route', relPath, 'page'),
+        id: makeNodeId('route', relPath, routeInfo.routeFileKind),
         path: routeInfo.urlPath,
         filePath: relPath,
-        routeFileKind: 'page',
+        routeFileKind: routeInfo.routeFileKind,
         dynamicSegmentType: routeInfo.dynamicSegmentType,
         isGroupRoute: false,
         renderingMode,

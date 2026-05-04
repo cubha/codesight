@@ -53,3 +53,38 @@ describe('parseNuxtComponents', () => {
     await fs.rm(emptyDir, { recursive: true, force: true })
   })
 })
+
+describe('parseNuxtComponents — dangling import 방지 (B-2)', () => {
+  it('.ts import는 edge 생성 안 함', async () => {
+    const tmpDir2 = await fs.mkdtemp(path.join(os.tmpdir(), 'cv-nuxt-b2-'))
+    await fs.mkdir(path.join(tmpDir2, 'components'), { recursive: true })
+    await fs.writeFile(
+      path.join(tmpDir2, 'components', 'MyComp.vue'),
+      `<script>
+import utils from './utils'
+import helper from './helper.ts'
+</script>
+<template><div /></template>`,
+    )
+    const result = await parseNuxtComponents(tmpDir2, 'test')
+    // utils (extensionless) and helper.ts (non-.vue) → no edges
+    expect(result.edges).toHaveLength(0)
+    await fs.rm(tmpDir2, { recursive: true, force: true })
+  })
+
+  it('.vue import는 edge 생성', async () => {
+    const tmpDir2 = await fs.mkdtemp(path.join(os.tmpdir(), 'cv-nuxt-b2v-'))
+    await fs.mkdir(path.join(tmpDir2, 'components'), { recursive: true })
+    await fs.writeFile(
+      path.join(tmpDir2, 'components', 'Parent.vue'),
+      `<script>
+import Child from './Child.vue'
+</script>
+<template><div /></template>`,
+    )
+    const result = await parseNuxtComponents(tmpDir2, 'test')
+    expect(result.edges).toHaveLength(1)
+    expect(result.edges[0]?.kind).toBe('imports')
+    await fs.rm(tmpDir2, { recursive: true, force: true })
+  })
+})

@@ -140,8 +140,13 @@ export async function parseSvelteComponents(
 
       let resolvedRel: string
       if (spec.startsWith('$lib')) {
-        resolvedRel = spec.replace('$lib', 'src/lib') + '.svelte'
+        const libPath = spec.replace('$lib', 'src/lib')
+        const specExt = path.extname(libPath)
+        if (specExt !== '' && specExt !== '.svelte') continue
+        resolvedRel = libPath.endsWith('.svelte') ? libPath : libPath + '.svelte'
       } else {
+        const relExt = path.extname(spec)
+        if (relExt !== '' && relExt !== '.svelte') continue
         const resolved = path.resolve(path.dirname(filePath), spec)
         resolvedRel = path.relative(repoRoot, resolved).replace(/\\/g, '/')
         if (!resolvedRel.endsWith('.svelte')) resolvedRel += '.svelte'

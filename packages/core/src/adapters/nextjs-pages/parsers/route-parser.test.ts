@@ -100,4 +100,27 @@ export default function Mixed() {}
     const routes = await parseNextPagesRoutes(tmpDir, 'test@0.1')
     expect(routes[0]?.renderingMode).toBe('SSR')
   })
+
+  it('pages/api/* 파일을 route-handler로 추출한다 (B-7)', async () => {
+    await writeFile('pages/api/users.ts', `
+export default function handler(req, res) {
+  res.json([])
+}
+`)
+    const routes = await parseNextPagesRoutes(tmpDir, 'test@0.1')
+    const apiRoute = routes.find(r => r.path === '/api/users')
+    expect(apiRoute).toBeDefined()
+    expect(apiRoute?.routeFileKind).toBe('route-handler')
+  })
+
+  it('pages/api/[id].ts → /api/:id dynamic route-handler', async () => {
+    await writeFile('pages/api/users/[id].ts', `
+export default function handler(req, res) {}
+`)
+    const routes = await parseNextPagesRoutes(tmpDir, 'test@0.1')
+    const apiRoute = routes.find(r => r.path === '/api/users/:id')
+    expect(apiRoute).toBeDefined()
+    expect(apiRoute?.routeFileKind).toBe('route-handler')
+    expect(apiRoute?.dynamicSegmentType).toBe('dynamic')
+  })
 })

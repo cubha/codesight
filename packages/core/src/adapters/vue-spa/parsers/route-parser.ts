@@ -31,6 +31,7 @@ async function findTsFiles(repoRoot: string): Promise<string[]> {
 
 function extractPathsFromRoutesArray(
   arrayNode: import('ts-morph').Node,
+  parentPath = '',
 ): string[] {
   const paths: string[] = []
   if (!arrayNode.isKind(SyntaxKind.ArrayLiteralExpression)) return paths
@@ -39,18 +40,28 @@ function extractPathsFromRoutesArray(
     if (!el.isKind(SyntaxKind.ObjectLiteralExpression)) continue
 
     const pathProp = el.asKindOrThrow(SyntaxKind.ObjectLiteralExpression).getProperty('path')
+    let rawSegment = ''
     if (pathProp?.isKind(SyntaxKind.PropertyAssignment)) {
       const init = pathProp.asKindOrThrow(SyntaxKind.PropertyAssignment).getInitializer()
       if (init?.isKind(SyntaxKind.StringLiteral)) {
-        paths.push(init.asKindOrThrow(SyntaxKind.StringLiteral).getLiteralValue())
+        rawSegment = init.asKindOrThrow(SyntaxKind.StringLiteral).getLiteralValue()
       }
     }
+
+    // 절대 경로는 그대로, 상대 경로는 부모와 결합 (Vue Router nested route 규약)
+    const combined = rawSegment.startsWith('/')
+      ? rawSegment
+      : parentPath
+        ? (parentPath + '/' + rawSegment).replace('//', '/')
+        : rawSegment
+    const normalized = combined || '/'
+    paths.push(normalized)
 
     // Handle children: [] for nested routes
     const childrenProp = el.asKindOrThrow(SyntaxKind.ObjectLiteralExpression).getProperty('children')
     if (childrenProp?.isKind(SyntaxKind.PropertyAssignment)) {
       const childInit = childrenProp.asKindOrThrow(SyntaxKind.PropertyAssignment).getInitializer()
-      if (childInit !== undefined) paths.push(...extractPathsFromRoutesArray(childInit))
+      if (childInit !== undefined) paths.push(...extractPathsFromRoutesArray(childInit, normalized))
     }
   }
 
