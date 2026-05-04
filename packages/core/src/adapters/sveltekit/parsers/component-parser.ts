@@ -13,7 +13,7 @@ import {
 
 const EXCLUDE_DIRS = new Set(['.git', 'node_modules', '.svelte-kit', 'dist', 'build'])
 const SVELTE_SCRIPT_RE = /<script(?:\s(?!context)[^>]*)?>(?<content>[\s\S]*?)<\/script>/
-const SERVER_FILE_RE = /^(.+)\.server\.(ts|js)$/
+const SERVER_FILE_RE = /^(\+(?:page|layout))\.server\.(ts|js)$/
 
 interface CollectedFiles {
   svelteFiles: string[]
