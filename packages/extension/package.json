@@ -1,8 +1,8 @@
 {
   "name": "codebase-arch-viz",
   "displayName": "Codebase Architecture Visualizer",
-  "description": "Routes for 7 frameworks out of the box. Full diagrams for Next.js + Supabase; add Claude API key to fill components & DB on other stacks.",
-  "version": "0.4.4",
+  "description": "Routes for 12 frameworks out of the box. Full routes+components+DB for all supported stacks (Prisma, Drizzle, TypeORM, Django ORM, SQLAlchemy, JPA). No API key needed.",
+  "version": "0.6.0",
   "publisher": "cubha",
   "license": "MIT",
   "icon": "media/icon.png",
@@ -36,7 +36,14 @@
     "nestjs",
     "django",
     "fastapi",
-    "spring"
+    "flask",
+    "spring",
+    "vue",
+    "angular",
+    "remix",
+    "prisma",
+    "drizzle",
+    "typeorm"
   ],
   "activationEvents": [
     "onStartupFinished",

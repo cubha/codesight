@@ -1,5 +1,39 @@
 # Changelog
 
+## [0.6.0] — 2026-05-04
+
+### Added
+
+**5 new framework adapters (static analysis, no API key):**
+- **FlaskAdapter** — `@app.route` + Blueprint `url_prefix` synthesis via tree-sitter. `<int:user_id>` → `:user_id`.
+- **Next.js Pages Router adapter** — `pages/` directory file-based routing. `[param]` → `:param`, `[...param]` → `:param*`.
+- **Vue SPA adapter** — `createRouter({ routes: [...] })` array parsed via ts-morph. Lazy `import()` paths included.
+- **Remix adapter** — `app/routes/` file-based. `$id` → `:id`, `_index.tsx` → `/`.
+- **Angular adapter** — `provideRouter(routes)` / `RouterModule.forRoot(routes)` parsed via ts-morph. Cross-file `Routes` variable resolution. `loadChildren` path literals included.
+
+**DB Multi-ORM support (all TS adapters):**
+- **Prisma** — `schema.prisma` model extraction via `@mrleebo/prisma-ast`. Relation fields excluded. DB tab populated for Next.js, NestJS, SvelteKit.
+- **Drizzle** — `pgTable()` / `sqliteTable()` call extraction via ts-morph (object + callback form).
+- **TypeORM** — `@Entity` / `@Column` decorator extraction via ts-morph. `@PrimaryGeneratedColumn` flagged as PK.
+
+**Backend DB support (Python/Java adapters):**
+- **Django ORM** — `models.Model` subclasses + `CharField` / `ForeignKey` etc. from `models.py` via tree-sitter.
+- **SQLAlchemy** — `Base` subclasses + `Column()` from FastAPI projects via tree-sitter.
+- **JPA** — `@Entity` + `@Column` + `@Table(name=...)` from Spring Boot projects via tree-sitter.
+
+**Component graph expansion:**
+- **Nuxt** — `.vue` SFC import graph (script block extracted via regex → ts-morph). `~/` and `@/` aliases resolved.
+- **SvelteKit** — `.svelte` SFC import graph. `$lib/` aliases resolved.
+- **Django** — `View` / `ViewSet` subclasses as component nodes.
+- **FastAPI** — `BaseModel` subclasses as component nodes.
+- **Spring Boot** — `@Service` / `@Component` / `@Repository` classes as component nodes.
+- **NestJS** — already had component graph; now also produces `tableNodes` via TypeORM parser.
+
+### Changed
+
+- `FrameworkKind` type expanded: `flask`, `vue-spa`, `remix`, `angular` added.
+- Framework count: 7 → 12 static-analysis adapters.
+
 ## [0.4.0] — 2026-05-03
 
 ### Added
