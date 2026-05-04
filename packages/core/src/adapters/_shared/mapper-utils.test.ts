@@ -119,4 +119,18 @@ describe('buildMapperEdges', () => {
     expect(result[0]?.from).toBe(route.id)
     expect(result[0]?.to).toBe(table.id)
   })
+
+  it('superusers 파일명은 users 테이블과 매칭 안 됨 (토큰 경계)', () => {
+    const route = makeRoute('src/routes/superusers.ts')
+    const table = makeTable('users')
+    const result = buildMapperEdges([route], [], [table], 'codebase-viz@0.1.0')
+    expect(result).toEqual([])
+  })
+
+  it('디렉토리 경로 매칭은 하지 않음 — route.ts in users/ dir는 users 테이블과 무관', () => {
+    const route = makeRoute('src/modules/users/route.ts')
+    const table = makeTable('users')
+    const result = buildMapperEdges([route], [], [table], 'codebase-viz@0.1.0')
+    expect(result).toEqual([])
+  })
 })

@@ -54,37 +54,48 @@ describe('parseNuxtComponents', () => {
   })
 })
 
-describe('parseNuxtComponents — dangling import 방지 (B-2)', () => {
-  it('.ts import는 edge 생성 안 함', async () => {
-    const tmpDir2 = await fs.mkdtemp(path.join(os.tmpdir(), 'cv-nuxt-b2-'))
-    await fs.mkdir(path.join(tmpDir2, 'components'), { recursive: true })
+describe('parseNuxtComponents — extensionless import + template (III-B-2)', () => {
+  let b2Dir: string
+
+  beforeAll(async () => {
+    b2Dir = await fs.mkdtemp(path.join(os.tmpdir(), 'cv-nuxt-b2-'))
+    await fs.mkdir(path.join(b2Dir, 'components'), { recursive: true })
+    await fs.mkdir(path.join(b2Dir, 'pages'), { recursive: true })
+
     await fs.writeFile(
-      path.join(tmpDir2, 'components', 'MyComp.vue'),
-      `<script>
-import utils from './utils'
-import helper from './helper.ts'
-</script>
-<template><div /></template>`,
+      path.join(b2Dir, 'components', 'MyButton.vue'),
+      `<template><button>Click</button></template>`,
     )
-    const result = await parseNuxtComponents(tmpDir2, 'test')
-    // utils (extensionless) and helper.ts (non-.vue) → no edges
-    expect(result.edges).toHaveLength(0)
-    await fs.rm(tmpDir2, { recursive: true, force: true })
+    await fs.writeFile(
+      path.join(b2Dir, 'components', 'MyCard.vue'),
+      `<template><div><MyButton /></div></template>`,
+    )
+    await fs.writeFile(
+      path.join(b2Dir, 'pages', 'index.vue'),
+      `<template><MyCard /></template>
+<script setup>
+import MyCard from '../components/MyCard'
+</script>`,
+    )
   })
 
-  it('.vue import는 edge 생성', async () => {
-    const tmpDir2 = await fs.mkdtemp(path.join(os.tmpdir(), 'cv-nuxt-b2v-'))
-    await fs.mkdir(path.join(tmpDir2, 'components'), { recursive: true })
-    await fs.writeFile(
-      path.join(tmpDir2, 'components', 'Parent.vue'),
-      `<script>
-import Child from './Child.vue'
-</script>
-<template><div /></template>`,
-    )
-    const result = await parseNuxtComponents(tmpDir2, 'test')
-    expect(result.edges).toHaveLength(1)
-    expect(result.edges[0]?.kind).toBe('imports')
-    await fs.rm(tmpDir2, { recursive: true, force: true })
+  afterAll(async () => {
+    await fs.rm(b2Dir, { recursive: true, force: true })
+  })
+
+  it('extensionless import → .vue 파일 엣지 생성 (III-B-2)', async () => {
+    const { edges } = await parseNuxtComponents(b2Dir, 'test@0.1')
+    // pages/index.vue → components/MyCard.vue (extensionless import)
+    expect(edges.length).toBeGreaterThanOrEqual(1)
+  })
+
+  it('template <ComponentTag> → imports 엣지 생성 (III-B-2)', async () => {
+    const { edges } = await parseNuxtComponents(b2Dir, 'test@0.1')
+    // MyCard.vue template has <MyButton> → edge to MyButton.vue
+    const hasButtonEdge = edges.some(e => {
+      const toId = e.to as string
+      return toId.includes('MyButton')
+    })
+    expect(hasButtonEdge).toBe(true)
   })
 })

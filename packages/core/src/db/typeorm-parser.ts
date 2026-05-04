@@ -14,6 +14,7 @@ const COLUMN_DECORATORS = new Set([
   'Column', 'PrimaryColumn', 'PrimaryGeneratedColumn',
   'CreateDateColumn', 'UpdateDateColumn', 'DeleteDateColumn',
 ])
+const RELATION_DECORATORS = new Set(['ManyToOne', 'OneToOne'])
 
 async function findTsFiles(repoRoot: string): Promise<string[]> {
   const results: string[] = []
@@ -100,29 +101,50 @@ export async function parseTypeOrmEntities(
 
       for (const prop of cls.getProperties()) {
         const colDecorator = prop.getDecorators().find(d => COLUMN_DECORATORS.has(d.getName()))
-        if (colDecorator === undefined) continue
+        if (colDecorator !== undefined) {
+          let colType = prop.getTypeNode()?.getText() ?? 'unknown'
+          const isPrimary = colDecorator.getName() === 'PrimaryColumn'
+            || colDecorator.getName() === 'PrimaryGeneratedColumn'
 
-        let colType = prop.getTypeNode()?.getText() ?? 'unknown'
-        const isPrimary = colDecorator.getName() === 'PrimaryColumn'
-          || colDecorator.getName() === 'PrimaryGeneratedColumn'
-
-        const args = colDecorator.getArguments()
-        if (args.length > 0) {
-          const first = args[0]!
-          if (first.isKind(SyntaxKind.StringLiteral)) {
-            colType = first.asKindOrThrow(SyntaxKind.StringLiteral).getLiteralValue()
-          } else if (first.isKind(SyntaxKind.ObjectLiteralExpression)) {
-            const typeProp = first.asKindOrThrow(SyntaxKind.ObjectLiteralExpression).getProperty('type')
-            if (typeProp?.isKind(SyntaxKind.PropertyAssignment)) {
-              const init = typeProp.asKindOrThrow(SyntaxKind.PropertyAssignment).getInitializer()
-              if (init?.isKind(SyntaxKind.StringLiteral)) {
-                colType = init.asKindOrThrow(SyntaxKind.StringLiteral).getLiteralValue()
+          const args = colDecorator.getArguments()
+          if (args.length > 0) {
+            const first = args[0]!
+            if (first.isKind(SyntaxKind.StringLiteral)) {
+              colType = first.asKindOrThrow(SyntaxKind.StringLiteral).getLiteralValue()
+            } else if (first.isKind(SyntaxKind.ObjectLiteralExpression)) {
+              const typeProp = first.asKindOrThrow(SyntaxKind.ObjectLiteralExpression).getProperty('type')
+              if (typeProp?.isKind(SyntaxKind.PropertyAssignment)) {
+                const init = typeProp.asKindOrThrow(SyntaxKind.PropertyAssignment).getInitializer()
+                if (init?.isKind(SyntaxKind.StringLiteral)) {
+                  colType = init.asKindOrThrow(SyntaxKind.StringLiteral).getLiteralValue()
+                }
               }
             }
           }
+
+          columns.push({ name: prop.getName(), type: colType, nullable: false, isPrimaryKey: isPrimary })
+          continue
         }
 
-        columns.push({ name: prop.getName(), type: colType, nullable: false, isPrimaryKey: isPrimary })
+        const relDecorator = prop.getDecorators().find(d => RELATION_DECORATORS.has(d.getName()))
+        if (relDecorator !== undefined) {
+          const args = relDecorator.getArguments()
+          const first = args[0]
+          let targetEntity: string | undefined
+          if (first !== undefined) {
+            const text = first.getText()
+            const m = text.match(/=>\s*(\w+)/)
+            if (m !== null) targetEntity = m[1]!
+          }
+          if (targetEntity !== undefined) {
+            columns.push({
+              name: prop.getName(),
+              type: relDecorator.getName(),
+              nullable: true,
+              references: { table: targetEntity, column: 'id' },
+            })
+          }
+        }
       }
 
       tables.push(

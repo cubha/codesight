@@ -10,7 +10,13 @@ import {
 import { createPythonParser } from '../../_shared/tree-sitter-loader.js'
 
 const EXCLUDE_DIRS = new Set(['__pycache__', '.git', 'node_modules', 'venv', '.venv', 'env'])
+
+// Flask-SQLAlchemy 베이스 이름: 단순 identifier 형태
 const SQLALCHEMY_BASES = new Set(['Base', 'DeclarativeBase', 'Model'])
+
+// attribute 형태의 베이스 전체 텍스트 (예: db.Model)
+const SQLALCHEMY_ATTR_BASES = new Set(['db.Model', 'Base.Model'])
+
 const SQLALCHEMY_COLUMN_TYPES = new Set([
   'String', 'Integer', 'Float', 'Boolean', 'DateTime', 'Date', 'Text', 'JSON',
   'BigInteger', 'Numeric', 'LargeBinary', 'UUID', 'Enum',
@@ -83,7 +89,6 @@ function parsePrimaryKey(callNode: import('web-tree-sitter').SyntaxNode): boolea
 /**
  * Mapped[T] 타입 어노테이션 노드에서 nullable 여부를 추론한다.
  * Optional[T] 또는 T | None 패턴이면 true, 구체 타입이면 false, Mapped 없으면 undefined.
- * tree-sitter Python에서 Mapped[T]는 generic_type 노드로 표현된다.
  */
 function parseMappedNullable(typeAnnotationNode: import('web-tree-sitter').SyntaxNode | null): boolean | undefined {
   if (typeAnnotationNode === null) return undefined
@@ -147,13 +152,10 @@ function parseColumnType(
     const arg = argList.child(i)
     if (arg === null) continue
 
-    // keyword_argument는 건너뜀
     if (arg.type === 'keyword_argument') continue
-    // 쉼표·괄호 등 punctuation은 건너뜀
     if (arg.type === ',') continue
 
     if (arg.type === 'call') {
-      // ForeignKey(...) call 여부 확인
       const funcNode = arg.childForFieldName('function')
       const callName =
         funcNode?.type === 'attribute' ? funcNode.lastChild?.text : funcNode?.text
@@ -161,7 +163,6 @@ function parseColumnType(
         hasForeignKey = true
         continue
       }
-      // 다른 call 형태 (예: Mapped[...]) — positional 타입으로 사용하지 않음
       continue
     }
 
@@ -180,24 +181,44 @@ function parseColumnType(
   return hasForeignKey ? `${firstPositionalType}→FK` : firstPositionalType
 }
 
-export async function parseSqlAlchemyModels(
+/**
+ * 클래스의 베이스가 Flask-SQLAlchemy 모델 베이스인지 확인한다.
+ * - identifier 노드: Base, DeclarativeBase, Model (SQLALCHEMY_BASES)
+ * - attribute 노드: db.Model 등 (전체 텍스트 비교)
+ */
+function isFlaskModelBase(baseNode: import('web-tree-sitter').SyntaxNode): boolean {
+  if (baseNode.type === 'identifier') {
+    return SQLALCHEMY_BASES.has(baseNode.text)
+  }
+  if (baseNode.type === 'attribute') {
+    // 전체 텍스트 비교 (예: "db.Model")
+    return SQLALCHEMY_ATTR_BASES.has(baseNode.text)
+  }
+  return false
+}
+
+export async function parseFlaskSqlAlchemyModels(
   repoRoot: string,
   analyzerVersion: string,
 ): Promise<TableNode[]> {
   const pyFiles = await findPyFiles(repoRoot)
-  const modelFiles = pyFiles.filter(f => {
-    // check heuristic - will read content below
-    return true
-  })
 
   const parser = await createPythonParser()
   const tables: TableNode[] = []
 
-  for (const filePath of modelFiles) {
+  for (const filePath of pyFiles) {
     const source = await fs.readFile(filePath, 'utf-8').catch(() => null)
     if (source === null) continue
+
+    // 파일 필터: SQLAlchemy 관련 코드가 없으면 스킵
+    if (
+      !source.includes('SQLAlchemy') &&
+      !source.includes('db.Model') &&
+      !source.includes('Base')
+    ) continue
+
+    // Column 정의가 없으면 스킵
     if (!source.includes('Column') && !source.includes('mapped_column')) continue
-    if (!source.includes('Base') && !source.includes('DeclarativeBase')) continue
 
     const relPath = path.relative(repoRoot, filePath).replace(/\\/g, '/')
     const tree = parser.parse(source)
@@ -215,7 +236,7 @@ export async function parseSqlAlchemyModels(
       let isModel = false
       for (let j = 0; j < baseClause.childCount; j++) {
         const base = baseClause.child(j)
-        if (base !== null && SQLALCHEMY_BASES.has(base.text)) {
+        if (base !== null && isFlaskModelBase(base)) {
           isModel = true
           break
         }
@@ -224,7 +245,7 @@ export async function parseSqlAlchemyModels(
 
       const className = nameNode.text
       const columns: ColumnDef[] = []
-      let tableName: string = className // 기본값: 클래스명
+      let tableName: string = className
 
       const body = node.childForFieldName('body')
       if (body !== null) {
@@ -291,7 +312,7 @@ export async function parseSqlAlchemyModels(
       const provenance: Provenance = {
         file: relPath,
         line: node.startPosition.row + 1,
-        adapter: 'sqlalchemy-orm-parser@0.1',
+        adapter: 'flask-orm-parser@0.1',
         analyzerVersion,
       }
 
@@ -304,7 +325,7 @@ export async function parseSqlAlchemyModels(
           columns,
           provenance,
           confidence: 'inferred',
-          inferenceChain: [`sqlalchemy: Base subclass ${className} in ${relPath}`],
+          inferenceChain: [`flask-sqlalchemy: db.Model subclass ${className} in ${relPath}`],
         }),
       )
     }

@@ -5,7 +5,7 @@
 [![Downloads](https://img.shields.io/visual-studio-marketplace/d/cubha.codebase-arch-viz)](https://marketplace.visualstudio.com/items?itemName=cubha.codebase-arch-viz)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green)](https://github.com/cubha/codesight/blob/master/LICENSE)
 
-**Instant architecture diagrams for 12 frameworks — no API key needed.**  
+**Instant architecture diagrams for 13 frameworks — no API key needed.**  
 Available on **VS Code**, **Cursor**, **VSCodium**, and any editor using the Open VSX registry.
 
 CodeSight analyzes your project statically and renders three interactive diagrams inside your editor: route hierarchy with HTTP methods, component trees, and DB schema with mapper connections.
@@ -36,57 +36,50 @@ Table schema with columns, nullable flags, FK targets, and which pages query eac
 | Framework | Level | Routes | Components | DB |
 |---|---|---|---|---|
 | **Next.js App Router** | **L3** | ✅ SSR/SSG/ISR/CSR | ✅ `.tsx` import graph | ✅ Supabase · Prisma · Drizzle · TypeORM |
-| **NestJS** | **L2** | ✅ `GET/POST` labels | ✅ Controllers · Services · Modules | ✅ TypeORM entities |
-| **Django** | **L2** | ✅ `path()` / `re_path()` | ✅ View / ViewSet classes | ✅ `models.Model` + nullable/FK/db_table |
+| **NestJS** | **L2** | ✅ `GET/POST` labels | ✅ Controllers · Services · Modules | ✅ TypeORM entities + FK relations |
+| **Django** | **L2** | ✅ CBV/FBV `GET/POST` detection | ✅ View / ViewSet classes | ✅ `models.Model` + nullable/FK/db_table |
 | **FastAPI** | **L2** | ✅ `GET/POST` labels | ✅ Pydantic schemas | ✅ SQLAlchemy + nullable/type/__tablename__ |
 | **Spring Boot** | **L2** | ✅ `GET/POST` labels | ✅ `@Service` / `@Repository` | ✅ JPA `@Entity` + @JoinColumn/nullable |
-| **Nuxt** | **L2** | ✅ `pages/` | ✅ `.vue` SFC import graph | — |
-| **SvelteKit** | **L2** | ✅ `+page`/`+layout`/`+server` | ✅ `.svelte` + runtime (client/shared/server) | ✅ Prisma · Drizzle (conditional) |
-| **Next.js Pages Router** | **L1** | ✅ SSG/ISR/SSR detection | — | — |
-| **Remix** | **L1** | ✅ nested folder routes | — | — |
-| **Vue SPA** | **L1** | ✅ `createRouter()` | — | — |
-| **Angular** | **L1** | ✅ `provideRouter()` | — | — |
-| **Flask** | **L1** | ✅ Blueprint routes | — | — |
+| **Flask** | **L2** | ✅ Blueprint routes | ✅ View classes | ✅ SQLAlchemy (Base / db.Model) |
+| **SvelteKit** | **L2** | ✅ `+page`/`+layout`/`+server` | ✅ `.svelte` + runtime tags | ✅ Supabase · Prisma · Drizzle · TypeORM |
+| **Nuxt** | **L2** | ✅ `pages/` | ✅ `.vue` SFC import graph | ✅ Supabase · Prisma · Drizzle · TypeORM |
+| **Next.js Pages Router** | **L2** | ✅ SSG/ISR/SSR detection | ✅ Component graph | ✅ Supabase · Prisma · Drizzle · TypeORM |
+| **Remix** | **L2** | ✅ nested folder routes | ✅ Component graph | ✅ Supabase · Prisma · Drizzle · TypeORM |
+| **React Router** | **L2** | ✅ `createBrowserRouter()` | ✅ Import chain (1-depth) | ✅ Supabase · Prisma · Drizzle · TypeORM |
+| **Vue SPA** | **L2** | ✅ `createRouter()` | ✅ Component graph | ✅ Supabase · Prisma · Drizzle · TypeORM |
+| **Angular** | **L2** | ✅ `provideRouter()` | ✅ Template-based renders | ✅ Supabase · Prisma · Drizzle · TypeORM |
 
-**L3** = all 3 tabs · **L2** = routes + components or DB · **L1** = routes only
+**L3** = all 3 tabs always · **L2** = routes + components + DB (DB shown when project uses a supported ORM) · **L1** = routes only
 
 Frameworks not in this list (Express, Hono, Rails, Go, etc.) use **LLM primary** mode when an Anthropic API key is provided.
 
 ---
 
-## ✨ What's new in v0.7.0
+## ✨ What's new in v0.8.0
 
-### HTTP method labels in diagrams
-Backend routes now show method badges in the Rendering Architecture tab:
-```
-GET /api/users · SSR
-POST /api/users · SSR
-DELETE /api/users/:id · SSR
-```
-Supported for NestJS (`@Get`, `@Post`), FastAPI (`@router.get`), and Spring Boot (`@GetMapping`, `@PostMapping`).
+### React Router — 13th static-analysis adapter
+`createBrowserRouter()` and `createHashRouter()` route arrays parsed statically. `Component:` and `lazy:` properties resolved. 1-depth import chain tracked for sub-component edges.
 
-### SvelteKit component runtime detection
-Components are now tagged `client`, `shared`, or `server`:
-- `+page.svelte` alone → `client`
-- `+page.svelte` + `+page.server.ts` → `shared`
-- `+page.server.ts` alone → `server`
+### DB (Tab3) connected for all 13 adapters
+Every adapter now populates the DB–Screen tab when the project uses a supported ORM:
 
-### Remix nested route support
-Folder-based nested routes are now scanned recursively:
-```
-app/routes/users/_index.tsx  → /users
-app/routes/users/$id.tsx     → /users/:id
-```
-
-### Richer ORM column metadata
-| ORM | New fields |
+| Adapter group | ORM support |
 |---|---|
-| Django ORM | `null=True` → nullable, `ForeignKey('User')` → FK target, `Meta.db_table` → table name |
-| SQLAlchemy | `nullable=True/False`, actual column type (String/Integer/…), `__tablename__` |
-| JPA | `@Column(nullable=false)`, `@JoinColumn(name="…")` as FK column |
+| All TS adapters (Next.js, Nuxt, SvelteKit, Remix, React Router, Vue SPA, Angular, NestJS, Next.js Pages) | Supabase · Prisma · Drizzle · TypeORM |
+| Flask | SQLAlchemy (`Base` / `db.Model`) |
+| FastAPI | SQLAlchemy |
+| Django | Django ORM |
+| Spring Boot | JPA |
 
-### DB–Screen mapper connections (SvelteKit + NestJS)
-SvelteKit and NestJS routes/components are now connected to their DB tables in the DB–Screen tab when ORM tables are detected.
+### FK reference tracking
+- **TypeORM**: `@ManyToOne` / `@OneToOne` decorators now produce `ColumnDef.references` — FK targets shown as arrows in the DB–Screen
+- **Django ORM**: `ForeignKey('Model')` first argument now mapped to `ColumnDef.references`
+
+### Django CBV HTTP method detection
+Class-based views (`class UserView(View): def get(self, request)`) now emit `httpMethod: 'GET'` on route nodes. `def post` → `POST`, `def put` → `PUT`, etc.
+
+### Angular template-based component graph
+`@Component.template` strings parsed for selector usage (`<app-child>`). Builds renders edges between parent and child components without requiring explicit imports.
 
 ---
 
@@ -99,7 +92,7 @@ SvelteKit and NestJS routes/components are now connected to their DB tables in t
 | **DB–Screen** | Tables · columns with types/nullable · FK targets · mapper connections to routes |
 
 **Sidebar panel**
-- Detected framework, parsing level (L1/L2/L3), route/table count, last cached time
+- Detected framework, parsing level (L2/L3), route/table count, last cached time
 - **Analyze** → **Re-analyze** button
 - **Open Viewer** — opens the diagram panel
 
@@ -107,7 +100,7 @@ SvelteKit and NestJS routes/components are now connected to their DB tables in t
 
 | Mode | What you get | API key |
 |---|---|---|
-| **Static analysis** | Full L3 for Next.js App Router. L2 routes+components+DB for NestJS/Django/FastAPI/Spring/Nuxt/SvelteKit. L1 routes for Remix/Vue/Angular/Flask/Pages. | Not required |
+| **Static analysis** | Full L3 for Next.js App Router. L2 routes+components+DB for all 12 other adapters (DB shown when ORM detected). | Not required |
 | **LLM-enhanced** (BYOK) | Fills gaps the static parser can't reach; infers dynamic route patterns | Required |
 
 **Quality-of-life**

@@ -30,6 +30,120 @@ async function findUrlFiles(repoRoot: string): Promise<string[]> {
   return results
 }
 
+async function findViewFiles(repoRoot: string): Promise<string[]> {
+  const results: string[] = []
+  async function recurse(dir: string): Promise<void> {
+    const entries = await fs.readdir(dir, { withFileTypes: true }).catch(() => null)
+    if (entries === null) return
+    for (const entry of entries) {
+      const fullPath = path.join(dir, entry.name)
+      if (entry.isDirectory()) {
+        if (!EXCLUDE_DIRS.has(entry.name)) await recurse(fullPath)
+      } else if (entry.isFile() && (entry.name === 'views.py' || entry.name.includes('views'))) {
+        results.push(fullPath)
+      }
+    }
+  }
+  await recurse(repoRoot)
+  return results
+}
+
+// views.py에서 @api_view([...]) 데코레이터가 있는 함수 → HTTP methods 맵 생성
+async function buildApiViewMethodMap(
+  repoRoot: string,
+  parser: Parser,
+): Promise<Map<string, string>> {
+  const methodMap = new Map<string, string>()
+  const viewFiles = await findViewFiles(repoRoot)
+
+  for (const filePath of viewFiles) {
+    const source = await fs.readFile(filePath, 'utf-8').catch(() => null)
+    if (source === null || !source.includes('@api_view')) continue
+
+    const tree = parser.parse(source)
+
+    for (let i = 0; i < tree.rootNode.childCount; i++) {
+      const node = tree.rootNode.child(i)
+      if (node === null || node.type !== 'decorated_definition') continue
+
+      let apiViewMethods: string | undefined
+      let funcName: string | undefined
+
+      for (let j = 0; j < node.childCount; j++) {
+        const child = node.child(j)
+        if (child === null) continue
+
+        if (child.type === 'decorator') {
+          const m = child.text.match(/@api_view\(\[([^\]]+)\]\)/)
+          if (m !== null) {
+            apiViewMethods = m[1]!
+              .replace(/['"]/g, '')
+              .split(',')
+              .map((s: string) => s.trim().toUpperCase())
+              .filter(Boolean)
+              .join(',')
+          }
+        } else if (child.type === 'function_definition') {
+          const nameNode = child.childForFieldName('name')
+          funcName = nameNode?.text
+        }
+      }
+
+      if (funcName !== undefined && apiViewMethods !== undefined) {
+        methodMap.set(funcName, apiViewMethods)
+      }
+    }
+  }
+
+  return methodMap
+}
+
+// views.py에서 CBV(Class Based View) def get/post/... → HTTP methods 맵 생성
+async function buildCbvMethodMap(
+  repoRoot: string,
+  parser: Parser,
+): Promise<Map<string, string>> {
+  const methodMap = new Map<string, string>()
+  const viewFiles = await findViewFiles(repoRoot)
+
+  const HTTP_METHODS = new Set(['get', 'post', 'put', 'patch', 'delete', 'head', 'options'])
+
+  for (const filePath of viewFiles) {
+    const source = await fs.readFile(filePath, 'utf-8').catch(() => null)
+    if (source === null) continue
+
+    const tree = parser.parse(source)
+
+    for (let i = 0; i < tree.rootNode.childCount; i++) {
+      const node = tree.rootNode.child(i)
+      if (node === null || node.type !== 'class_definition') continue
+
+      const nameNode = node.childForFieldName('name')
+      if (nameNode === null) continue
+      const className = nameNode.text
+
+      const body = node.childForFieldName('body')
+      if (body === null) continue
+
+      const methods: string[] = []
+      for (let j = 0; j < body.childCount; j++) {
+        const stmt = body.child(j)
+        if (stmt === null || stmt.type !== 'function_definition') continue
+        const funcName = stmt.childForFieldName('name')?.text
+        if (funcName !== undefined && HTTP_METHODS.has(funcName)) {
+          methods.push(funcName.toUpperCase())
+        }
+      }
+
+      if (methods.length > 0) {
+        methodMap.set(className, methods.join(','))
+      }
+    }
+  }
+
+  return methodMap
+}
+
 function normalizeDjangoPattern(pattern: string): { urlPath: string; dynamicSegmentType: DynamicSegmentType } {
   const normalized = pattern
     .replace(/<\w+:(\w+)>/g, ':$1')
@@ -96,15 +210,51 @@ interface FileData {
   includes: IncludeEntry[]
 }
 
+function extractViewName(node: Parser.SyntaxNode): string | undefined {
+  // path('url/', views.func_name) or path('url/', func_name)
+  if (node.type === 'identifier') return node.text
+  if (node.type === 'attribute') {
+    const last = node.child(node.childCount - 1)
+    return last?.text
+  }
+  return undefined
+}
+
+function extractCbvClassName(node: Parser.SyntaxNode): string | undefined {
+  // views.UserView.as_view() 또는 UserView.as_view() 패턴
+  if (node.type !== 'call') return undefined
+  const func = node.child(0)
+  if (func === null) return undefined
+  const m = func.text.match(/(?:^|\.)([\w]+)\.as_view$/)
+  return m?.[1]
+}
+
 function extractAll(
   rootNode: Parser.SyntaxNode,
   relPath: string,
   analyzerVersion: string,
+  apiViewMethodMap: Map<string, string>,
+  cbvMethodMap: Map<string, string>,
 ): FileData {
   const directRoutes: RouteNode[] = []
   const includes: IncludeEntry[] = []
+  const drfRouterVars = new Set<string>()
+  const drfRegisterCalls: Array<{ prefix: string; row: number }> = []
 
   function walk(node: Parser.SyntaxNode): void {
+    if (node.type === 'assignment') {
+      const left = node.childForFieldName?.('left') ?? node.child(0)
+      const right = node.childForFieldName?.('right') ?? node.child(2)
+      if (left?.type === 'identifier' && right?.type === 'call') {
+        const funcNode = right.child(0)
+        const funcName =
+          funcNode?.type === 'attribute' ? funcNode.lastChild?.text : funcNode?.text
+        if (funcName === 'DefaultRouter' || funcName === 'SimpleRouter') {
+          drfRouterVars.add(left.text)
+        }
+      }
+    }
+
     if (node.type === 'call') {
       const func = node.child(0)
       if (func !== null && (func.text === 'path' || func.text === 're_path')) {
@@ -128,6 +278,11 @@ function extractAll(
               if (rawPattern !== undefined && rawPattern !== '') {
                 const { urlPath, dynamicSegmentType } = normalizeDjangoPattern(rawPattern)
                 if (urlPath !== '/') {
+                  const viewName = extractViewName(secondArg)
+                  const fbvMethod = viewName !== undefined ? apiViewMethodMap.get(viewName) : undefined
+                  const cbvClassName = extractCbvClassName(secondArg)
+                  const cbvMethod = cbvClassName !== undefined ? cbvMethodMap.get(cbvClassName) : undefined
+                  const httpMethod = fbvMethod ?? cbvMethod
                   directRoutes.push(
                     createRouteNode({
                       id: makeNodeId('route', relPath, urlPath),
@@ -137,6 +292,7 @@ function extractAll(
                       dynamicSegmentType,
                       isGroupRoute: false,
                       renderingMode: 'SSR',
+                      ...(httpMethod !== undefined ? { httpMethod } : {}),
                       provenance: astToProvenance(
                         relPath,
                         { row: node.startPosition.row, column: node.startPosition.column },
@@ -153,7 +309,26 @@ function extractAll(
         }
         return
       }
+
+      if (func?.type === 'attribute') {
+        const obj = func.child(0)
+        const method = func.child(2)
+        if (obj !== null && drfRouterVars.has(obj.text) && method?.text === 'register') {
+          const argList = node.child(1)
+          if (argList !== null) {
+            const firstArg = argList.namedChild(0)
+            if (firstArg?.type === 'string') {
+              const prefix = extractStringValue(firstArg)
+              if (prefix !== undefined) {
+                drfRegisterCalls.push({ prefix, row: node.startPosition.row })
+              }
+            }
+          }
+          return
+        }
+      }
     }
+
     for (let i = 0; i < node.childCount; i++) {
       const child = node.child(i)
       if (child !== null) walk(child)
@@ -161,6 +336,53 @@ function extractAll(
   }
 
   walk(rootNode)
+
+  for (const reg of drfRegisterCalls) {
+    const { prefix, row } = reg
+    const listPath = '/' + prefix.replace(/^\//, '').replace(/\/$/, '')
+    const detailPath = listPath + '/:pk'
+
+    directRoutes.push(
+      createRouteNode({
+        id: makeNodeId('route', relPath, listPath + ':drf'),
+        path: listPath,
+        filePath: relPath,
+        routeFileKind: 'page',
+        dynamicSegmentType: 'static',
+        isGroupRoute: false,
+        renderingMode: 'SSR',
+        provenance: astToProvenance(
+          relPath,
+          { row, column: 0 },
+          'django-drf@0.1',
+          analyzerVersion,
+        ),
+        confidence: 'inferred',
+        inferenceChain: [`DRF router.register('${prefix}', ...) → list route`],
+      }),
+    )
+
+    directRoutes.push(
+      createRouteNode({
+        id: makeNodeId('route', relPath, detailPath + ':drf'),
+        path: detailPath,
+        filePath: relPath,
+        routeFileKind: 'page',
+        dynamicSegmentType: 'dynamic',
+        isGroupRoute: false,
+        renderingMode: 'SSR',
+        provenance: astToProvenance(
+          relPath,
+          { row, column: 0 },
+          'django-drf@0.1',
+          analyzerVersion,
+        ),
+        confidence: 'inferred',
+        inferenceChain: [`DRF router.register('${prefix}', ...) → detail route`],
+      }),
+    )
+  }
+
   return { directRoutes, includes }
 }
 
@@ -173,6 +395,11 @@ export async function parseUrls(
 
   const parser = await createPythonParser()
 
+  // Pre-pass: views.py에서 @api_view HTTP method 맵 빌드
+  const apiViewMethodMap = await buildApiViewMethodMap(repoRoot, parser)
+  // Pre-pass: views.py에서 CBV HTTP method 맵 빌드
+  const cbvMethodMap = await buildCbvMethodMap(repoRoot, parser)
+
   // Pass 1: 모든 urls.py → fileMap
   const fileMap = new Map<string, FileData>()
   for (const absPath of urlFiles) {
@@ -180,7 +407,7 @@ export async function parseUrls(
     if (source === null) continue
     const relPath = path.relative(repoRoot, absPath).replace(/\\/g, '/')
     const tree = parser.parse(source)
-    fileMap.set(relPath, extractAll(tree.rootNode, relPath, analyzerVersion))
+    fileMap.set(relPath, extractAll(tree.rootNode, relPath, analyzerVersion, apiViewMethodMap, cbvMethodMap))
   }
 
   // Pass 2: 포함(include)된 파일 목록 계산 → 루트 파일에서 시작해 재귀 수집

@@ -148,4 +148,93 @@ urlpatterns = [path('api/', include('missing.urls'))]
     const nodes = await parseUrls(tmpDir)
     expect(nodes).toHaveLength(0)
   })
+
+  it('DRF DefaultRouter.register() → list/detail routes (II-C-3)', async () => {
+    await writeFile('api/urls.py', `
+from rest_framework.routers import DefaultRouter
+from . import views
+
+router = DefaultRouter()
+router.register('users', views.UserViewSet)
+urlpatterns = router.urls
+`)
+    const nodes = await parseUrls(tmpDir)
+    expect(nodes.length).toBeGreaterThanOrEqual(2)
+    const paths = nodes.map(n => n.path)
+    expect(paths).toContain('/users')
+    expect(paths).toContain('/users/:pk')
+    const listRoute = nodes.find(n => n.path === '/users')
+    expect(listRoute?.confidence).toBe('inferred')
+  })
+
+  it('@api_view 데코레이터 → httpMethod 설정 (IV-2)', async () => {
+    await writeFile('api/views.py', `
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+
+@api_view(['GET', 'POST'])
+def user_list(request):
+    return Response([])
+
+@api_view(['GET'])
+def user_detail(request, pk):
+    return Response({})
+`)
+    await writeFile('api/urls.py', `
+from django.urls import path
+from . import views
+
+urlpatterns = [
+    path('users/', views.user_list),
+    path('users/<int:pk>/', views.user_detail),
+]
+`)
+    const nodes = await parseUrls(tmpDir)
+    expect(nodes.length).toBeGreaterThanOrEqual(2)
+    const listRoute = nodes.find(n => n.path === '/users')
+    const detailRoute = nodes.find(n => n.path === '/users/:pk')
+    expect(listRoute?.httpMethod).toBe('GET,POST')
+    expect(detailRoute?.httpMethod).toBe('GET')
+  })
+
+  it('CBV def get/post 메서드 → httpMethod 설정 (IV-7)', async () => {
+    await writeFile('api/views.py', `
+from django.views import View
+
+class UserListView(View):
+    def get(self, request):
+        return []
+    def post(self, request):
+        return {}
+`)
+    await writeFile('api/urls.py', `
+from django.urls import path
+from . import views
+
+urlpatterns = [
+    path('users/', views.UserListView.as_view()),
+]
+`)
+    const nodes = await parseUrls(tmpDir)
+    const userRoute = nodes.find(n => n.path === '/users')
+    expect(userRoute?.httpMethod).toBe('GET,POST')
+  })
+
+  it('@api_view 없는 일반 view → httpMethod undefined', async () => {
+    await writeFile('api/views.py', `
+from django.views import View
+
+class UserView(View):
+    pass
+`)
+    await writeFile('api/urls.py', `
+from django.urls import path
+from . import views
+
+urlpatterns = [path('users/', views.UserView.as_view())]
+`)
+    const nodes = await parseUrls(tmpDir)
+    expect(nodes).toHaveLength(1)
+    expect(nodes[0]?.httpMethod).toBeUndefined()
+  })
 })

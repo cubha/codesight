@@ -15,7 +15,7 @@ export class SvelteKitAdapter implements IAdapter {
 
   async analyze(ctx: AdapterContext): Promise<AdapterResult> {
     const { repoRoot, analyzerVersion, stack } = ctx
-    const hasAnyTsOrm = stack.hasPrisma || stack.hasDrizzle || stack.hasTypeOrm
+    const hasAnyTsOrm = stack.hasSupabase || stack.hasPrisma || stack.hasDrizzle || stack.hasTypeOrm
 
     const [routeNodes, components, tableNodes] = await Promise.all([
       parseRoutes(repoRoot, analyzerVersion),

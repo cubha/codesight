@@ -64,6 +64,56 @@ interface BlueprintDef {
   urlPrefix: string
 }
 
+async function collectGlobalBlueprintOverrides(
+  pyFiles: string[],
+  parser: Parser,
+): Promise<Map<string, string>> {
+  const overrides = new Map<string, string>()
+
+  for (const filePath of pyFiles) {
+    const source = await fs.readFile(filePath, 'utf-8').catch(() => null)
+    if (source === null) continue
+    if (!source.includes('register_blueprint')) continue
+
+    const tree = parser.parse(source)
+
+    function scanNode(node: Parser.SyntaxNode): void {
+      if (node.type === 'call') {
+        const func = node.childForFieldName('function')
+        if (func?.type === 'attribute' && func.lastChild?.text === 'register_blueprint') {
+          const argList = node.childForFieldName('arguments')
+          if (argList !== null) {
+            let bpVarName: string | undefined
+            let urlPrefix: string | undefined
+            for (let i = 0; i < argList.childCount; i++) {
+              const arg = argList.child(i)
+              if (arg?.type === 'identifier') bpVarName = arg.text
+              if (arg?.type === 'keyword_argument') {
+                const key = arg.child(0)
+                const val = arg.child(2)
+                if (key?.text === 'url_prefix' && val?.type === 'string') {
+                  urlPrefix = extractStringContent(val)
+                }
+              }
+            }
+            if (bpVarName !== undefined && urlPrefix !== undefined) {
+              overrides.set(bpVarName, urlPrefix)
+            }
+          }
+        }
+      }
+      for (let i = 0; i < node.childCount; i++) {
+        const child = node.child(i)
+        if (child !== null) scanNode(child)
+      }
+    }
+
+    scanNode(tree.rootNode)
+  }
+
+  return overrides
+}
+
 export async function parseFlaskRoutes(
   repoRoot: string,
   analyzerVersion: string,
@@ -71,6 +121,9 @@ export async function parseFlaskRoutes(
   const pyFiles = await findPyFiles(repoRoot)
   const parser = await createPythonParser()
   const routes: RouteNode[] = []
+
+  // Cross-file and application factory: scan all files for register_blueprint with url_prefix
+  const globalOverrides = await collectGlobalBlueprintOverrides(pyFiles, parser)
 
   for (const filePath of pyFiles) {
     const source = await fs.readFile(filePath, 'utf-8').catch(() => null)
@@ -147,9 +200,9 @@ export async function parseFlaskRoutes(
       }
     }
 
-    // Resolve final blueprint prefixes
+    // Resolve final blueprint prefixes: local > global (cross-file / factory) > Blueprint-level
     for (const [varName, def] of blueprints) {
-      const overridePrefix = blueprintPrefixes.get(varName)
+      const overridePrefix = blueprintPrefixes.get(varName) ?? globalOverrides.get(varName)
       blueprints.set(varName, {
         ...def,
         urlPrefix: overridePrefix ?? def.urlPrefix,

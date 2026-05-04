@@ -10,7 +10,6 @@ import {
 } from '@codebase-viz/types'
 
 const EXCLUDE_DIRS = new Set(['.git', 'node_modules', 'dist', '.angular'])
-const ROUTER_FUNCS = new Set(['provideRouter', 'RouterModule'])
 
 async function findTsFiles(repoRoot: string): Promise<string[]> {
   const results: string[] = []
@@ -30,26 +29,104 @@ async function findTsFiles(repoRoot: string): Promise<string[]> {
   return results
 }
 
-function extractPathsFromRoutesArray(arrayNode: import('ts-morph').Node): string[] {
+function resolveLoadChildrenPaths(
+  prop: import('ts-morph').PropertyAssignment,
+  parentPath: string,
+  project: import('ts-morph').Project,
+  currentFileDir: string,
+): string[] {
+  const init = prop.getInitializer()
+  if (init === undefined) return []
+
+  // Pattern: loadChildren: () => import('./path').then(m => m.exportName)
+  for (const call of init.getDescendantsOfKind(SyntaxKind.CallExpression)) {
+    const expr = call.getExpression()
+    if (!expr.isKind(SyntaxKind.PropertyAccessExpression)) continue
+    const propAccess = expr.asKindOrThrow(SyntaxKind.PropertyAccessExpression)
+    if (propAccess.getName() !== 'then') continue
+
+    const importText = propAccess.getExpression().getText()
+    const importMatch = importText.match(/^import\(['"`]([^'"`]+)['"`]\)$/)
+    if (importMatch === null) continue
+
+    const importPathRel = importMatch[1]!
+
+    const thenArgs = call.getArguments()
+    if (thenArgs.length === 0) continue
+    const thenArg = thenArgs[0]!
+    if (!thenArg.isKind(SyntaxKind.ArrowFunction)) continue
+    const body = thenArg.asKindOrThrow(SyntaxKind.ArrowFunction).getBody()
+    if (!body.isKind(SyntaxKind.PropertyAccessExpression)) continue
+    const exportName = body.asKindOrThrow(SyntaxKind.PropertyAccessExpression).getName()
+
+    for (const candidate of [
+      path.resolve(currentFileDir, importPathRel + '.ts'),
+      path.resolve(currentFileDir, importPathRel),
+      path.resolve(currentFileDir, importPathRel, 'index.ts'),
+    ]) {
+      let sf = project.getSourceFile(candidate)
+      if (sf === undefined) {
+        try { sf = project.addSourceFileAtPath(candidate) } catch { continue }
+      }
+      const varDecl = sf.getVariableDeclarations().find(v => v.getName() === exportName)
+      const routesArray = varDecl?.getInitializer()
+      if (routesArray === undefined) continue
+      return extractPathsFromRoutesArray(routesArray, parentPath, project, path.dirname(candidate))
+    }
+  }
+
+  return []
+}
+
+function extractPathsFromRoutesArray(
+  arrayNode: import('ts-morph').Node,
+  parentPath = '',
+  project?: import('ts-morph').Project,
+  currentFileDir?: string,
+): string[] {
   const paths: string[] = []
   if (!arrayNode.isKind(SyntaxKind.ArrayLiteralExpression)) return paths
 
   for (const el of arrayNode.asKindOrThrow(SyntaxKind.ArrayLiteralExpression).getElements()) {
     if (!el.isKind(SyntaxKind.ObjectLiteralExpression)) continue
+    const obj = el.asKindOrThrow(SyntaxKind.ObjectLiteralExpression)
 
-    const pathProp = el.asKindOrThrow(SyntaxKind.ObjectLiteralExpression).getProperty('path')
+    const pathProp = obj.getProperty('path')
+    let rawSegment = ''
     if (pathProp?.isKind(SyntaxKind.PropertyAssignment)) {
       const init = pathProp.asKindOrThrow(SyntaxKind.PropertyAssignment).getInitializer()
       if (init?.isKind(SyntaxKind.StringLiteral)) {
-        const p = init.asKindOrThrow(SyntaxKind.StringLiteral).getLiteralValue()
-        if (p !== '**') paths.push(p)
+        rawSegment = init.asKindOrThrow(SyntaxKind.StringLiteral).getLiteralValue()
       }
     }
 
-    const childrenProp = el.asKindOrThrow(SyntaxKind.ObjectLiteralExpression).getProperty('children')
+    if (rawSegment === '**') continue
+
+    // Accumulate full path: combine parent prefix with current segment
+    const fullPath = rawSegment.startsWith('/')
+      ? rawSegment
+      : parentPath
+        ? (parentPath + '/' + rawSegment).replace('//', '/')
+        : rawSegment
+
+    paths.push(fullPath)
+
+    // Recurse into children: [] passing accumulated path as prefix
+    const childrenProp = obj.getProperty('children')
     if (childrenProp?.isKind(SyntaxKind.PropertyAssignment)) {
       const childInit = childrenProp.asKindOrThrow(SyntaxKind.PropertyAssignment).getInitializer()
-      if (childInit !== undefined) paths.push(...extractPathsFromRoutesArray(childInit))
+      if (childInit !== undefined) {
+        paths.push(...extractPathsFromRoutesArray(childInit, fullPath, project, currentFileDir))
+      }
+    }
+
+    // Attempt to resolve loadChildren: () => import('./path').then(m => m.routes)
+    const loadChildrenProp = obj.getProperty('loadChildren')
+    if (loadChildrenProp?.isKind(SyntaxKind.PropertyAssignment) && project !== undefined && currentFileDir !== undefined) {
+      paths.push(...resolveLoadChildrenPaths(
+        loadChildrenProp.asKindOrThrow(SyntaxKind.PropertyAssignment),
+        fullPath, project, currentFileDir,
+      ))
     }
   }
 
@@ -89,8 +166,8 @@ export async function parseAngularRoutes(
   for (const sourceFile of project.getSourceFiles()) {
     const filePath = sourceFile.getFilePath()
     const relPath = path.relative(repoRoot, filePath).replace(/\\/g, '/')
+    const fileDir = path.dirname(filePath)
 
-    // Find provideRouter(routes) or RouterModule.forRoot(routes) calls
     for (const callExpr of sourceFile.getDescendantsOfKind(SyntaxKind.CallExpression)) {
       const exprText = callExpr.getExpression().getText()
       if (exprText !== 'provideRouter' && exprText !== 'RouterModule.forRoot' && exprText !== 'RouterModule.forChild') continue
@@ -105,10 +182,8 @@ export async function parseAngularRoutes(
         routesArray = firstArg
       } else if (firstArg.isKind(SyntaxKind.Identifier)) {
         const varName = firstArg.getText()
-        // Check same file first
         const varDecl = sourceFile.getVariableDeclarations().find(v => v.getName() === varName)
         routesArray = varDecl?.getInitializer()
-        // If not found, search across all project source files
         if (routesArray === undefined) {
           for (const sf of project.getSourceFiles()) {
             const vd = sf.getVariableDeclarations().find(v => v.getName() === varName)
@@ -122,10 +197,10 @@ export async function parseAngularRoutes(
 
       if (routesArray === undefined) continue
 
-      const extractedPaths = extractPathsFromRoutesArray(routesArray)
+      const extractedPaths = extractPathsFromRoutesArray(routesArray, '', project, fileDir)
 
       for (const rawPath of extractedPaths) {
-        const urlPath = rawPath === '' ? '/' : ('/' + rawPath)
+        const urlPath = rawPath === '' ? '/' : rawPath.startsWith('/') ? rawPath : ('/' + rawPath)
         const dynamicSegmentType: DynamicSegmentType = urlPath.includes(':') ? 'dynamic' : 'static'
 
         const provenance: Provenance = {

@@ -250,4 +250,71 @@ class Post(Base):
     const userIdCol = cols.find(c => c.name === 'user_id')
     expect(userIdCol?.type).toBe('Integer→FK')
   })
+
+  it('mapped_column primary_key=True → isPrimaryKey: true (II-C-2)', async () => {
+    await writeFile('models.py', `
+from sqlalchemy import Column, Integer, String
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from typing import Optional
+
+class Base(DeclarativeBase):
+    pass
+
+class User(Base):
+    __tablename__ = 'users'
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column()
+    bio: Mapped[Optional[str]] = mapped_column()
+`)
+    const tables = await parseSqlAlchemyModels(tmpDir, 'test')
+    expect(tables).toHaveLength(1)
+    const cols = tables[0]?.columns ?? []
+    const idCol = cols.find(c => c.name === 'id')
+    expect(idCol?.isPrimaryKey).toBe(true)
+    expect(idCol?.nullable).toBe(false)
+  })
+
+  it('Mapped[str] → nullable: false, Mapped[Optional[str]] → nullable: true (II-C-2)', async () => {
+    await writeFile('models.py', `
+from sqlalchemy import Column, Integer, String
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from typing import Optional
+
+class Base(DeclarativeBase):
+    pass
+
+class Post(Base):
+    __tablename__ = 'posts'
+    id: Mapped[int] = mapped_column(primary_key=True)
+    title: Mapped[str] = mapped_column()
+    body: Mapped[Optional[str]] = mapped_column()
+`)
+    const tables = await parseSqlAlchemyModels(tmpDir, 'test')
+    expect(tables).toHaveLength(1)
+    const cols = tables[0]?.columns ?? []
+    const titleCol = cols.find(c => c.name === 'title')
+    const bodyCol = cols.find(c => c.name === 'body')
+    expect(titleCol?.nullable).toBe(false)
+    expect(bodyCol?.nullable).toBe(true)
+  })
+
+  it('기존 Column 스타일에도 isPrimaryKey 동작 (II-C-2)', async () => {
+    await writeFile('models.py', `
+from sqlalchemy import Column, Integer, String
+from sqlalchemy.orm import DeclarativeBase
+
+class Base(DeclarativeBase):
+    pass
+
+class Item(Base):
+    __tablename__ = 'items'
+    id = Column(Integer, primary_key=True)
+    name = Column(String)
+`)
+    const tables = await parseSqlAlchemyModels(tmpDir, 'test')
+    expect(tables).toHaveLength(1)
+    const cols = tables[0]?.columns ?? []
+    const idCol = cols.find(c => c.name === 'id')
+    expect(idCol?.isPrimaryKey).toBe(true)
+  })
 })

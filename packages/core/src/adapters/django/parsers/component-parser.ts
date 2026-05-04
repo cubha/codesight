@@ -53,44 +53,84 @@ export async function parseDjangoComponents(
 
     for (let i = 0; i < tree.rootNode.childCount; i++) {
       const node = tree.rootNode.child(i)
-      if (node === null || node.type !== 'class_definition') continue
+      if (node === null) continue
 
-      const nameNode = node.childForFieldName('name')
-      if (nameNode === null) continue
-      const className = nameNode.text
+      // CBV: class_definition with View/ViewSet base class
+      if (node.type === 'class_definition') {
+        const nameNode = node.childForFieldName('name')
+        if (nameNode === null) continue
+        const className = nameNode.text
 
-      const baseClause = node.childForFieldName('superclasses')
-      let hasViewBase = false
-      if (baseClause !== null) {
-        for (let j = 0; j < baseClause.childCount; j++) {
-          const base = baseClause.child(j)
-          if (base !== null && (DJANGO_BASE_CLASSES.has(base.text) || base.text.endsWith('View') || base.text.endsWith('ViewSet'))) {
-            hasViewBase = true
-            break
+        const baseClause = node.childForFieldName('superclasses')
+        let hasViewBase = false
+        if (baseClause !== null) {
+          for (let j = 0; j < baseClause.childCount; j++) {
+            const base = baseClause.child(j)
+            if (base !== null && (DJANGO_BASE_CLASSES.has(base.text) || base.text.endsWith('View') || base.text.endsWith('ViewSet'))) {
+              hasViewBase = true
+              break
+            }
           }
         }
+
+        if (!hasViewBase) continue
+
+        nodes.push(
+          createComponentNode({
+            id: makeNodeId('component', relPath, className),
+            name: className,
+            filePath: relPath,
+            runtime: 'server',
+            provenance: {
+              file: relPath,
+              line: node.startPosition.row + 1,
+              adapter: 'django-component-parser@0.1',
+              analyzerVersion,
+            },
+            confidence: 'inferred',
+            inferenceChain: [`django: View subclass ${className} in ${relPath}`],
+          }),
+        )
+        continue
       }
 
-      if (!hasViewBase) continue
+      // FBV: function_definition with first parameter named 'request'
+      if (node.type === 'function_definition') {
+        const nameNode = node.childForFieldName('name')
+        if (nameNode === null) continue
+        const funcName = nameNode.text
 
-      const provenance: Provenance = {
-        file: relPath,
-        line: node.startPosition.row + 1,
-        adapter: 'django-component-parser@0.1',
-        analyzerVersion,
+        const paramsNode = node.childForFieldName('parameters')
+        let firstParam = ''
+        if (paramsNode !== null) {
+          for (let k = 0; k < paramsNode.childCount; k++) {
+            const p = paramsNode.child(k)
+            if (p !== null && p.type === 'identifier') {
+              firstParam = p.text
+              break
+            }
+          }
+        }
+
+        if (firstParam !== 'request' && firstParam !== 'req') continue
+
+        nodes.push(
+          createComponentNode({
+            id: makeNodeId('component', relPath, funcName),
+            name: funcName,
+            filePath: relPath,
+            runtime: 'server',
+            provenance: {
+              file: relPath,
+              line: node.startPosition.row + 1,
+              adapter: 'django-component-parser@0.1',
+              analyzerVersion,
+            },
+            confidence: 'inferred',
+            inferenceChain: [`django: FBV ${funcName}(request, ...) in ${relPath}`],
+          }),
+        )
       }
-
-      nodes.push(
-        createComponentNode({
-          id: makeNodeId('component', relPath, className),
-          name: className,
-          filePath: relPath,
-          runtime: 'server',
-          provenance,
-          confidence: 'inferred',
-          inferenceChain: [`django: View subclass ${className} in ${relPath}`],
-        }),
-      )
     }
   }
 

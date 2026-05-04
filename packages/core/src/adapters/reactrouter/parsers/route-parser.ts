@@ -45,6 +45,7 @@ function normalizePath(rawPath: string): { urlPath: string; dynamicSegmentType: 
 interface RouteEntry {
   path: string
   elementComponent?: string
+  lazyModuleSpec?: string
   children?: RouteEntry[]
 }
 
@@ -52,6 +53,7 @@ interface FlatRouteItem {
   urlPath: string
   dynamicSegmentType: DynamicSegmentType
   elementComponent?: string
+  lazyModuleSpec?: string
 }
 
 function extractRoutesFromArray(arrayNode: import('ts-morph').Node): RouteEntry[] {
@@ -83,6 +85,35 @@ function extractRoutesFromArray(arrayNode: import('ts-morph').Node): RouteEntry[
         const tagName = elementInit.asKindOrThrow(SyntaxKind.JsxElement).getOpeningElement().getTagNameNode().getText()
         if (tagName.charAt(0) === tagName.charAt(0).toUpperCase() && tagName.charAt(0) !== tagName.charAt(0).toLowerCase()) {
           entry.elementComponent = tagName
+        }
+      }
+    }
+
+    // Component: ComponentName (React Router v6.4+ data API)
+    if (entry.elementComponent === undefined) {
+      const componentProp = obj.getProperty('Component')
+      if (componentProp?.isKind(SyntaxKind.PropertyAssignment)) {
+        const init = componentProp.asKindOrThrow(SyntaxKind.PropertyAssignment).getInitializer()
+        if (init?.isKind(SyntaxKind.Identifier)) {
+          const name = init.getText()
+          if (name[0] !== undefined && name[0] !== name[0].toLowerCase()) {
+            entry.elementComponent = name
+          }
+        }
+      }
+    }
+
+    // lazy: () => import('./path') (React Router v6.4+ lazy loading)
+    if (entry.elementComponent === undefined) {
+      const lazyProp = obj.getProperty('lazy')
+      if (lazyProp?.isKind(SyntaxKind.PropertyAssignment)) {
+        const init = lazyProp.asKindOrThrow(SyntaxKind.PropertyAssignment).getInitializer()
+        if (init !== undefined) {
+          const m = init.getText().match(/import\(['"`]([^'"`]+)['"`]\)/)
+          if (m !== null) {
+            entry.lazyModuleSpec = m[1]!
+            entry.elementComponent = path.basename(m[1]!, path.extname(m[1]!))
+          }
         }
       }
     }
@@ -120,6 +151,7 @@ function flattenRoutesEnriched(entries: RouteEntry[], parentPath = ''): FlatRout
     const dynamicSegmentType: DynamicSegmentType = normalized.includes(':') ? 'dynamic' : 'static'
     const item: FlatRouteItem = { urlPath: normalized, dynamicSegmentType }
     if (entry.elementComponent !== undefined) item.elementComponent = entry.elementComponent
+    if (entry.lazyModuleSpec !== undefined) item.lazyModuleSpec = entry.lazyModuleSpec
     result.push(item)
     if (entry.children !== undefined && entry.children.length > 0) {
       result.push(...flattenRoutesEnriched(entry.children, normalized))
@@ -197,7 +229,7 @@ export async function parseReactRouterFull(
       const enrichedFlat = flattenRoutesEnriched(routeEntries)
 
       for (const flat of enrichedFlat) {
-        const { urlPath, dynamicSegmentType, elementComponent } = flat
+        const { urlPath, dynamicSegmentType, elementComponent, lazyModuleSpec } = flat
         const provenance: Provenance = {
           file: relPath,
           line: callExpr.getStartLineNumber(),
@@ -219,7 +251,7 @@ export async function parseReactRouterFull(
         routeNodes.push(routeNode)
 
         if (elementComponent !== undefined) {
-          const moduleSpec = importMap.get(elementComponent)
+          const moduleSpec = importMap.get(elementComponent) ?? lazyModuleSpec
           if (moduleSpec !== undefined && moduleSpec.startsWith('.')) {
             const absBase = path.resolve(routerDir, moduleSpec)
             let compAbsPath: string | undefined
@@ -245,6 +277,51 @@ export async function parseReactRouterFull(
                 componentNodes.push(compNode)
                 seenCompFiles.set(compRelPath, compNode.id)
                 compNodeId = compNode.id
+
+                // 컴포넌트 파일 내부 import 추적 → sub-component renders 엣지
+                let compSf = project.getSourceFile(compAbsPath)
+                if (compSf === undefined) {
+                  try { compSf = project.addSourceFileAtPath(compAbsPath) } catch { /* skip */ }
+                }
+                if (compSf !== undefined) {
+                  for (const imp of compSf.getImportDeclarations()) {
+                    const spec = imp.getModuleSpecifierValue()
+                    if (!spec.startsWith('.')) continue
+                    const subBase = path.resolve(path.dirname(compAbsPath), spec)
+                    let subAbsPath: string | undefined
+                    for (const ext of ['.tsx', '.ts', '.jsx', '.js']) {
+                      try { await fs.access(subBase + ext); subAbsPath = subBase + ext; break } catch { /* skip */ }
+                    }
+                    if (subAbsPath === undefined) continue
+                    const subRelPath = path.relative(repoRoot, subAbsPath).replace(/\\/g, '/')
+                    let subNodeId = seenCompFiles.get(subRelPath)
+                    if (subNodeId === undefined) {
+                      const subName = path.basename(subAbsPath, path.extname(subAbsPath))
+                      const subNode = createComponentNode({
+                        id: makeNodeId('component', subRelPath, subName),
+                        name: subName,
+                        filePath: subRelPath,
+                        runtime: 'client',
+                        provenance: { file: compRelPath, line: 1, adapter: 'react-router@0.1', analyzerVersion },
+                        confidence: 'verified',
+                      })
+                      componentNodes.push(subNode)
+                      seenCompFiles.set(subRelPath, subNode.id)
+                      subNodeId = subNode.id
+                    }
+                    const subEdgeId = makeEdgeId('renders', compNodeId, subNodeId)
+                    if (!rendersEdges.some(e => e.id === subEdgeId)) {
+                      rendersEdges.push(createEdge({
+                        id: subEdgeId,
+                        from: compNodeId,
+                        to: subNodeId,
+                        kind: 'renders',
+                        provenance: { file: compRelPath, line: 1, adapter: 'react-router@0.1', analyzerVersion },
+                        confidence: 'verified',
+                      }))
+                    }
+                  }
+                }
               }
               rendersEdges.push(createEdge({
                 id: makeEdgeId('renders', routeNode.id, compNodeId),

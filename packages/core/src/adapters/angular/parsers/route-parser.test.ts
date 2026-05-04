@@ -3,6 +3,7 @@ import * as os from 'node:os'
 import * as path from 'node:path'
 import { describe, it, expect, beforeAll, afterAll } from 'vitest'
 import { parseAngularRoutes } from './route-parser.js'
+import { AngularAdapter } from '../adapter.js'
 
 let tmpDir: string
 
@@ -76,6 +77,90 @@ describe('parseAngularRoutes — mini-angular-app fixture', () => {
   })
 })
 
+describe('parseAngularRoutes — nested children path prefix (III-A-2)', () => {
+  let nestedDir: string
+
+  beforeAll(async () => {
+    nestedDir = await fs.mkdtemp(path.join(os.tmpdir(), 'cv-ng-nested-'))
+    await fs.mkdir(path.join(nestedDir, 'src', 'app'), { recursive: true })
+    await fs.writeFile(
+      path.join(nestedDir, 'src', 'app', 'app.routes.ts'),
+      `import { Routes } from '@angular/router'
+export const routes: Routes = [
+  { path: '', component: HomeComponent },
+  { path: 'admin', children: [
+    { path: '', component: AdminDashboardComponent },
+    { path: 'users', component: UsersListComponent },
+    { path: 'settings', component: SettingsComponent },
+  ]},
+]`,
+    )
+    await fs.writeFile(
+      path.join(nestedDir, 'src', 'app', 'app.config.ts'),
+      `import { provideRouter } from '@angular/router'
+import { routes } from './app.routes'
+export const appConfig = { providers: [provideRouter(routes)] }`,
+    )
+  })
+
+  afterAll(async () => {
+    await fs.rm(nestedDir, { recursive: true, force: true })
+  })
+
+  it('children 경로에 부모 prefix 누적 (III-A-2)', async () => {
+    const routes = await parseAngularRoutes(nestedDir, 'test@0.1')
+    const paths = routes.map(r => r.path)
+    expect(paths).toContain('/')
+    expect(paths).toContain('/admin')
+    expect(paths).toContain('/admin/users')
+    expect(paths).toContain('/admin/settings')
+  })
+})
+
+describe('parseAngularRoutes — loadChildren lazy routes (III-A-2)', () => {
+  let lazyDir: string
+
+  beforeAll(async () => {
+    lazyDir = await fs.mkdtemp(path.join(os.tmpdir(), 'cv-ng-lazy-'))
+    await fs.mkdir(path.join(lazyDir, 'src', 'app', 'admin'), { recursive: true })
+    await fs.writeFile(
+      path.join(lazyDir, 'src', 'app', 'admin', 'admin.routes.ts'),
+      `import { Routes } from '@angular/router'
+export const adminRoutes: Routes = [
+  { path: 'dashboard', component: AdminDashboardComponent },
+  { path: 'users', component: UsersListComponent },
+]`,
+    )
+    await fs.writeFile(
+      path.join(lazyDir, 'src', 'app', 'app.routes.ts'),
+      `import { Routes } from '@angular/router'
+export const routes: Routes = [
+  { path: '', component: HomeComponent },
+  { path: 'admin', loadChildren: () => import('./admin/admin.routes').then(m => m.adminRoutes) },
+]`,
+    )
+    await fs.writeFile(
+      path.join(lazyDir, 'src', 'app', 'app.config.ts'),
+      `import { provideRouter } from '@angular/router'
+import { routes } from './app.routes'
+export const appConfig = { providers: [provideRouter(routes)] }`,
+    )
+  })
+
+  afterAll(async () => {
+    await fs.rm(lazyDir, { recursive: true, force: true })
+  })
+
+  it('loadChildren 대상 routes 파일의 경로를 해소한다 (III-A-2)', async () => {
+    const routes = await parseAngularRoutes(lazyDir, 'test@0.1')
+    const paths = routes.map(r => r.path)
+    expect(paths).toContain('/')
+    expect(paths).toContain('/admin')
+    expect(paths).toContain('/admin/dashboard')
+    expect(paths).toContain('/admin/users')
+  })
+})
+
 describe('parseAngularRoutes', () => {
   it('provideRouter(routes) 배열에서 path를 추출한다', async () => {
     const routes = await parseAngularRoutes(tmpDir, 'test@0.1')
@@ -96,5 +181,32 @@ describe('parseAngularRoutes', () => {
   it('routeFileKind는 page', async () => {
     const routes = await parseAngularRoutes(tmpDir, 'test@0.1')
     for (const r of routes) expect(r.routeFileKind).toBe('page')
+  })
+})
+
+describe('AngularAdapter — hasSupabase (Tab3)', () => {
+  it('hasSupabase=true면 tableNodes 배열 반환', async () => {
+    const adapter = new AngularAdapter()
+    const result = await adapter.analyze({
+      repoRoot: tmpDir,
+      analyzerVersion: '0.0.0-test',
+      stack: {
+        framework: 'angular',
+        adapterId: 'angular',
+        parsingLevel: 'L2',
+        hasSupabase: true,
+        hasPrisma: false,
+        hasDexie: false,
+        hasDrizzle: false,
+        hasTypeOrm: false,
+        hasSQLAlchemy: false,
+        hasDjangoORM: false,
+        hasSpringDataJpa: false,
+        isMonorepo: false,
+        appDirs: [],
+        llmRecommended: false,
+      },
+    })
+    expect(Array.isArray(result.tableNodes)).toBe(true)
   })
 })

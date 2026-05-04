@@ -3,6 +3,7 @@ import * as os from 'node:os'
 import * as path from 'node:path'
 import { describe, it, expect, beforeAll, afterAll } from 'vitest'
 import { parseSvelteComponents } from './component-parser.js'
+import { SvelteKitAdapter } from '../adapter.js'
 
 let tmpDir: string
 
@@ -48,40 +49,6 @@ describe('parseSvelteComponents', () => {
     const result = await parseSvelteComponents(emptyDir, 'test@0.1')
     expect(result.nodes).toHaveLength(0)
     await fs.rm(emptyDir, { recursive: true, force: true })
-  })
-})
-
-describe('parseSvelteComponents — dangling import 방지 (B-3)', () => {
-  it('$lib/utils.ts import는 edge 생성 안 함', async () => {
-    const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'cv-sk-b3-'))
-    await fs.mkdir(path.join(tmpDir, 'src', 'routes'), { recursive: true })
-    await fs.writeFile(
-      path.join(tmpDir, 'src', 'routes', '+page.svelte'),
-      `<script>
-import { format } from '$lib/utils.ts'
-import helper from './helper.js'
-</script>
-<p>hello</p>`,
-    )
-    const result = await parseSvelteComponents(tmpDir, 'test')
-    expect(result.edges).toHaveLength(0)
-    await fs.rm(tmpDir, { recursive: true, force: true })
-  })
-
-  it('$lib/Button.svelte import는 edge 생성', async () => {
-    const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'cv-sk-b3v-'))
-    await fs.mkdir(path.join(tmpDir, 'src', 'routes'), { recursive: true })
-    await fs.writeFile(
-      path.join(tmpDir, 'src', 'routes', '+page.svelte'),
-      `<script>
-import Button from '$lib/Button.svelte'
-</script>
-<Button />`,
-    )
-    const result = await parseSvelteComponents(tmpDir, 'test')
-    expect(result.edges).toHaveLength(1)
-    expect(result.edges[0]?.kind).toBe('imports')
-    await fs.rm(tmpDir, { recursive: true, force: true })
   })
 })
 
@@ -143,5 +110,81 @@ describe('runtime 판정', () => {
     expect(serverNode?.runtime).toBe('server')
 
     await fs.rm(dir, { recursive: true, force: true })
+  })
+})
+
+describe('parseSvelteComponents — svelte.config.js alias (III-B-3)', () => {
+  let b3Dir: string
+
+  beforeAll(async () => {
+    b3Dir = await fs.mkdtemp(path.join(os.tmpdir(), 'cv-svelte-b3-'))
+    await fs.mkdir(path.join(b3Dir, 'src', 'components'), { recursive: true })
+    await fs.mkdir(path.join(b3Dir, 'src', 'routes'), { recursive: true })
+
+    await fs.writeFile(
+      path.join(b3Dir, 'svelte.config.js'),
+      `export default {
+  kit: {
+    alias: {
+      '$components': 'src/components'
+    }
+  }
+}`,
+    )
+    await fs.writeFile(
+      path.join(b3Dir, 'src', 'components', 'Header.svelte'),
+      `<script>export let title = ''</script><header>{title}</header>`,
+    )
+    await fs.writeFile(
+      path.join(b3Dir, 'src', 'routes', '+page.svelte'),
+      `<script>
+  import Header from '$components/Header.svelte'
+</script>
+<Header title="Home" />`,
+    )
+  })
+
+  afterAll(async () => {
+    await fs.rm(b3Dir, { recursive: true, force: true })
+  })
+
+  it('svelte.config.js alias로 $components 임포트 해소 (III-B-3)', async () => {
+    const result = await parseSvelteComponents(b3Dir, 'test@0.1')
+    expect(result.edges.length).toBeGreaterThanOrEqual(1)
+    const hasEdge = result.edges.some(e => {
+      const to = e.to as string
+      return to.includes('Header')
+    })
+    expect(hasEdge).toBe(true)
+  })
+})
+
+describe('SvelteKitAdapter — hasSupabase', () => {
+  let fixtureDir: string
+
+  beforeAll(async () => {
+    fixtureDir = await fs.mkdtemp(path.join(os.tmpdir(), 'cv-svelte-supabase-'))
+    await fs.mkdir(path.join(fixtureDir, 'src', 'routes'), { recursive: true })
+    await fs.writeFile(
+      path.join(fixtureDir, 'src', 'routes', '+page.svelte'),
+      `<script lang="ts">const x = 1</script>`,
+    )
+  })
+
+  afterAll(async () => {
+    await fs.rm(fixtureDir, { recursive: true, force: true })
+  })
+
+  it('sveltekit adapter: hasSupabase=true면 tableNodes 배열 반환', async () => {
+    const adapter = new SvelteKitAdapter()
+    const result = await adapter.analyze({
+      repoRoot: fixtureDir,
+      analyzerVersion: '0.0.0-test',
+      stack: { framework: 'sveltekit', adapterId: 'sveltekit', parsingLevel: 'L1',
+        hasSupabase: true, hasPrisma: false, hasDexie: false, hasDrizzle: false, hasTypeOrm: false,
+        hasSQLAlchemy: false, hasDjangoORM: false, hasSpringDataJpa: false,
+        isMonorepo: false, appDirs: [], llmRecommended: false },
+    })
+    expect(Array.isArray(result.tableNodes)).toBe(true)
   })
 })

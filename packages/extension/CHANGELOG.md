@@ -1,5 +1,38 @@
 # Changelog
 
+## [0.8.0] — 2026-05-05
+
+### Added
+
+**React Router — 13th static-analysis adapter:**
+- `createBrowserRouter()` / `createHashRouter()` route arrays parsed statically
+- `Component:` and `lazy:` properties resolved → renders edges
+- 1-depth import chain tracked for sub-component edges
+
+**Tab3 (DB–Screen) connected for all 13 adapters:**
+- Next.js Pages Router, Remix, Nuxt, SvelteKit — Supabase support added (Prisma/Drizzle/TypeORM already had it)
+- Vue SPA, React Router, Angular — Supabase · Prisma · Drizzle · TypeORM connected
+- Flask — new SQLAlchemy ORM parser (`Base` / `db.Model` subclasses + `Column()` via tree-sitter)
+
+**FK reference tracking:**
+- TypeORM: `@ManyToOne` / `@OneToOne` decorators → `ColumnDef.references` (FK target arrows in DB–Screen)
+- Django ORM: `ForeignKey('Model')` first argument → `ColumnDef.references`
+
+**Django CBV HTTP method detection:**
+- `class UserView(View): def get(self, request)` → `httpMethod: 'GET'` on route nodes
+- Covers `get`, `post`, `put`, `patch`, `delete` methods
+
+**Angular template-based component graph:**
+- `@Component.template` / `templateUrl` strings scanned for `<selector-name>` tags
+- Renders edges created between parent and child components
+
+### Changed
+
+- Framework count: 12 → 13 static-analysis adapters
+- All adapter `parsingLevel` values now correctly set to `L2` (routes + components + DB when ORM present)
+
+---
+
 ## [0.7.0] — 2026-05-04
 
 ### Added

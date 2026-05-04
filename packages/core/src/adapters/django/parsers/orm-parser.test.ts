@@ -147,6 +147,25 @@ class Post(models.Model):
     expect(cols.find(c => c.name === 'related')?.type).toBe('OneToOneField→Profile')
   })
 
+  it('ForeignKey → ColumnDef.references 생성', async () => {
+    await writeFile('api/models.py', `
+from django.db import models
+
+class Author(models.Model):
+    name = models.CharField(max_length=100)
+
+class Book(models.Model):
+    title = models.CharField(max_length=200)
+    author = models.ForeignKey(Author, on_delete=models.CASCADE)
+`)
+    const tables = await parseDjangoOrmModels(tmpDir, 'test')
+    const bookTable = tables.find(t => t.name === 'Book')
+    const authorCol = bookTable?.columns.find(c => c.name === 'author')
+    expect(authorCol?.references).toBeDefined()
+    expect(authorCol?.references?.table).toBe('Author')
+    expect(authorCol?.references?.column).toBe('id')
+  })
+
   it('Meta 클래스 db_table 값을 테이블명으로 사용', async () => {
     await writeFile('api/models.py', `
 from django.db import models

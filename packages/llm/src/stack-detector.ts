@@ -22,13 +22,12 @@ const FRAMEWORK_PROFILES: Record<FrameworkKind, FrameworkProfile> = {
   'django':            { adapterId: 'django',            parsingLevel: 'L2', llmRecommended: false },
   'fastapi':           { adapterId: 'fastapi',           parsingLevel: 'L2', llmRecommended: false },
   'springboot':        { adapterId: 'springboot',        parsingLevel: 'L2', llmRecommended: false },
-  // L1: routes only
-  'nextjs-pages':      { adapterId: 'nextjs-pages',      parsingLevel: 'L1', llmRecommended: false },
-  'flask':             { adapterId: 'flask',             parsingLevel: 'L1', llmRecommended: false },
-  'vue-spa':           { adapterId: 'vue-spa',           parsingLevel: 'L1', llmRecommended: false },
+  'nextjs-pages':      { adapterId: 'nextjs-pages',      parsingLevel: 'L2', llmRecommended: false },
+  'flask':             { adapterId: 'flask',             parsingLevel: 'L2', llmRecommended: false },
+  'vue-spa':           { adapterId: 'vue-spa',           parsingLevel: 'L2', llmRecommended: false },
   'react-router':      { adapterId: 'react-router',      parsingLevel: 'L2', llmRecommended: false },
-  'remix':             { adapterId: 'remix',             parsingLevel: 'L1', llmRecommended: false },
-  'angular':           { adapterId: 'angular',           parsingLevel: 'L1', llmRecommended: false },
+  'remix':             { adapterId: 'remix',             parsingLevel: 'L2', llmRecommended: false },
+  'angular':           { adapterId: 'angular',           parsingLevel: 'L2', llmRecommended: false },
   'expo':              { adapterId: 'expo',              parsingLevel: 'L1', llmRecommended: true  },
   // L3: LLM-only (no static adapter)
   'vite-react':        { adapterId: 'vite-react',        parsingLevel: 'L3', llmRecommended: true  },

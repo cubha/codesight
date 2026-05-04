@@ -196,12 +196,21 @@ export async function parseDjangoOrmModels(
           const nullable = extractNullable(argListNode)
 
           let resolvedType = fieldTypeName
+          let references: { table: string; column: string } | undefined
           if (RELATION_FIELDS.has(fieldTypeName)) {
             const target = extractRelationTarget(argListNode)
-            if (target !== undefined) resolvedType = `${fieldTypeName}→${target}`
+            if (target !== undefined) {
+              resolvedType = `${fieldTypeName}→${target}`
+              references = { table: target, column: 'id' }
+            }
           }
 
-          columns.push({ name: fieldName, type: resolvedType, nullable })
+          columns.push({
+            name: fieldName,
+            type: resolvedType,
+            nullable,
+            ...(references !== undefined ? { references } : {}),
+          })
         }
       }
 

@@ -85,4 +85,34 @@ describe('parseTypeOrmEntities', () => {
     expect(tables).toHaveLength(0)
     await fs.rm(emptyDir, { recursive: true, force: true })
   })
+
+  it('@ManyToOne decorator → ColumnDef.references 생성', async () => {
+    const relDir = await fs.mkdtemp(path.join(os.tmpdir(), 'cv-rel-'))
+    await fs.mkdir(path.join(relDir, 'src', 'entities'), { recursive: true })
+    await fs.writeFile(
+      path.join(relDir, 'src', 'entities', 'post.entity.ts'),
+      `
+import { Entity, Column, PrimaryGeneratedColumn, ManyToOne } from 'typeorm'
+import { User } from './user.entity'
+
+@Entity()
+export class Post {
+  @PrimaryGeneratedColumn()
+  id: number
+
+  @Column()
+  title: string
+
+  @ManyToOne(() => User, user => user.posts)
+  author: User
+}
+`,
+    )
+    const tables = await parseTypeOrmEntities(relDir, 'test')
+    const postTable = tables.find(t => t.name === 'post')
+    const authorCol = postTable?.columns.find(c => c.name === 'author')
+    expect(authorCol?.references).toBeDefined()
+    expect(authorCol?.references?.table).toBe('User')
+    await fs.rm(relDir, { recursive: true, force: true })
+  })
 })

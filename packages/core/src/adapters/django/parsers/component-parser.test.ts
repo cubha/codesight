@@ -79,10 +79,56 @@ class Config:
     expect(nodes).toEqual([])
   })
 
-  it('함수형 view는 추출 안 됨 (현 구현: 클래스 기반만 지원)', async () => {
+  it('FBV: request 첫 인자 함수 추출', async () => {
     await writeFile('api/views.py', `
-def my_view(request):
-    return None
+def user_list(request):
+    return []
+`)
+    const nodes = await parseDjangoComponents(tmpDir, 'test')
+    expect(nodes).toHaveLength(1)
+    expect(nodes[0]?.name).toBe('user_list')
+    expect(nodes[0]?.runtime).toBe('server')
+  })
+
+  it('FBV: URL 파라미터 있는 함수도 추출', async () => {
+    await writeFile('api/views.py', `
+def user_detail(request, pk):
+    return {}
+
+def post_detail(request, slug):
+    return {}
+`)
+    const nodes = await parseDjangoComponents(tmpDir, 'test')
+    expect(nodes).toHaveLength(2)
+    const names = nodes.map(n => n.name)
+    expect(names).toContain('user_detail')
+    expect(names).toContain('post_detail')
+  })
+
+  it('FBV + CBV 혼합 파일에서 모두 추출', async () => {
+    await writeFile('api/views.py', `
+from django.views import View
+
+class UserListView(View):
+    pass
+
+def simple_view(request):
+    return {}
+`)
+    const nodes = await parseDjangoComponents(tmpDir, 'test')
+    expect(nodes).toHaveLength(2)
+    const names = nodes.map(n => n.name)
+    expect(names).toContain('UserListView')
+    expect(names).toContain('simple_view')
+  })
+
+  it('request 첫 인자 아닌 일반 함수는 추출 안 됨', async () => {
+    await writeFile('api/views.py', `
+def helper(data):
+    return data
+
+def util(x, y):
+    return x + y
 `)
     const nodes = await parseDjangoComponents(tmpDir, 'test')
     expect(nodes).toEqual([])

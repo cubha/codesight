@@ -1,5 +1,7 @@
+import * as fs from 'node:fs/promises'
+import * as os from 'node:os'
 import * as path from 'node:path'
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, beforeAll, afterAll } from 'vitest'
 import { parseReactRoutes, parseReactRouterFull } from './route-parser.js'
 
 const FIXTURE = path.resolve(process.cwd(), 'fixtures/mini-react-router-app')
@@ -71,5 +73,70 @@ describe('parseReactRouterFull — renders 엣지 (II-A-1)', () => {
     expect(homeComp).toBeDefined()
     const edge = rendersEdges.find(e => e.from === homeRoute?.id && e.to === homeComp?.id)
     expect(edge).toBeDefined()
+  })
+})
+
+describe('parseReactRouterFull — Component: + lazy: 속성 (III-B-1)', () => {
+  let b1Dir: string
+
+  beforeAll(async () => {
+    b1Dir = await fs.mkdtemp(path.join(os.tmpdir(), 'cv-rr-b1-'))
+    await fs.mkdir(path.join(b1Dir, 'src', 'pages'), { recursive: true })
+
+    await fs.writeFile(
+      path.join(b1Dir, 'src', 'pages', 'Dashboard.tsx'),
+      `export default function Dashboard() { return <div>Dashboard</div> }`,
+    )
+    await fs.writeFile(
+      path.join(b1Dir, 'src', 'pages', 'Settings.tsx'),
+      `export default function Settings() { return <div>Settings</div> }`,
+    )
+    await fs.writeFile(
+      path.join(b1Dir, 'src', 'router.tsx'),
+      `import { createBrowserRouter } from 'react-router-dom'
+import Dashboard from './pages/Dashboard'
+
+export const router = createBrowserRouter([
+  { path: '/dashboard', Component: Dashboard },
+  { path: '/settings', lazy: () => import('./pages/Settings') },
+])`,
+    )
+  })
+
+  afterAll(async () => {
+    await fs.rm(b1Dir, { recursive: true, force: true })
+  })
+
+  it('Component: 속성으로 renders 엣지 생성 (III-B-1)', async () => {
+    const { componentNodes, rendersEdges } = await parseReactRouterFull(b1Dir, 'test@0.1')
+    const dashComp = componentNodes.find(c => c.name === 'Dashboard')
+    expect(dashComp).toBeDefined()
+    expect(rendersEdges.some(e => e.to === dashComp?.id)).toBe(true)
+  })
+
+  it('lazy: 속성으로 renders 엣지 생성 (III-B-1)', async () => {
+    const { componentNodes, rendersEdges } = await parseReactRouterFull(b1Dir, 'test@0.1')
+    const settingsComp = componentNodes.find(c => c.name === 'Settings')
+    expect(settingsComp).toBeDefined()
+    expect(rendersEdges.some(e => e.to === settingsComp?.id)).toBe(true)
+  })
+
+  it('컴포넌트 내부 import → sub-component renders 엣지 생성 (IV-3)', async () => {
+    await fs.mkdir(path.join(b1Dir, 'src', 'components'), { recursive: true })
+    await fs.writeFile(
+      path.join(b1Dir, 'src', 'components', 'DashCard.tsx'),
+      `export default function DashCard() { return <div>Card</div> }`,
+    )
+    await fs.writeFile(
+      path.join(b1Dir, 'src', 'pages', 'Dashboard.tsx'),
+      `import DashCard from '../components/DashCard'
+export default function Dashboard() { return <div><DashCard /></div> }`,
+    )
+    const { componentNodes, rendersEdges } = await parseReactRouterFull(b1Dir, 'test@0.1')
+    const dashComp = componentNodes.find(c => c.name === 'Dashboard')
+    const cardComp = componentNodes.find(c => c.name === 'DashCard')
+    expect(dashComp).toBeDefined()
+    expect(cardComp).toBeDefined()
+    expect(rendersEdges.some(e => e.from === dashComp?.id && e.to === cardComp?.id)).toBe(true)
   })
 })

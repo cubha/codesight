@@ -11,7 +11,7 @@ import {
   type Provenance,
 } from '@codebase-viz/types'
 
-const EXCLUDE_DIRS = new Set(['.git', 'node_modules', '.nuxt', 'dist', '.output'])
+const EXCLUDE_DIRS = new Set(['.git', 'node_modules', 'dist', '.vite', 'build'])
 const VUE_SCRIPT_RE = /<script(?:\s[^>]*)?>(?<content>[\s\S]*?)<\/script>/
 const VUE_TEMPLATE_RE = /<template(?:\s[^>]*)?>(?<content>[\s\S]*?)<\/template>/
 const COMPONENT_TAG_RE = /<([A-Z][A-Za-z0-9]*)/g
@@ -33,7 +33,7 @@ async function findVueFiles(repoRoot: string): Promise<string[]> {
   return results
 }
 
-export async function parseNuxtComponents(
+export async function parseVueSpaComponents(
   repoRoot: string,
   analyzerVersion: string,
 ): Promise<{ nodes: ComponentNode[]; edges: IREdge[] }> {
@@ -60,7 +60,7 @@ export async function parseNuxtComponents(
     const provenance: Provenance = {
       file: relPath,
       line: 1,
-      adapter: 'nuxt-component-parser@0.1',
+      adapter: 'vue-spa-component-parser@0.1',
       analyzerVersion,
     }
 
@@ -70,63 +70,51 @@ export async function parseNuxtComponents(
         id: nodeId,
         name,
         filePath: relPath,
-        runtime: relPath.includes('pages/') ? 'server' : 'client',
+        runtime: 'client',
         provenance,
         confidence: 'inferred',
-        inferenceChain: [`nuxt: .vue file detected`],
+        inferenceChain: [`vue-spa: .vue SFC file detected`],
       }),
     )
 
-    const match = VUE_SCRIPT_RE.exec(source)
-    if (match?.groups?.['content'] !== undefined) {
-      const scriptContent = match.groups['content']
+    const scriptMatch = VUE_SCRIPT_RE.exec(source)
+    if (scriptMatch?.groups?.['content'] !== undefined) {
+      const scriptContent = scriptMatch.groups['content']
       const sf = project.createSourceFile(`${relPath}.ts`, scriptContent, { overwrite: true })
 
       for (const imp of sf.getImportDeclarations()) {
         const spec = imp.getModuleSpecifierValue()
-        if (!spec.startsWith('.') && !spec.startsWith('~/') && !spec.startsWith('@/')) continue
+        if (!spec.startsWith('.')) continue
 
-        let resolvedRel: string | undefined
+        const resolved = path.resolve(path.dirname(filePath), spec)
+        const ext = path.extname(spec)
+        const candidates = ext !== ''
+          ? [resolved]
+          : [resolved + '.vue', path.join(resolved, 'index.vue')]
 
-        if (spec.startsWith('~/') || spec.startsWith('@/')) {
-          const withoutPrefix = spec.replace(/^[~@]\//, '')
-          const withVue = withoutPrefix.endsWith('.vue') ? withoutPrefix : withoutPrefix + '.vue'
-          if (vueRelSet.has(withVue)) {
-            resolvedRel = withVue
-          }
-        } else if (spec.startsWith('.')) {
-          const resolved = path.resolve(path.dirname(filePath), spec)
-          const candidates = [resolved, resolved.replace(/\.vue$/, '')]
-          for (const candidate of candidates) {
-            const withVue = candidate.endsWith('.vue') ? candidate : candidate + '.vue'
-            const rel = path.relative(repoRoot, withVue).replace(/\\/g, '/')
-            if (vueRelSet.has(rel)) {
-              resolvedRel = rel
-              break
+        for (const candidate of candidates) {
+          const rel = path.relative(repoRoot, candidate).replace(/\\/g, '/')
+          if (vueRelSet.has(rel)) {
+            const toId = makeNodeId('component', rel, path.basename(rel, '.vue'))
+            const edgeId = makeEdgeId('imports', nodeId, toId)
+            if (!edges.some(e => e.id === edgeId)) {
+              edges.push(createEdge({
+                id: edgeId,
+                from: nodeId,
+                to: toId,
+                kind: 'imports',
+                importDepth: 1,
+                provenance,
+                confidence: 'inferred',
+                inferenceChain: [`vue-spa: import '${spec}' in ${relPath}`],
+              }))
             }
+            break
           }
         }
-
-        if (resolvedRel === undefined) continue
-
-        const toId = makeNodeId('component', resolvedRel, path.basename(resolvedRel, '.vue'))
-        const edgeId = makeEdgeId('imports', nodeId, toId)
-        edges.push(
-          createEdge({
-            id: edgeId,
-            from: nodeId,
-            to: toId,
-            kind: 'imports',
-            importDepth: 1,
-            provenance,
-            confidence: 'inferred',
-            inferenceChain: [`nuxt: import '${spec}' in ${relPath}`],
-          }),
-        )
       }
     }
 
-    // Template component tags: detect <ComponentName> usage
     const templateMatch = VUE_TEMPLATE_RE.exec(source)
     if (templateMatch?.groups?.['content'] !== undefined) {
       const templateContent = templateMatch.groups['content']
@@ -139,18 +127,16 @@ export async function parseNuxtComponents(
             const toId = makeNodeId('component', rel, tagName)
             const edgeId = makeEdgeId('imports', nodeId, toId)
             if (!edges.some(e => e.id === edgeId)) {
-              edges.push(
-                createEdge({
-                  id: edgeId,
-                  from: nodeId,
-                  to: toId,
-                  kind: 'imports',
-                  importDepth: 1,
-                  provenance,
-                  confidence: 'inferred',
-                  inferenceChain: [`nuxt: <${tagName}> in template of ${relPath}`],
-                }),
-              )
+              edges.push(createEdge({
+                id: edgeId,
+                from: nodeId,
+                to: toId,
+                kind: 'imports',
+                importDepth: 1,
+                provenance,
+                confidence: 'inferred',
+                inferenceChain: [`vue-spa: <${tagName}> in template of ${relPath}`],
+              }))
             }
             break
           }

@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { parseRoutes } from './route-parser.js'
+import { NuxtAdapter } from '../adapter.js'
 import * as fs from 'node:fs/promises'
 import * as os from 'node:os'
 import * as path from 'node:path'
@@ -163,5 +164,32 @@ definePageMeta({ ssr: true })
     const nodes = await parseRoutes(tmpDir)
     expect(nodes).toHaveLength(1)
     expect(nodes[0]!.renderingMode).toBe('SSR')
+  })
+})
+
+describe('NuxtAdapter — hasSupabase', () => {
+  it('nuxt adapter: hasSupabase=true면 tableNodes 배열 반환', async () => {
+    const adapter = new NuxtAdapter()
+    const result = await adapter.analyze({
+      repoRoot: tmpDir,
+      analyzerVersion: '0.0.0-test',
+      stack: {
+        framework: 'nuxt',
+        adapterId: 'nuxt',
+        parsingLevel: 'L1',
+        hasSupabase: true,
+        hasPrisma: false,
+        hasDexie: false,
+        hasDrizzle: false,
+        hasTypeOrm: false,
+        hasSQLAlchemy: false,
+        hasDjangoORM: false,
+        hasSpringDataJpa: false,
+        isMonorepo: false,
+        appDirs: [],
+        llmRecommended: false,
+      },
+    })
+    expect(Array.isArray(result.tableNodes)).toBe(true)
   })
 })

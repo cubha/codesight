@@ -23,6 +23,17 @@ import {
  * silence > noise 원칙: 확실하지 않으면 연결하지 않는다.
  * confidence='inferred'로 설정하며, inferenceChain에 근거를 기록한다.
  */
+/**
+ * basename(파일명, 확장자 제거) 에서 tableName 토큰 경계 매칭.
+ * 예: "users" → "users.controller" ✅, "users-list" ✅, "superusers" ❌
+ */
+function tokenMatch(fileBase: string, tableName: string): boolean {
+  if (fileBase === tableName) return true
+  // 토큰 경계: 앞뒤가 단어 구분자(-, _, ., 문자열 시작/끝)인 경우만 매칭
+  const re = new RegExp(`(?:^|[-_.])${tableName}(?:[-_.]|$)`)
+  return re.test(fileBase)
+}
+
 export function buildMapperEdges(
   routes: RouteNode[],
   components: ComponentNode[],
@@ -37,50 +48,44 @@ export function buildMapperEdges(
   for (const table of tables) {
     const tableNameLower = table.name.toLowerCase()
 
-    // Route → Table
+    // Route → Table (basename 토큰 경계 매칭만 — dirParts 경로 전체 포함 제거)
     for (const route of routes) {
-      const fileBase = path.basename(route.filePath).toLowerCase()
-      const dirParts = route.filePath.toLowerCase()
-
-      if (fileBase.includes(tableNameLower) || dirParts.includes(`/${tableNameLower}`)) {
-        const edgeId = makeEdgeId('queries', route.id, table.id)
-        edges.push(
-          createEdge({
-            id: edgeId,
-            from: route.id,
-            to: table.id,
-            kind: 'queries',
-            provenance: route.provenance,
-            confidence: 'inferred',
-            inferenceChain: [
-              `filename match: table "${table.name}" found in route filePath "${route.filePath}"`,
-            ],
-          }),
-        )
-      }
+      const fileBase = path.basename(route.filePath, path.extname(route.filePath)).toLowerCase()
+      if (!tokenMatch(fileBase, tableNameLower)) continue
+      const edgeId = makeEdgeId('queries', route.id, table.id)
+      edges.push(
+        createEdge({
+          id: edgeId,
+          from: route.id,
+          to: table.id,
+          kind: 'queries',
+          provenance: route.provenance,
+          confidence: 'inferred',
+          inferenceChain: [
+            `filename match: table "${table.name}" found in route basename "${path.basename(route.filePath)}"`,
+          ],
+        }),
+      )
     }
 
-    // Component → Table
+    // Component → Table (basename 토큰 경계 매칭만)
     for (const component of components) {
-      const fileBase = path.basename(component.filePath).toLowerCase()
-      const dirParts = component.filePath.toLowerCase()
-
-      if (fileBase.includes(tableNameLower) || dirParts.includes(`/${tableNameLower}`)) {
-        const edgeId = makeEdgeId('queries', component.id, table.id)
-        edges.push(
-          createEdge({
-            id: edgeId,
-            from: component.id,
-            to: table.id,
-            kind: 'queries',
-            provenance: component.provenance,
-            confidence: 'inferred',
-            inferenceChain: [
-              `filename match: table "${table.name}" found in component filePath "${component.filePath}"`,
-            ],
-          }),
-        )
-      }
+      const fileBase = path.basename(component.filePath, path.extname(component.filePath)).toLowerCase()
+      if (!tokenMatch(fileBase, tableNameLower)) continue
+      const edgeId = makeEdgeId('queries', component.id, table.id)
+      edges.push(
+        createEdge({
+          id: edgeId,
+          from: component.id,
+          to: table.id,
+          kind: 'queries',
+          provenance: component.provenance,
+          confidence: 'inferred',
+          inferenceChain: [
+            `filename match: table "${table.name}" found in component basename "${path.basename(component.filePath)}"`,
+          ],
+        }),
+      )
     }
   }
 

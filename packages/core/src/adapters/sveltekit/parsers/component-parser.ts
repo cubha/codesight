@@ -46,6 +46,35 @@ async function collectSvelteAndServerFiles(repoRoot: string): Promise<CollectedF
 
 const dirCache = new Map<string, Set<string>>()
 
+async function readSvelteAliases(repoRoot: string): Promise<Map<string, string>> {
+  const aliases = new Map<string, string>()
+  // Default SvelteKit alias
+  aliases.set('$lib', 'src/lib')
+
+  const configCandidates = ['svelte.config.js', 'svelte.config.ts']
+  for (const configFile of configCandidates) {
+    const configPath = path.join(repoRoot, configFile)
+    const content = await fs.readFile(configPath, 'utf-8').catch(() => null)
+    if (content === null) continue
+
+    // Extract kit.alias object using regex (avoids dynamic import of config)
+    // Pattern: alias: { '$components': 'src/components', ... }
+    const aliasBlockMatch = content.match(/alias\s*:\s*\{([^}]+)\}/)
+    if (aliasBlockMatch === null) continue
+
+    const aliasBlock = aliasBlockMatch[1]!
+    // Match 'key': 'value' or "key": "value" pairs
+    const pairRe = /['"`](\$[^'"`]+)['"`]\s*:\s*['"`]([^'"`]+)['"`]/g
+    let m: RegExpExecArray | null
+    while ((m = pairRe.exec(aliasBlock)) !== null) {
+      aliases.set(m[1]!, m[2]!)
+    }
+    break
+  }
+
+  return aliases
+}
+
 async function getDirFiles(dir: string): Promise<Set<string>> {
   if (dirCache.has(dir)) return dirCache.get(dir)!
   const entries = await fs.readdir(dir).catch(() => [] as string[])
@@ -69,6 +98,7 @@ export async function parseSvelteComponents(
   analyzerVersion: string,
 ): Promise<{ nodes: ComponentNode[]; edges: IREdge[] }> {
   dirCache.clear()
+  const aliases = await readSvelteAliases(repoRoot)
 
   const { svelteFiles, serverFiles } = await collectSvelteAndServerFiles(repoRoot)
   if (svelteFiles.length === 0 && serverFiles.length === 0) return { nodes: [], edges: [] }
@@ -136,21 +166,32 @@ export async function parseSvelteComponents(
 
     for (const imp of sf.getImportDeclarations()) {
       const spec = imp.getModuleSpecifierValue()
-      if (!spec.startsWith('.') && !spec.startsWith('$lib')) continue
 
-      let resolvedRel: string
-      if (spec.startsWith('$lib')) {
-        const libPath = spec.replace('$lib', 'src/lib')
-        const specExt = path.extname(libPath)
-        if (specExt !== '' && specExt !== '.svelte') continue
-        resolvedRel = libPath.endsWith('.svelte') ? libPath : libPath + '.svelte'
-      } else {
+      let resolvedRel: string | undefined
+
+      // Check aliases (includes $lib by default)
+      let aliasResolved = false
+      for (const [prefix, target] of aliases) {
+        if (spec.startsWith(prefix)) {
+          const libPath = spec.replace(prefix, target)
+          const specExt = path.extname(libPath)
+          if (specExt !== '' && specExt !== '.svelte') break
+          resolvedRel = libPath.endsWith('.svelte') ? libPath : libPath + '.svelte'
+          aliasResolved = true
+          break
+        }
+      }
+
+      if (!aliasResolved) {
+        if (!spec.startsWith('.')) continue
         const relExt = path.extname(spec)
         if (relExt !== '' && relExt !== '.svelte') continue
         const resolved = path.resolve(path.dirname(filePath), spec)
         resolvedRel = path.relative(repoRoot, resolved).replace(/\\/g, '/')
         if (!resolvedRel.endsWith('.svelte')) resolvedRel += '.svelte'
       }
+
+      if (resolvedRel === undefined) continue
 
       const toId = makeNodeId('component', resolvedRel, path.basename(resolvedRel, '.svelte'))
       const edgeId = makeEdgeId('imports', nodeId, toId)

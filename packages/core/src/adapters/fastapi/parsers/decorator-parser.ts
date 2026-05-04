@@ -344,7 +344,7 @@ export async function parseDecorators(
         const inferenceTag = `include_router(${inc.routerObj}${inc.routerAttr ? '.' + inc.routerAttr : ''}, prefix='${inc.prefix}') from ${relPath}`
         allRoutes.push(
           createRouteNode({
-            id: makeNodeId('route', route.filePath, `${composedPath}:${inc.prefix}:include_router`),
+            id: makeNodeId('route', route.filePath, `${composedPath}:${route.httpMethod ?? 'UNKNOWN'}`),
             path: composedPath,
             filePath: route.filePath,
             routeFileKind: route.routeFileKind,

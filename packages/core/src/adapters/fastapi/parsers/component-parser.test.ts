@@ -108,4 +108,58 @@ class UserSchema(BaseModel):
     const nodes = await parseFastapiComponents(tmpDir, 'test')
     expect(nodes[0]?.id).toBe('component:schemas.py:UserSchema')
   })
+
+  it('@router.get 핸들러 함수 추출', async () => {
+    await writeFile('routers/users.py', `
+from fastapi import APIRouter
+
+router = APIRouter()
+
+@router.get('/users')
+def list_users():
+    return []
+
+@router.post('/users')
+def create_user():
+    return {}
+`)
+    const nodes = await parseFastapiComponents(tmpDir, 'test')
+    const names = nodes.map(n => n.name)
+    expect(names).toContain('list_users')
+    expect(names).toContain('create_user')
+  })
+
+  it('@router 핸들러 + BaseModel 혼합 파일에서 모두 추출', async () => {
+    await writeFile('routers/posts.py', `
+from fastapi import APIRouter
+from pydantic import BaseModel
+
+router = APIRouter()
+
+class PostSchema(BaseModel):
+    title: str
+
+@router.get('/posts')
+def list_posts():
+    return []
+`)
+    const nodes = await parseFastapiComponents(tmpDir, 'test')
+    expect(nodes.length).toBeGreaterThanOrEqual(2)
+    const names = nodes.map(n => n.name)
+    expect(names).toContain('PostSchema')
+    expect(names).toContain('list_posts')
+  })
+
+  it('@router 없는 일반 함수는 추출 안 됨', async () => {
+    await writeFile('routers/users.py', `
+from fastapi import APIRouter
+
+router = APIRouter()
+
+def helper():
+    return []
+`)
+    const nodes = await parseFastapiComponents(tmpDir, 'test')
+    expect(nodes).toEqual([])
+  })
 })

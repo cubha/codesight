@@ -63,3 +63,79 @@ describe('parseFlaskRoutes', () => {
     await fs.rm(emptyDir, { recursive: true, force: true })
   })
 })
+
+describe('parseFlaskRoutes — cross-file register_blueprint (II-C-4)', () => {
+  let crossDir: string
+
+  beforeAll(async () => {
+    crossDir = await fs.mkdtemp(path.join(os.tmpdir(), 'cv-flask-cross-'))
+    await fs.writeFile(
+      path.join(crossDir, 'users.py'),
+      `from flask import Blueprint
+users_bp = Blueprint('users', __name__)
+
+@users_bp.route('/users')
+def list_users():
+    return []
+`,
+    )
+    await fs.writeFile(
+      path.join(crossDir, 'app.py'),
+      `from flask import Flask
+from users import users_bp
+
+app = Flask(__name__)
+app.register_blueprint(users_bp, url_prefix='/api')
+`,
+    )
+  })
+
+  afterAll(async () => {
+    await fs.rm(crossDir, { recursive: true, force: true })
+  })
+
+  it('별도 파일의 register_blueprint url_prefix 적용 (II-C-4)', async () => {
+    const routes = await parseFlaskRoutes(crossDir, 'test@0.1')
+    const paths = routes.map(r => r.path)
+    expect(paths).toContain('/api/users')
+  })
+})
+
+describe('parseFlaskRoutes — application factory pattern (II-C-5)', () => {
+  let factoryDir: string
+
+  beforeAll(async () => {
+    factoryDir = await fs.mkdtemp(path.join(os.tmpdir(), 'cv-flask-factory-'))
+    await fs.writeFile(
+      path.join(factoryDir, 'users.py'),
+      `from flask import Blueprint
+users_bp = Blueprint('users', __name__)
+
+@users_bp.route('/users')
+def list_users():
+    return []
+`,
+    )
+    await fs.writeFile(
+      path.join(factoryDir, 'app.py'),
+      `from flask import Flask
+from users import users_bp
+
+def create_app():
+    app = Flask(__name__)
+    app.register_blueprint(users_bp, url_prefix='/api')
+    return app
+`,
+    )
+  })
+
+  afterAll(async () => {
+    await fs.rm(factoryDir, { recursive: true, force: true })
+  })
+
+  it('create_app() 내부 register_blueprint url_prefix 적용 (II-C-5)', async () => {
+    const routes = await parseFlaskRoutes(factoryDir, 'test@0.1')
+    const paths = routes.map(r => r.path)
+    expect(paths).toContain('/api/users')
+  })
+})

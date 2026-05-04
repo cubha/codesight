@@ -172,4 +172,33 @@ def get_user(user_id: int):
       expect(inferredRoutes[0].inferenceChain).toBeDefined()
     }
   })
+
+  it('include_router — 동일 path GET+POST NodeId 충돌 없음 (II-C-1)', async () => {
+    await writeFile('routers/items.py', `
+from fastapi import APIRouter
+router = APIRouter()
+
+@router.get('/items')
+def list_items():
+    return []
+
+@router.post('/items')
+def create_item():
+    return {}
+`)
+    await writeFile('main.py', `
+from fastapi import FastAPI
+from routers import items
+
+app = FastAPI()
+app.include_router(items.router, prefix='/api')
+`)
+    const nodes = await parseDecorators(tmpDir)
+    const apiItems = nodes.filter(n => n.path === '/api/items')
+    expect(apiItems).toHaveLength(2)
+    const ids = apiItems.map(n => n.id)
+    expect(ids[0]).not.toBe(ids[1])
+    const methods = apiItems.map(n => n.httpMethod).sort()
+    expect(methods).toEqual(['GET', 'POST'])
+  })
 })
