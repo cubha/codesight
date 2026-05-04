@@ -141,6 +141,84 @@ public class Post {
     expect(tables.map(t => t.name)).toEqual(expect.arrayContaining(['User', 'Post']))
   })
 
+  it('@Column(nullable = false) → nullable: false', async () => {
+    await writeFile('Product.java', `
+import jakarta.persistence.*;
+
+@Entity
+public class Product {
+    @Id
+    private Long id;
+
+    @Column(nullable = false)
+    private String name;
+}
+`)
+    const tables = await parseJpaEntities(tmpDir, 'test')
+    expect(tables).toHaveLength(1)
+    const col = (tables[0]?.columns ?? []).find(c => c.name === 'name')
+    expect(col?.nullable).toBe(false)
+  })
+
+  it('@Column(nullable = true) → nullable: true', async () => {
+    await writeFile('Product.java', `
+import jakarta.persistence.*;
+
+@Entity
+public class Product {
+    @Id
+    private Long id;
+
+    @Column(nullable = true)
+    private String description;
+}
+`)
+    const tables = await parseJpaEntities(tmpDir, 'test')
+    expect(tables).toHaveLength(1)
+    const col = (tables[0]?.columns ?? []).find(c => c.name === 'description')
+    expect(col?.nullable).toBe(true)
+  })
+
+  it('@Column 인자 없음 → nullable: true (JPA 기본값)', async () => {
+    await writeFile('Product.java', `
+import jakarta.persistence.*;
+
+@Entity
+public class Product {
+    @Id
+    private Long id;
+
+    @Column
+    private String title;
+}
+`)
+    const tables = await parseJpaEntities(tmpDir, 'test')
+    expect(tables).toHaveLength(1)
+    const col = (tables[0]?.columns ?? []).find(c => c.name === 'title')
+    expect(col?.nullable).toBe(true)
+  })
+
+  it('@JoinColumn(name = "author_id") → ColumnDef 컬럼명 author_id', async () => {
+    await writeFile('Post.java', `
+import jakarta.persistence.*;
+
+@Entity
+public class Post {
+    @Id
+    private Long id;
+
+    @ManyToOne
+    @JoinColumn(name = "author_id")
+    private User author;
+}
+`)
+    const tables = await parseJpaEntities(tmpDir, 'test')
+    expect(tables).toHaveLength(1)
+    const names = (tables[0]?.columns ?? []).map(c => c.name)
+    expect(names).toContain('author_id')
+    expect(names).not.toContain('author')
+  })
+
   it('NodeId가 결정론적으로 생성됨', async () => {
     await writeFile('src/User.java', `
 import jakarta.persistence.*;

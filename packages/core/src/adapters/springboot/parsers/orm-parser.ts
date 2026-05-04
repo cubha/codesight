@@ -113,6 +113,8 @@ export async function parseJpaEntities(
 
             let hasColumn = false
             let isPrimary = false
+            let nullable: boolean = true
+            let joinColumnName: string | undefined
 
             for (let j = 0; j < member.childCount; j++) {
               const mod = member.child(j)
@@ -121,7 +123,48 @@ export async function parseJpaEntities(
                 const annot = mod.child(k)
                 if (annot === null || (annot.type !== 'annotation' && annot.type !== 'marker_annotation')) continue
                 const annotName = getAnnotationName(annot)
-                if (annotName === 'Column') hasColumn = true
+                if (annotName === 'Column') {
+                  hasColumn = true
+                  // @Column(nullable = false/true) 파싱 — marker_annotation은 인자 없으므로 스킵
+                  if (annot.type === 'annotation') {
+                    for (let l = 0; l < annot.childCount; l++) {
+                      const argList = annot.child(l)
+                      if (argList === null || argList.type !== 'annotation_argument_list') continue
+                      for (let m = 0; m < argList.childCount; m++) {
+                        const pair = argList.child(m)
+                        if (pair === null || pair.type !== 'element_value_pair') continue
+                        const keyNode = pair.child(0)
+                        const valNode = pair.child(2)
+                        if (keyNode?.text === 'nullable') {
+                          if (valNode?.type === 'false') nullable = false
+                          else if (valNode?.type === 'true') nullable = true
+                        }
+                      }
+                    }
+                  }
+                }
+                if (annotName === 'JoinColumn') {
+                  hasColumn = true
+                  // @JoinColumn(name = "col_name") 파싱
+                  if (annot.type === 'annotation') {
+                    for (let l = 0; l < annot.childCount; l++) {
+                      const argList = annot.child(l)
+                      if (argList === null || argList.type !== 'annotation_argument_list') continue
+                      for (let m = 0; m < argList.childCount; m++) {
+                        const pair = argList.child(m)
+                        if (pair === null || pair.type !== 'element_value_pair') continue
+                        const keyNode = pair.child(0)
+                        const valNode = pair.child(2)
+                        if (keyNode?.text === 'name' && valNode?.type === 'string_literal') {
+                          for (let n = 0; n < valNode.childCount; n++) {
+                            const frag = valNode.child(n)
+                            if (frag !== null && frag.type === 'string_fragment') joinColumnName = frag.text
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
                 if (annotName === 'Id' || annotName === 'GeneratedValue') isPrimary = true
               }
             }
@@ -134,7 +177,8 @@ export async function parseJpaEntities(
               if (nameChild !== null) {
                 const typeNode = member.childForFieldName('type')
                 const colType = typeNode?.text ?? 'unknown'
-                columns.push({ name: nameChild.text, type: colType, nullable: false, isPrimaryKey: isPrimary })
+                const colName = joinColumnName ?? nameChild.text
+                columns.push({ name: colName, type: colType, nullable, isPrimaryKey: isPrimary })
               }
             }
           }
