@@ -5,3 +5,11 @@ dist/
 .claude/
 scratch.md
 .tmp-*/
+
+# 환경변수 (토큰/시크릿) — 절대 커밋 금지
+.env.local
+.env*.local
+.env
+
+# 빌드 아티팩트
+*.vsix

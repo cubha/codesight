@@ -6,6 +6,7 @@ import type { TableNode } from '@codebase-viz/types'
 export { parsePrismaSchema } from './prisma-parser.js'
 export { parseDrizzleSchema } from './drizzle-parser.js'
 export { parseTypeOrmEntities } from './typeorm-parser.js'
+export { parseSupabaseTables } from './supabase-parser.js'
 
 export async function detectTsOrmTables(
   repoRoot: string,

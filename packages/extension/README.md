@@ -55,31 +55,22 @@ Frameworks not in this list (Express, Hono, Rails, Go, etc.) use **LLM primary**
 
 ---
 
-## ✨ What's new in v0.8.0
+## ✨ What's new in v0.8.2
 
-### React Router — 13th static-analysis adapter
-`createBrowserRouter()` and `createHashRouter()` route arrays parsed statically. `Component:` and `lazy:` properties resolved. 1-depth import chain tracked for sub-component edges.
+### Tab3 mapper edges for Nuxt, Vue SPA, Angular, React Router
+Four adapters previously returned empty mapper edges — now `buildMapperEdges` is called, linking route and component file names to ORM table names in the DB–Screen tab.
 
-### DB (Tab3) connected for all 13 adapters
-Every adapter now populates the DB–Screen tab when the project uses a supported ORM:
+### Supabase parser shared across all SPA adapters
+Nuxt, SvelteKit, Remix, Next.js Pages, Vue SPA, Angular, and React Router now all parse auto-generated `supabase.ts` type files to populate the DB–Screen tab — even without Prisma, Drizzle, or TypeORM.
 
-| Adapter group | ORM support |
-|---|---|
-| All TS adapters (Next.js, Nuxt, SvelteKit, Remix, React Router, Vue SPA, Angular, NestJS, Next.js Pages) | Supabase · Prisma · Drizzle · TypeORM |
-| Flask | SQLAlchemy (`Base` / `db.Model`) |
-| FastAPI | SQLAlchemy |
-| Django | Django ORM |
-| Spring Boot | JPA |
+### Tab1 rendering fix — no more orphan nodes for backend frameworks
+Django, Flask, FastAPI, Spring Boot, and NestJS diagrams no longer show a dangling `REACT` box. The renderer now only draws data-layer connection edges when a frontend subgraph is actually defined.
 
-### FK reference tracking
-- **TypeORM**: `@ManyToOne` / `@OneToOne` decorators now produce `ColumnDef.references` — FK targets shown as arrows in the DB–Screen
-- **Django ORM**: `ForeignKey('Model')` first argument now mapped to `ColumnDef.references`
+### Tab3 ERD stability fix
+Column types containing `→` (e.g. Django `ForeignKey→User`) caused Mermaid ERD to fail silently. Type values are now sanitized before output.
 
-### Django CBV HTTP method detection
-Class-based views (`class UserView(View): def get(self, request)`) now emit `httpMethod: 'GET'` on route nodes. `def post` → `POST`, `def put` → `PUT`, etc.
-
-### Angular template-based component graph
-`@Component.template` strings parsed for selector usage (`<app-child>`). Builds renders edges between parent and child components without requiring explicit imports.
+### Performance — tree-sitter parser caching
+Python and Java WASM parsers are now cached at the module level. Projects with many files no longer re-initialize the WASM runtime on each parser call.
 
 ---
 

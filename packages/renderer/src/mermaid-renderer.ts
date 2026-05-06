@@ -134,7 +134,11 @@ function buildRenderingDiagram(graph: IRGraph): string {
   const lines: string[] = [RENDERING_INIT, 'graph TD', CLASS_DEFS]
 
   // ── 1. FRONTEND LAYER ────────────────────────────────────────────────────
+  // frontendRef: subgraph node ID to use as source for data layer edges.
+  // undefined for backend-only frameworks (Django, Flask, SpringBoot, etc.)
+  let frontendRef: string | undefined
   if (infra.hasNextjs && !allCSR) {
+    frontendRef = 'REACT'
     lines.push(`  subgraph INFRA["☁ VERCEL · Edge Network"]`)
     lines.push(`    subgraph RUNTIME["⚙ Node.js · Server Runtime"]`)
     lines.push(`      subgraph FRAMEWORK["▲ Next.js · App Router"]`)
@@ -143,18 +147,21 @@ function buildRenderingDiagram(graph: IRGraph): string {
     for (const l of buildRouteSectionLines(sections, '          ')) lines.push(l)
     lines.push('        end\n      end\n    end\n  end')
   } else if (infra.hasNextjs && allCSR) {
+    frontendRef = 'REACT'
     lines.push(`  subgraph BROWSER["🌐 Browser · Client-Side App"]`)
     lines.push(`    subgraph FRAMEWORK["▲ Next.js · App Router"]`)
     lines.push(`      subgraph REACT["⚛ React · CSR Engine"]`)
     for (const l of buildRouteSectionLines(sections, '        ')) lines.push(l)
     lines.push('      end\n    end\n  end')
   } else if (infra.hasVite) {
+    frontendRef = 'REACT'
     lines.push(`  subgraph BROWSER["🌐 Browser · Client-Side App"]`)
     lines.push(`    subgraph BUNDLER["⚡ Vite · Dev/Build"]`)
     lines.push(`      subgraph REACT["⚛ React · CSR Engine"]`)
     for (const l of buildRouteSectionLines(sections, '        ')) lines.push(l)
     lines.push('      end\n    end\n  end')
   } else if (infra.hasExpo) {
+    frontendRef = 'RN'
     lines.push(`  subgraph MOBILE["📱 Mobile · iOS / Android"]`)
     lines.push(`    subgraph RN["⚛ React Native · Expo"]`)
     for (const l of buildRouteSectionLines(sections, '      ')) lines.push(l)
@@ -188,41 +195,40 @@ function buildRenderingDiagram(graph: IRGraph): string {
         }
       }
       lines.push('  end')
-      lines.push(`  REACT -.->|"REST"| ${beId}`)
+      if (frontendRef !== undefined) lines.push(`  ${frontendRef} -.->|"REST"| ${beId}`)
     }
   } else if (infra.hasSupabase) {
-    const fetchSrc = (infra.hasNextjs && !allCSR) ? 'SSR_FETCH' : 'REACT'
+    const fetchSrc = (infra.hasNextjs && !allCSR) ? 'SSR_FETCH' : (frontendRef ?? 'REACT')
     lines.push(`  subgraph DATALAYER["🗄 DATA LAYER"]`)
     lines.push(`    subgraph SUPABASE_G["⚡ Supabase · BaaS"]`)
     lines.push(`      PG_SB[("PostgreSQL")]`)
     if (infra.hasNextjs && !allCSR) lines.push(`      SB_AUTH["Auth · OAuth"]`)
     lines.push('    end\n  end')
-    const edge = (infra.hasNextjs && !allCSR) ? 'supabase-js' : 'supabase-js'
-    lines.push(`  ${fetchSrc} -.->|"${edge}"| PG_SB`)
+    if (frontendRef !== undefined) lines.push(`  ${fetchSrc} -.->|"supabase-js"| PG_SB`)
   } else if (infra.hasDexie) {
     lines.push(`  subgraph LOCALDATA["💾 LOCAL DATA LAYER"]`)
     lines.push(`    subgraph DEXIE_G["📦 Dexie.js · IndexedDB"]`)
     lines.push(`      IDB[("IndexedDB")]`)
     lines.push('    end\n  end')
-    lines.push('  REACT -.->|"dexie"| IDB')
+    if (frontendRef !== undefined) lines.push(`  ${frontendRef} -.->|"dexie"| IDB`)
   } else if (infra.hasFirebase) {
     lines.push(`  subgraph DATALAYER["🔥 DATA LAYER"]`)
     lines.push(`    subgraph FIREBASE_G["Firebase · BaaS"]`)
     lines.push(`      FS[("Firestore")]`)
     lines.push('    end\n  end')
-    lines.push('  REACT -.->|"firebase"| FS')
+    if (frontendRef !== undefined) lines.push(`  ${frontendRef} -.->|"firebase"| FS`)
   } else if (infra.hasPrisma) {
     lines.push(`  subgraph DATALAYER["🗄 DATA LAYER"]`)
     lines.push(`    subgraph PRISMA_G["Prisma ORM"]`)
     lines.push(`      PG_DB[("Database")]`)
     lines.push('    end\n  end')
-    lines.push('  REACT -.->|"prisma"| PG_DB')
+    if (frontendRef !== undefined) lines.push(`  ${frontendRef} -.->|"prisma"| PG_DB`)
   } else if (hasExternalAPI) {
     lines.push(`  subgraph DATALAYER["🔌 API LAYER"]`)
     lines.push(`    subgraph API_G["⚡ REST API · Backend"]`)
     lines.push(`      API_SVC[("Backend Service")]`)
     lines.push('    end\n  end')
-    lines.push('  REACT -.->|"REST"| API_SVC')
+    if (frontendRef !== undefined) lines.push(`  ${frontendRef} -.->|"REST"| API_SVC`)
   }
 
   return lines.join('\n')
@@ -385,7 +391,7 @@ function buildDbScreenDiagram(graph: IRGraph): string {
     for (const col of t.columns.slice(0, 8)) {
       const pkFlag = col.isPrimaryKey === true ? ' PK' : ''
       const fkFlag = col.references !== undefined ? ' FK' : ''
-      lines.push(`    ${col.type} ${sanitizeId(col.name)}${pkFlag}${fkFlag}`)
+      lines.push(`    ${sanitizeId(col.type)} ${sanitizeId(col.name)}${pkFlag}${fkFlag}`)
     }
     lines.push('  }')
   }
