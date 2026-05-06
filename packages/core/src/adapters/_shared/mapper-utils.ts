@@ -30,7 +30,8 @@ import {
 function tokenMatch(fileBase: string, tableName: string): boolean {
   if (fileBase === tableName) return true
   // 토큰 경계: 앞뒤가 단어 구분자(-, _, ., 문자열 시작/끝)인 경우만 매칭
-  const re = new RegExp(`(?:^|[-_.])${tableName}(?:[-_.]|$)`)
+  const escaped = tableName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  const re = new RegExp(`(?:^|[-_.])${escaped}(?:[-_.]|$)`)
   return re.test(fileBase)
 }
 

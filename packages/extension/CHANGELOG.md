@@ -1,5 +1,28 @@
 # Changelog
 
+## [0.8.2] — 2026-05-06
+
+### Added
+
+**Supabase shared parser for all SPA adapters:**
+- Nuxt, SvelteKit, Remix, Next.js Pages, Vue SPA, Angular, React Router now all parse auto-generated `supabase.ts` type files
+- Reads `Database.public.Tables` structure → extracts Row columns + FK relationships
+- Supabase-only projects (no Prisma/Drizzle/TypeORM) now correctly populate the DB–Screen tab
+
+### Fixed
+
+- **Tab1 orphan `REACT` node** (11 adapters): backend-only frameworks (Django, Flask, FastAPI, Spring Boot, NestJS) no longer emit a dangling `REACT` subgraph node in the Rendering Architecture diagram. `frontendRef` pattern introduced — data layer edges are only drawn when a frontend layer subgraph is actually defined.
+- **Tab3 ERD parse error** (`→` in column type): Django/SQLAlchemy FK columns with types like `Integer→FK` caused Mermaid ERD to fail. `sanitizeId()` now applied to `col.type` as well as `col.name`.
+- **Tab3 mapper edges missing** (Nuxt, Vue SPA, Angular, React Router): `buildMapperEdges` was hardcoded to `[]` — now properly called, linking route/component file names to ORM table names via token-boundary matching.
+- **Regex false-positive edges** in `mapper-utils.ts`: table names with `.` or `+` characters were interpolated directly into `RegExp`, causing false matches. Proper escape applied (`replace(/[.*+?^${}()|[\]\\]/g, '\\$&')`).
+
+### Performance
+
+- **tree-sitter Parser instance caching**: `createPythonParser()` and `createJavaParser()` now return module-level cached instances, avoiding redundant WASM initialization on repeated calls.
+
+---
+
+
 ## [0.8.1] — 2026-05-05
 
 ### Added

@@ -6,6 +6,8 @@ let wasmDir: string | undefined
 let initialized = false
 let pythonLanguage: Parser.Language | undefined
 let javaLanguage: Parser.Language | undefined
+let pythonParser: Parser | undefined
+let javaParser: Parser | undefined
 
 // Allows the extension (CJS bundle) to override WASM directory at startup.
 export function setWasmDir(dir: string): void {
@@ -13,6 +15,8 @@ export function setWasmDir(dir: string): void {
   initialized = false
   pythonLanguage = undefined
   javaLanguage = undefined
+  pythonParser = undefined
+  javaParser = undefined
 }
 
 function resolveWasmDir(): string {
@@ -50,15 +54,17 @@ export async function getJavaLanguage(): Promise<Parser.Language> {
 }
 
 export async function createPythonParser(): Promise<Parser> {
+  if (pythonParser !== undefined) return pythonParser
   const lang = await getPythonLanguage()
-  const parser = new Parser()
-  parser.setLanguage(lang)
-  return parser
+  pythonParser = new Parser()
+  pythonParser.setLanguage(lang)
+  return pythonParser
 }
 
 export async function createJavaParser(): Promise<Parser> {
+  if (javaParser !== undefined) return javaParser
   const lang = await getJavaLanguage()
-  const parser = new Parser()
-  parser.setLanguage(lang)
-  return parser
+  javaParser = new Parser()
+  javaParser.setLanguage(lang)
+  return javaParser
 }

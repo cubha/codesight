@@ -1,8 +1,8 @@
 {
   "name": "codebase-arch-viz",
   "displayName": "Codebase Architecture Visualizer",
-  "description": "Static codebase analysis for 13 frameworks. Routes + Components + DB for all adapters — no API key needed. MyBatis mapper XML support, large diagram rendering, bug fixes.",
-  "version": "0.8.1",
+  "description": "Static codebase analysis for 13 frameworks. Routes + Components + DB for all adapters — no API key needed. Tab3 mapper edges for Nuxt/Vue/Angular/React Router, Tab1 rendering fixes, Supabase shared parser.",
+  "version": "0.8.2",
   "publisher": "cubha",
   "license": "MIT",
   "icon": "media/icon.png",
@@ -117,7 +117,10 @@
   },
   "scripts": {
     "build": "node esbuild.mjs",
-    "package": "vsce package --no-dependencies"
+    "package": "vsce package --no-dependencies",
+    "publish:vscode": "vsce publish --no-dependencies --pat $AZURE_DEVOPS_PAT",
+    "publish:ovsx": "ovsx publish --pat $OPEN_VSX_TOKEN",
+    "publish:all": "pnpm publish:vscode && pnpm publish:ovsx"
   },
   "dependencies": {
     "@codebase-viz/core": "workspace:*",
@@ -129,6 +132,7 @@
     "@types/vscode": "^1.90.0",
     "@vscode/vsce": "^3.0.0",
     "esbuild": "^0.24.0",
+    "ovsx": "^0.9.0",
     "typescript": "*"
   }
 }
