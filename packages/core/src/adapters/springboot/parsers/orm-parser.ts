@@ -167,7 +167,7 @@ export async function parseJpaEntities(
                   }
                 }
                 if (annotName === 'Id' || annotName === 'GeneratedValue') isPrimary = true
-                if (annotName === 'ManyToOne' || annotName === 'ManyToMany') {
+                if (annotName === 'ManyToOne' || annotName === 'ManyToMany' || annotName === 'OneToOne') {
                   hasColumn = true
                   isManyToOne = true
                 }

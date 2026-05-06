@@ -50,15 +50,23 @@ function buildUrlPath(dirRelToRoutes: string): string {
   return urlSegments.length === 0 ? '/' : '/' + urlSegments.join('/')
 }
 
-async function detectRenderingMode(filePath: string): Promise<RenderingMode> {
-  let content: string
-  try {
-    content = await fs.readFile(filePath, 'utf-8')
-  } catch {
-    return 'SSR'
+async function detectRenderingMode(absFilePath: string): Promise<RenderingMode> {
+  const dir = path.dirname(absFilePath)
+  const candidates = [
+    path.join(dir, '+page.server.ts'),
+    path.join(dir, '+page.ts'),
+    absFilePath,
+  ]
+  for (const candidate of candidates) {
+    let content: string
+    try {
+      content = await fs.readFile(candidate, 'utf-8')
+    } catch {
+      continue
+    }
+    if (content.includes('export const ssr = false')) return 'CSR'
+    if (content.includes('export const prerender = true')) return 'SSG'
   }
-  if (content.includes('export const ssr = false')) return 'CSR'
-  if (content.includes('export const prerender = true')) return 'SSG'
   return 'SSR'
 }
 

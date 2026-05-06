@@ -180,4 +180,36 @@ class User(models.Model):
     expect(tables).toHaveLength(1)
     expect(tables[0]?.name).toBe('auth_users')
   })
+
+  it('ManyToManyField → column으로 추출 + references 생성 (N-7)', async () => {
+    await writeFile('api/models.py', `
+from django.db import models
+
+class Post(models.Model):
+    tags = models.ManyToManyField('Tag', blank=True)
+    title = models.CharField(max_length=200)
+`)
+    const tables = await parseDjangoOrmModels(tmpDir, 'test')
+    expect(tables).toHaveLength(1)
+    const cols = tables[0]?.columns ?? []
+    const tagsCol = cols.find(c => c.name === 'tags')
+    expect(tagsCol).toBeDefined()
+    expect(tagsCol?.type).toBe('ManyToManyField→Tag')
+    expect(tagsCol?.references?.table).toBe('Tag')
+    expect(tagsCol?.references?.column).toBe('id')
+  })
+
+  it('ManyToManyField identifier target → references 생성 (N-7)', async () => {
+    await writeFile('api/models.py', `
+from django.db import models
+
+class Article(models.Model):
+    categories = models.ManyToManyField(Category)
+    body = models.TextField()
+`)
+    const tables = await parseDjangoOrmModels(tmpDir, 'test')
+    expect(tables).toHaveLength(1)
+    const categoriesCol = (tables[0]?.columns ?? []).find(c => c.name === 'categories')
+    expect(categoriesCol?.references?.table).toBe('Category')
+  })
 })

@@ -179,4 +179,35 @@ describe('parseRoutes (SvelteKit)', () => {
     expect(nodes).toHaveLength(1)
     expect(nodes[0]!.routeFileKind).toBe('error')
   })
+
+  it('+page.server.ts에 export const ssr = false → renderingMode CSR (N-10)', async () => {
+    await writeFile('src/routes/dashboard/+page.svelte')
+    await writeFile('src/routes/dashboard/+page.server.ts', `
+export const ssr = false
+export async function load() { return {} }
+`)
+    const nodes = await parseRoutes(tmpDir)
+    const dashboard = nodes.find(n => n.path === '/dashboard')
+    expect(dashboard).toBeDefined()
+    expect(dashboard?.renderingMode).toBe('CSR')
+  })
+
+  it('+page.ts에 export const prerender = true → renderingMode SSG (N-10)', async () => {
+    await writeFile('src/routes/about/+page.svelte')
+    await writeFile('src/routes/about/+page.ts', `
+export const prerender = true
+`)
+    const nodes = await parseRoutes(tmpDir)
+    const about = nodes.find(n => n.path === '/about')
+    expect(about).toBeDefined()
+    expect(about?.renderingMode).toBe('SSG')
+  })
+
+  it('+page.ts와 +page.server.ts 없으면 기본값 SSR (N-10)', async () => {
+    await writeFile('src/routes/blog/+page.svelte')
+    const nodes = await parseRoutes(tmpDir)
+    const blog = nodes.find(n => n.path === '/blog')
+    expect(blog).toBeDefined()
+    expect(blog?.renderingMode).toBe('SSR')
+  })
 })

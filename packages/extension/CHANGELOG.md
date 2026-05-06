@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.9.0] — 2026-05-06
+
+### Fixed — DB FK 관계 정확도 (Phase V)
+
+- **SpringBoot `@OneToOne`**: `@OneToOne` 어노테이션을 `@ManyToOne`과 동일하게 처리 → FK edge 및 column 생성. `@JoinColumn(name=...)` 있으면 컬럼명 오버라이드.
+- **Django `ManyToManyField`**: `RELATION_FIELDS`에 추가 → M2M 필드도 `references` 포함 edge 생성.
+- **FastAPI/SQLAlchemy `ForeignKey`**: `ForeignKey('users.id')` 감지 시 `parseForeignKeyRef` 헬퍼로 `{ table: 'users', column: 'id' }` 추출 → Tab3 DB–Screen에 FK 화살표 표시.
+- **TypeORM `@Column` nullable**: 항상 `false`이던 하드코딩을 `resolveColumnNullable()` 헬퍼로 교체. `{ nullable: true }` ObjectLiteral 파싱 + `T | null` / `T | undefined` TypeNode 감지.
+- **TypeORM ArrowFunction 블록 바디**: `() => { return User; }` 형태의 relation 타입 함수 미감지 → ts-morph `SyntaxKind.Block` + `ReturnStatement` 분석으로 전환.
+
+### Fixed — Tab1 Routes 정확도 (Phase VI)
+
+- **Flask `methods=[...]`**: `@app.route('/path', methods=['GET', 'POST'])` keyword argument 파싱 → `httpMethod` 설정. 이전에는 모든 Flask 라우트의 HTTP method가 없었음.
+- **Flask 2.0+ 단축 데코레이터**: `@app.get()`, `@app.post()`, `@app.put()`, `@app.delete()`, `@app.patch()` 인식 → 라우트 등록 + `httpMethod` 자동 설정.
+- **SpringBoot `@RequestMapping(method=RequestMethod.POST)`**: `method` 인자에서 `RequestMethod.X` field access 파싱 → 올바른 HTTP method 반환. 이전에는 항상 `GET` 반환.
+- **SpringBoot 다중 class prefix**: `@RequestMapping({"/api/v1", "/api/v2"})` 형태에서 첫 번째 prefix만 사용하던 문제 수정 → 각 prefix와 메서드 경로 조합으로 RouteNode 생성.
+- **SvelteKit `renderingMode` 오감지**: `export const ssr = false` / `export const prerender = true`를 `.svelte` 파일에서 읽던 문제 수정 → `+page.server.ts` → `+page.ts` → `.svelte` 순서로 탐색.
+- **Django `include()` 패키지 형태**: `include('myapp.urls')` 처리 시 `myapp/urls.py`만 탐색하던 문제 수정 → `myapp/urls/__init__.py` 패키지 형태도 탐색.
+
+---
+
 ## [0.8.2] — 2026-05-06
 
 ### Added

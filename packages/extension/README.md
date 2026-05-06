@@ -55,22 +55,29 @@ Frameworks not in this list (Express, Hono, Rails, Go, etc.) use **LLM primary**
 
 ---
 
-## ✨ What's new in v0.8.2
+## ✨ What's new in v0.9.0
 
-### Tab3 mapper edges for Nuxt, Vue SPA, Angular, React Router
-Four adapters previously returned empty mapper edges — now `buildMapperEdges` is called, linking route and component file names to ORM table names in the DB–Screen tab.
+### DB FK accuracy — 5 parsers improved
+Relation fields that previously produced no FK arrow in the DB–Screen tab are now correctly wired:
 
-### Supabase parser shared across all SPA adapters
-Nuxt, SvelteKit, Remix, Next.js Pages, Vue SPA, Angular, and React Router now all parse auto-generated `supabase.ts` type files to populate the DB–Screen tab — even without Prisma, Drizzle, or TypeORM.
+- **Spring Boot `@OneToOne`** — generates a FK column and edge, same as `@ManyToOne`. Respects `@JoinColumn(name=...)`.
+- **Django `ManyToManyField`** — added to relation detection; produces a `references` edge to the target table.
+- **FastAPI / SQLAlchemy `ForeignKey('table.col')`** — target table and column extracted and stored as `references`.
+- **TypeORM `@Column` nullable** — `{ nullable: true }` options and `T | null` TypeScript union types are now parsed correctly (was always `false`).
+- **TypeORM ArrowFunction body** — `() => { return User; }` relation type functions now resolved via ts-morph AST (regex fallback missed block bodies).
 
-### Tab1 rendering fix — no more orphan nodes for backend frameworks
-Django, Flask, FastAPI, Spring Boot, and NestJS diagrams no longer show a dangling `REACT` box. The renderer now only draws data-layer connection edges when a frontend subgraph is actually defined.
+### Tab1 HTTP method accuracy — 4 parsers improved
 
-### Tab3 ERD stability fix
-Column types containing `→` (e.g. Django `ForeignKey→User`) caused Mermaid ERD to fail silently. Type values are now sanitized before output.
+- **Flask `methods=[...]`** — `@app.route('/path', methods=['POST'])` now sets `httpMethod`. Previously all Flask routes had no HTTP method.
+- **Flask 2.0+ shorthand decorators** — `@app.get()`, `@app.post()`, `@app.put()`, `@app.delete()`, `@app.patch()` are now recognized as routes with the correct HTTP method.
+- **Spring Boot `@RequestMapping(method=RequestMethod.POST)`** — `method` argument parsed from the annotation; was always returning `GET`.
+- **Spring Boot multi-prefix** — `@RequestMapping({"/api/v1", "/api/v2"})` on a class now generates routes for every prefix combination (was using only the first).
 
-### Performance — tree-sitter parser caching
-Python and Java WASM parsers are now cached at the module level. Projects with many files no longer re-initialize the WASM runtime on each parser call.
+### SvelteKit rendering mode fix
+`export const ssr = false` and `export const prerender = true` live in `+page.ts` / `+page.server.ts`, not in `.svelte` files. The parser now checks these files first — all routes were previously shown as SSR.
+
+### Django `include()` package form
+`include('myapp.urls')` now also resolves `myapp/urls/__init__.py` (Python package form), in addition to `myapp/urls.py`.
 
 ---
 

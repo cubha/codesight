@@ -11,6 +11,8 @@ import {
 import { createPythonParser } from '../../_shared/tree-sitter-loader.js'
 
 const EXCLUDE_DIRS = new Set(['__pycache__', '.git', 'node_modules', 'venv', '.venv', 'env'])
+const HTTP_SHORTHAND = new Set(['get', 'post', 'put', 'delete', 'patch'])
+const SHORTHAND_RE = /@\w+\.(get|post|put|delete|patch)\(/
 
 async function findPyFiles(repoRoot: string): Promise<string[]> {
   const results: string[] = []
@@ -54,6 +56,24 @@ function getStringArg(argList: Parser.SyntaxNode): string | undefined {
     const arg = argList.child(i)
     if (arg !== null && arg.type === 'string') {
       return extractStringContent(arg)
+    }
+  }
+  return undefined
+}
+
+function getMethodsArg(argList: Parser.SyntaxNode): string | undefined {
+  for (let i = 0; i < argList.childCount; i++) {
+    const arg = argList.child(i)
+    if (arg === null || arg.type !== 'keyword_argument') continue
+    const key = arg.child(0)
+    const val = arg.child(2)
+    if (key?.text !== 'methods' || val?.type !== 'list') continue
+    for (let k = 0; k < val.childCount; k++) {
+      const elem = val.child(k)
+      if (elem !== null && elem.type === 'string') {
+        const content = extractStringContent(elem)
+        if (content !== undefined) return content.toUpperCase()
+      }
     }
   }
   return undefined
@@ -128,7 +148,7 @@ export async function parseFlaskRoutes(
   for (const filePath of pyFiles) {
     const source = await fs.readFile(filePath, 'utf-8').catch(() => null)
     if (source === null) continue
-    if (!source.includes('@app.route') && !source.includes('.route(') && !source.includes('Blueprint')) continue
+    if (!source.includes('@app.route') && !source.includes('.route(') && !source.includes('Blueprint') && !SHORTHAND_RE.test(source)) continue
 
     const relPath = path.relative(repoRoot, filePath).replace(/\\/g, '/')
     const tree = parser.parse(source)
@@ -216,6 +236,7 @@ export async function parseFlaskRoutes(
 
       let routePath: string | undefined
       let ownerBpVar: string | undefined
+      let httpMethod: string | undefined
 
       for (let j = 0; j < node.childCount; j++) {
         const child = node.child(j)
@@ -239,13 +260,25 @@ export async function parseFlaskRoutes(
           }
         }
 
-        if (funcName !== 'route' || argList === undefined) continue
+        if (argList === undefined) continue
+        if (funcName !== 'route' && (funcName === undefined || !HTTP_SHORTHAND.has(funcName))) continue
 
-        const rawPath = getStringArg(argList)
-        if (rawPath === undefined) continue
-        routePath = rawPath
-        if (callerName !== undefined && blueprints.has(callerName)) {
-          ownerBpVar = callerName
+        if (funcName === 'route') {
+          const rawPath = getStringArg(argList)
+          if (rawPath === undefined) continue
+          routePath = rawPath
+          httpMethod = getMethodsArg(argList)
+          if (callerName !== undefined && blueprints.has(callerName)) {
+            ownerBpVar = callerName
+          }
+        } else {
+          const rawPath = getStringArg(argList)
+          if (rawPath === undefined) continue
+          routePath = rawPath
+          httpMethod = funcName.toUpperCase()
+          if (callerName !== undefined && blueprints.has(callerName)) {
+            ownerBpVar = callerName
+          }
         }
       }
 
@@ -275,6 +308,7 @@ export async function parseFlaskRoutes(
         isGroupRoute: false,
         renderingMode: 'SSR' as const,
         provenance,
+        ...(httpMethod !== undefined ? { httpMethod } : {}),
       }
       routes.push(
         ownerBpVar !== undefined

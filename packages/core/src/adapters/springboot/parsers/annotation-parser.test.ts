@@ -130,4 +130,40 @@ public class AltController {
     expect(paths).toContain('/items')
     expect(paths).toContain('/things')
   })
+
+  it('@RequestMapping(method=RequestMethod.POST) → httpMethod POST (B-5)', async () => {
+    await writeFile('UserController.java', `
+@RestController
+@RequestMapping("/users")
+public class UserController {
+
+    @RequestMapping(value = "/create", method = RequestMethod.POST)
+    public Object createUser() { return null; }
+
+    @RequestMapping(value = "/list", method = RequestMethod.GET)
+    public Object listUsers() { return null; }
+}
+`)
+    const nodes = await parseAnnotations(tmpDir)
+    const postRoute = nodes.find(n => n.path.includes('create'))
+    const getRoute = nodes.find(n => n.path.includes('list'))
+    expect(postRoute?.httpMethod).toBe('POST')
+    expect(getRoute?.httpMethod).toBe('GET')
+  })
+
+  it('@RequestMapping({"/api/v1", "/api/v2"}) → 각 prefix 조합 RouteNode 생성 (N-11)', async () => {
+    await writeFile('ApiController.java', `
+@RestController
+@RequestMapping({"/api/v1", "/api/v2"})
+public class ApiController {
+
+    @GetMapping("/users")
+    public Object getUsers() { return null; }
+}
+`)
+    const nodes = await parseAnnotations(tmpDir)
+    const paths = nodes.map(n => n.path)
+    expect(paths).toContain('/api/v1/users')
+    expect(paths).toContain('/api/v2/users')
+  })
 })

@@ -42,7 +42,7 @@ function extractStringContent(node: import('web-tree-sitter').SyntaxNode): strin
   return undefined
 }
 
-const RELATION_FIELDS = new Set(['ForeignKey', 'OneToOneField'])
+const RELATION_FIELDS = new Set(['ForeignKey', 'OneToOneField', 'ManyToManyField'])
 
 function extractNullable(argListNode: import('web-tree-sitter').SyntaxNode | null): boolean {
   if (argListNode === null) return false

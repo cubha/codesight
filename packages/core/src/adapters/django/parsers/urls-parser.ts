@@ -21,7 +21,11 @@ async function findUrlFiles(repoRoot: string): Promise<string[]> {
       const fullPath = path.join(dir, entry.name)
       if (entry.isDirectory()) {
         if (!EXCLUDE_DIRS.has(entry.name)) await recurse(fullPath)
-      } else if (entry.isFile() && entry.name === 'urls.py') {
+      } else if (
+        entry.isFile() &&
+        (entry.name === 'urls.py' ||
+          (entry.name === '__init__.py' && path.basename(dir) === 'urls'))
+      ) {
         results.push(fullPath)
       }
     }
@@ -189,8 +193,9 @@ function extractIncludeModuleName(includeCallNode: Parser.SyntaxNode): string | 
   return undefined
 }
 
-function moduleNameToRelPath(moduleName: string): string {
-  return moduleName.replace(/\./g, '/') + '.py'
+function moduleNameToRelPaths(moduleName: string): string[] {
+  const base = moduleName.replace(/\./g, '/')
+  return [base + '.py', base + '/__init__.py']
 }
 
 function composePrefixedPath(prefixRaw: string, routePath: string): string {
@@ -414,7 +419,12 @@ export async function parseUrls(
   const includedFiles = new Set<string>()
   for (const data of fileMap.values()) {
     for (const inc of data.includes) {
-      includedFiles.add(moduleNameToRelPath(inc.moduleName))
+      for (const candidate of moduleNameToRelPaths(inc.moduleName)) {
+        if (fileMap.has(candidate)) {
+          includedFiles.add(candidate)
+          break
+        }
+      }
     }
   }
 
@@ -454,7 +464,8 @@ export async function parseUrls(
     }
 
     for (const inc of data.includes) {
-      const targetRelPath = moduleNameToRelPath(inc.moduleName)
+      const candidates = moduleNameToRelPaths(inc.moduleName)
+      const targetRelPath = candidates.find(c => fileMap.has(c)) ?? candidates[0]!
       collect(targetRelPath, [...prefixStack, inc.prefix])
     }
   }

@@ -317,4 +317,46 @@ class Item(Base):
     const idCol = cols.find(c => c.name === 'id')
     expect(idCol?.isPrimaryKey).toBe(true)
   })
+
+  it('ForeignKey("users.id") → references { table: "users", column: "id" } (B-4)', async () => {
+    await writeFile('models.py', `
+from sqlalchemy import Column, Integer, ForeignKey
+from sqlalchemy.orm import DeclarativeBase
+
+class Base(DeclarativeBase):
+    pass
+
+class Post(Base):
+    __tablename__ = 'posts'
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey('users.id'))
+`)
+    const tables = await parseSqlAlchemyModels(tmpDir, 'test')
+    const cols = tables[0]?.columns ?? []
+    const userIdCol = cols.find(c => c.name === 'user_id')
+    expect(userIdCol?.references).toBeDefined()
+    expect(userIdCol?.references?.table).toBe('users')
+    expect(userIdCol?.references?.column).toBe('id')
+  })
+
+  it('ForeignKey("categories") → references { table: "categories", column: "id" } (B-4)', async () => {
+    await writeFile('models.py', `
+from sqlalchemy import Column, Integer, ForeignKey
+from sqlalchemy.orm import DeclarativeBase
+
+class Base(DeclarativeBase):
+    pass
+
+class Article(Base):
+    __tablename__ = 'articles'
+    id = Column(Integer, primary_key=True)
+    category_id = Column(Integer, ForeignKey('categories'))
+`)
+    const tables = await parseSqlAlchemyModels(tmpDir, 'test')
+    const cols = tables[0]?.columns ?? []
+    const catCol = cols.find(c => c.name === 'category_id')
+    expect(catCol?.references).toBeDefined()
+    expect(catCol?.references?.table).toBe('categories')
+    expect(catCol?.references?.column).toBe('id')
+  })
 })

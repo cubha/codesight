@@ -128,6 +128,36 @@ function parseMappedNullable(typeAnnotationNode: import('web-tree-sitter').Synta
   return false
 }
 
+function parseForeignKeyRef(
+  argList: import('web-tree-sitter').SyntaxNode,
+): { table: string; column: string } | undefined {
+  for (let i = 0; i < argList.childCount; i++) {
+    const arg = argList.child(i)
+    if (arg === null || arg.type === 'keyword_argument' || arg.type === ',') continue
+    if (arg.type !== 'call') continue
+    const funcNode = arg.childForFieldName('function')
+    const callName = funcNode?.type === 'attribute' ? funcNode.lastChild?.text : funcNode?.text
+    if (callName !== 'ForeignKey') continue
+    const fkArgs = arg.childForFieldName('arguments')
+    if (fkArgs === null) continue
+    for (let j = 0; j < fkArgs.childCount; j++) {
+      const fkArg = fkArgs.child(j)
+      if (fkArg === null || fkArg.type !== 'string') continue
+      let content: string | undefined
+      for (let k = 0; k < fkArg.childCount; k++) {
+        const ch = fkArg.child(k)
+        if (ch !== null && ch.type === 'string_content') { content = ch.text; break }
+      }
+      if (content === undefined) continue
+      const dotIdx = content.indexOf('.')
+      const table = dotIdx >= 0 ? content.slice(0, dotIdx) : content
+      const column = dotIdx >= 0 ? content.slice(dotIdx + 1) : 'id'
+      if (table.length > 0) return { table, column }
+    }
+  }
+  return undefined
+}
+
 /**
  * call의 argument_list에서 첫 번째 positional argument(타입명)를 추출한다.
  * ForeignKey(...)가 있으면 타입명 뒤 →FK를 붙인다.
@@ -277,12 +307,15 @@ export async function parseSqlAlchemyModels(
             const nullable = isPrimaryKey ? false : (mappedNullable ?? parseNullable(right))
 
             const colType = parseColumnType(right, funcName ?? 'Column')
+            const argListNode = right.childForFieldName('arguments')
+            const fkRef = argListNode !== null ? parseForeignKeyRef(argListNode) : undefined
 
             columns.push({
               name: fieldName,
               type: colType,
               nullable,
               ...(isPrimaryKey ? { isPrimaryKey: true } : {}),
+              ...(fkRef !== undefined ? { references: fkRef } : {}),
             })
           }
         }
