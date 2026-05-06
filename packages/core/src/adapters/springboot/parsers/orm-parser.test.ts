@@ -299,6 +299,49 @@ public class Post {
     expect(fkCol?.references?.column).toBe('id')
   })
 
+  it('@OneToOne → references 채우기 + JPA convention column name (N-6)', async () => {
+    await writeFile('OrderDetail.java', `
+import jakarta.persistence.*;
+
+@Entity
+public class OrderDetail {
+    @Id
+    private Long id;
+
+    @OneToOne
+    private Order order;
+}
+`)
+    const tables = await parseJpaEntities(tmpDir, 'test')
+    expect(tables).toHaveLength(1)
+    const fkCol = (tables[0]?.columns ?? []).find(c => c.name === 'order_id')
+    expect(fkCol).toBeDefined()
+    expect(fkCol?.references?.table).toBe('Order')
+    expect(fkCol?.references?.column).toBe('id')
+  })
+
+  it('@OneToOne + @JoinColumn → JoinColumn name + references (N-6)', async () => {
+    await writeFile('UserProfile.java', `
+import jakarta.persistence.*;
+
+@Entity
+public class UserProfile {
+    @Id
+    private Long id;
+
+    @OneToOne
+    @JoinColumn(name = "user_id")
+    private User user;
+}
+`)
+    const tables = await parseJpaEntities(tmpDir, 'test')
+    expect(tables).toHaveLength(1)
+    const fkCol = (tables[0]?.columns ?? []).find(c => c.name === 'user_id')
+    expect(fkCol).toBeDefined()
+    expect(fkCol?.references?.table).toBe('User')
+    expect(fkCol?.references?.column).toBe('id')
+  })
+
   it('@OneToMany 필드는 FK 컬럼 없음 (inverse side 스킵)', async () => {
     await writeFile('User.java', `
 import jakarta.persistence.*;

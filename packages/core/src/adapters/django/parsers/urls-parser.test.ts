@@ -237,4 +237,31 @@ urlpatterns = [path('users/', views.UserView.as_view())]
     expect(nodes).toHaveLength(1)
     expect(nodes[0]?.httpMethod).toBeUndefined()
   })
+
+  it('include("myapp.urls") → myapp/urls/__init__.py 패키지 형태도 인식 (N-15)', async () => {
+    await writeFile('myproject/urls.py', `
+from django.urls import path, include
+
+urlpatterns = [
+    path('api/', include('myapp.urls')),
+]
+`)
+    await writeFile('myapp/urls/__init__.py', `
+from django.urls import path
+from . import views
+
+urlpatterns = [
+    path('users/', views.user_list, name='user-list'),
+    path('users/<int:pk>/', views.user_detail, name='user-detail'),
+]
+`)
+    await writeFile('myapp/views.py', `
+def user_list(request): pass
+def user_detail(request, pk): pass
+`)
+
+    const nodes = await parseUrls(tmpDir)
+    const paths = nodes.map(n => n.path)
+    expect(paths.some(p => p.includes('users'))).toBe(true)
+  })
 })

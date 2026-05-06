@@ -100,6 +100,37 @@ interface AnnotationInfo {
   pathArgs: string[]
   row: number
   col: number
+  node: Parser.SyntaxNode
+}
+
+function getAnnotationMethod(annotation: Parser.SyntaxNode): string | undefined {
+  for (let i = 0; i < annotation.childCount; i++) {
+    const child = annotation.child(i)
+    if (child === null || child.type !== 'annotation_argument_list') continue
+    for (let j = 0; j < child.childCount; j++) {
+      const pair = child.child(j)
+      if (pair === null || pair.type !== 'element_value_pair') continue
+      const key = pair.child(0)
+      const val = pair.child(2)
+      if (key?.text !== 'method') continue
+      if (val?.type === 'field_access' || val?.type === 'member_access') {
+        const last = val.lastNamedChild
+        if (last !== null) return last.text.toUpperCase()
+      }
+      if (val?.type === 'identifier') return val.text.toUpperCase()
+      if (val?.type === 'element_value_array_initializer') {
+        for (let k = 0; k < val.childCount; k++) {
+          const el = val.child(k)
+          if (el?.type === 'field_access' || el?.type === 'member_access') {
+            const last = el.lastNamedChild
+            if (last !== null) return last.text.toUpperCase()
+          }
+          if (el?.type === 'identifier') return el.text.toUpperCase()
+        }
+      }
+    }
+  }
+  return undefined
 }
 
 function extractAnnotations(modifiers: Parser.SyntaxNode): AnnotationInfo[] {
@@ -112,7 +143,7 @@ function extractAnnotations(modifiers: Parser.SyntaxNode): AnnotationInfo[] {
       if (nameNode === null) continue
       const name = nameNode.text
       const pathArgs = getAnnotationStringArgs(node)
-      infos.push({ name, pathArgs, row: node.startPosition.row, col: node.startPosition.column })
+      infos.push({ name, pathArgs, row: node.startPosition.row, col: node.startPosition.column, node })
     }
   }
   return infos
@@ -149,7 +180,7 @@ export async function parseAnnotations(
       if (node.type === 'class_declaration') {
         // Check class-level modifiers
         let isController = false
-        let classPrefix = ''
+        let classPrefixes: string[] = ['']
         let prefixRow = 0
         let prefixCol = 0
 
@@ -159,8 +190,8 @@ export async function parseAnnotations(
           const annotations = extractAnnotations(child)
           for (const ann of annotations) {
             if (CONTROLLER_ANNOTATIONS.has(ann.name)) isController = true
-            if (ann.name === 'RequestMapping' && ann.pathArgs.length > 0 && ann.pathArgs[0] !== undefined) {
-              classPrefix = ann.pathArgs[0]
+            if (ann.name === 'RequestMapping' && ann.pathArgs.length > 0) {
+              classPrefixes = ann.pathArgs
               prefixRow = ann.row
               prefixCol = ann.col
             }
@@ -195,32 +226,39 @@ export async function parseAnnotations(
                 const methodSuffixes = ann.pathArgs.length > 0 ? ann.pathArgs : ['']
                 const row = ann.row !== undefined ? ann.row : prefixRow
 
-                for (const methodSuffix of methodSuffixes) {
-                  const rawPath = composePath(classPrefix, methodSuffix)
-                  if (rawPath === '') continue
+                let springHttpMethod: string | undefined = MAPPING_TO_METHOD[ann.name]
+                if (ann.name === 'RequestMapping') {
+                  const parsed = getAnnotationMethod(ann.node)
+                  if (parsed !== undefined) springHttpMethod = parsed
+                }
 
-                  const urlPath = normalizeUrlPath(rawPath)
+                for (const classPrefix of classPrefixes) {
+                  for (const methodSuffix of methodSuffixes) {
+                    const rawPath = composePath(classPrefix, methodSuffix)
+                    if (rawPath === '') continue
 
-                  const springHttpMethod = MAPPING_TO_METHOD[ann.name]
-                  routes.push(
-                    createRouteNode({
-                      id: makeNodeId('route', relPath, `${urlPath}:${ann.name}`),
-                      path: urlPath,
-                      filePath: relPath,
-                      routeFileKind: 'page',
-                      dynamicSegmentType: getDynamicSegmentType(urlPath),
-                      isGroupRoute: false,
-                      renderingMode: 'SSR',
-                      ...(springHttpMethod !== undefined ? { httpMethod: springHttpMethod } : {}),
-                      provenance: astToProvenance(
-                        relPath,
-                        { row, column: ann.col },
-                        'springboot@0.1',
-                        analyzerVersion,
-                      ),
-                      confidence: 'verified',
-                    }),
-                  )
+                    const urlPath = normalizeUrlPath(rawPath)
+
+                    routes.push(
+                      createRouteNode({
+                        id: makeNodeId('route', relPath, `${urlPath}:${ann.name}`),
+                        path: urlPath,
+                        filePath: relPath,
+                        routeFileKind: 'page',
+                        dynamicSegmentType: getDynamicSegmentType(urlPath),
+                        isGroupRoute: false,
+                        renderingMode: 'SSR',
+                        ...(springHttpMethod !== undefined ? { httpMethod: springHttpMethod } : {}),
+                        provenance: astToProvenance(
+                          relPath,
+                          { row, column: ann.col },
+                          'springboot@0.1',
+                          analyzerVersion,
+                        ),
+                        confidence: 'verified',
+                      }),
+                    )
+                  }
                 }
               }
             }

@@ -86,6 +86,88 @@ describe('parseTypeOrmEntities', () => {
     await fs.rm(emptyDir, { recursive: true, force: true })
   })
 
+  it('@Column({ nullable: true }) → nullable: true (B-2)', async () => {
+    const relDir = await fs.mkdtemp(path.join(os.tmpdir(), 'cv-nullable-'))
+    await fs.mkdir(path.join(relDir, 'src'), { recursive: true })
+    await fs.writeFile(
+      path.join(relDir, 'src', 'user.entity.ts'),
+      `
+import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm'
+
+@Entity()
+export class User {
+  @PrimaryGeneratedColumn()
+  id: number
+
+  @Column({ nullable: true })
+  bio: string | null
+
+  @Column()
+  name: string
+}
+`,
+    )
+    const tables = await parseTypeOrmEntities(relDir, 'test')
+    const user = tables.find(t => t.name === 'user')
+    const bioCol = user?.columns.find(c => c.name === 'bio')
+    const nameCol = user?.columns.find(c => c.name === 'name')
+    expect(bioCol?.nullable).toBe(true)
+    expect(nameCol?.nullable).toBe(false)
+    await fs.rm(relDir, { recursive: true, force: true })
+  })
+
+  it('string | null TypeNode → nullable: true (B-2)', async () => {
+    const relDir = await fs.mkdtemp(path.join(os.tmpdir(), 'cv-nulltype-'))
+    await fs.mkdir(path.join(relDir, 'src'), { recursive: true })
+    await fs.writeFile(
+      path.join(relDir, 'src', 'item.entity.ts'),
+      `
+import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm'
+
+@Entity()
+export class Item {
+  @PrimaryGeneratedColumn()
+  id: number
+
+  @Column()
+  description: string | null
+}
+`,
+    )
+    const tables = await parseTypeOrmEntities(relDir, 'test')
+    const item = tables.find(t => t.name === 'item')
+    const descCol = item?.columns.find(c => c.name === 'description')
+    expect(descCol?.nullable).toBe(true)
+    await fs.rm(relDir, { recursive: true, force: true })
+  })
+
+  it('() => { return User; } 블록 바디 ArrowFunction → references 생성 (B-3)', async () => {
+    const relDir = await fs.mkdtemp(path.join(os.tmpdir(), 'cv-arrow-'))
+    await fs.mkdir(path.join(relDir, 'src'), { recursive: true })
+    await fs.writeFile(
+      path.join(relDir, 'src', 'post.entity.ts'),
+      `
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne } from 'typeorm'
+import { User } from './user.entity'
+
+@Entity()
+export class Post {
+  @PrimaryGeneratedColumn()
+  id: number
+
+  @ManyToOne(() => { return User; })
+  author: User
+}
+`,
+    )
+    const tables = await parseTypeOrmEntities(relDir, 'test')
+    const post = tables.find(t => t.name === 'post')
+    const authorCol = post?.columns.find(c => c.name === 'author')
+    expect(authorCol?.references).toBeDefined()
+    expect(authorCol?.references?.table).toBe('User')
+    await fs.rm(relDir, { recursive: true, force: true })
+  })
+
   it('@ManyToOne decorator → ColumnDef.references 생성', async () => {
     const relDir = await fs.mkdtemp(path.join(os.tmpdir(), 'cv-rel-'))
     await fs.mkdir(path.join(relDir, 'src', 'entities'), { recursive: true })

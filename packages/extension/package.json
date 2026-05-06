@@ -1,8 +1,8 @@
 {
   "name": "codebase-arch-viz",
   "displayName": "Codebase Architecture Visualizer",
-  "description": "Static codebase analysis for 13 frameworks. Routes + Components + DB for all adapters — no API key needed. Tab3 mapper edges for Nuxt/Vue/Angular/React Router, Tab1 rendering fixes, Supabase shared parser.",
-  "version": "0.8.2",
+  "description": "Static analysis for 13 frameworks — DB FK accuracy (OneToOne/M2M/FK refs), Flask HTTP methods, Spring multi-prefix, SvelteKit rendering. Routes + Components + DB, no API key needed.",
+  "version": "0.9.0",
   "publisher": "cubha",
   "license": "MIT",
   "icon": "media/icon.png",

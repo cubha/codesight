@@ -34,6 +34,34 @@ async function findTsFiles(repoRoot: string): Promise<string[]> {
   return results
 }
 
+function resolveColumnNullable(
+  prop: import('ts-morph').PropertyDeclaration,
+  isPrimary: boolean,
+  colDecorator: import('ts-morph').Decorator,
+): boolean {
+  if (isPrimary) return false
+
+  const args = colDecorator.getArguments()
+  if (args.length > 0) {
+    const first = args[0]!
+    if (first.isKind(SyntaxKind.ObjectLiteralExpression)) {
+      const nullableProp = first.asKindOrThrow(SyntaxKind.ObjectLiteralExpression).getProperty('nullable')
+      if (nullableProp?.isKind(SyntaxKind.PropertyAssignment)) {
+        const init = nullableProp.asKindOrThrow(SyntaxKind.PropertyAssignment).getInitializer()
+        if (init?.isKind(SyntaxKind.TrueKeyword)) return true
+        if (init?.isKind(SyntaxKind.FalseKeyword)) return false
+      }
+    }
+  }
+
+  if (prop.hasQuestionToken()) return true
+  const typeText = prop.getTypeNode()?.getText() ?? ''
+  if (typeText.includes('| null') || typeText.includes('| undefined') ||
+      typeText.includes('null |') || typeText.includes('undefined |')) return true
+
+  return false
+}
+
 function resolveEntityName(cls: import('ts-morph').ClassDeclaration): string {
   const decorator = cls.getDecorators().find(d => d.getName() === 'Entity')
   if (decorator === undefined) return cls.getName() ?? 'unknown'
@@ -122,7 +150,8 @@ export async function parseTypeOrmEntities(
             }
           }
 
-          columns.push({ name: prop.getName(), type: colType, nullable: false, isPrimaryKey: isPrimary })
+          const nullable = resolveColumnNullable(prop, isPrimary, colDecorator)
+          columns.push({ name: prop.getName(), type: colType, nullable, isPrimaryKey: isPrimary })
           continue
         }
 
@@ -132,9 +161,21 @@ export async function parseTypeOrmEntities(
           const first = args[0]
           let targetEntity: string | undefined
           if (first !== undefined) {
-            const text = first.getText()
-            const m = text.match(/=>\s*(\w+)/)
-            if (m !== null) targetEntity = m[1]!
+            if (first.isKind(SyntaxKind.ArrowFunction)) {
+              const arrowFn = first.asKindOrThrow(SyntaxKind.ArrowFunction)
+              const body = arrowFn.getBody()
+              if (body.isKind(SyntaxKind.Identifier)) {
+                targetEntity = body.getText()
+              } else if (body.isKind(SyntaxKind.Block)) {
+                const returnStmt = body.getStatements().find(s => s.isKind(SyntaxKind.ReturnStatement))
+                const expr = returnStmt?.asKind(SyntaxKind.ReturnStatement)?.getExpression()
+                if (expr?.isKind(SyntaxKind.Identifier)) targetEntity = expr.getText()
+              }
+            } else {
+              const text = first.getText()
+              const m = text.match(/=>\s*(\w+)/)
+              if (m !== null) targetEntity = m[1]!
+            }
           }
           if (targetEntity !== undefined) {
             columns.push({

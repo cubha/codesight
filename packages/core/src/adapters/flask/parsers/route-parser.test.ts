@@ -139,3 +139,55 @@ def create_app():
     expect(paths).toContain('/api/users')
   })
 })
+
+describe('parseFlaskRoutes — methods kwarg + shorthand decorators (N-4, N-5)', () => {
+  it('@app.route에 methods=[GET, POST] 지정 시 httpMethod 추출 (N-4)', async () => {
+    const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'cv-flask-n4-'))
+    await fs.writeFile(path.join(dir, 'app.py'), `
+from flask import Flask
+app = Flask(__name__)
+
+@app.route('/users', methods=['GET'])
+def list_users():
+    return {}
+
+@app.route('/users', methods=['POST'])
+def create_user():
+    return {}
+`)
+    const routes = await parseFlaskRoutes(dir, 'test')
+    const getRoute = routes.find(r => r.path === '/users' && r.httpMethod === 'GET')
+    const postRoute = routes.find(r => r.path === '/users' && r.httpMethod === 'POST')
+    expect(getRoute).toBeDefined()
+    expect(postRoute).toBeDefined()
+    await fs.rm(dir, { recursive: true, force: true })
+  })
+
+  it('@app.get() 단축 데코레이터 → httpMethod GET + 라우트 인식 (N-5)', async () => {
+    const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'cv-flask-n5-'))
+    await fs.writeFile(path.join(dir, 'app.py'), `
+from flask import Flask
+app = Flask(__name__)
+
+@app.get('/items')
+def list_items():
+    return {}
+
+@app.post('/items')
+def create_item():
+    return {}
+
+@app.delete('/items/<int:id>')
+def delete_item(id):
+    return {}
+`)
+    const routes = await parseFlaskRoutes(dir, 'test')
+    const getRoute = routes.find(r => r.path === '/items' && r.httpMethod === 'GET')
+    const postRoute = routes.find(r => r.path === '/items' && r.httpMethod === 'POST')
+    const deleteRoute = routes.find(r => r.path.includes('id') && r.httpMethod === 'DELETE')
+    expect(getRoute).toBeDefined()
+    expect(postRoute).toBeDefined()
+    expect(deleteRoute).toBeDefined()
+    await fs.rm(dir, { recursive: true, force: true })
+  })
+})
