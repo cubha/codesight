@@ -147,6 +147,7 @@
       <div class="legend-row"><div class="l-dot" style="background:#ca8a04"></div>ISR · 증분 재생성</div>
       <div class="legend-row"><div class="l-dot" style="background:#7c3aed"></div>SSG · 정적 생성</div>
       <div class="legend-row"><div class="l-dot" style="background:#6b7280;border:1px dashed #7dd3fc;border-radius:2px"></div>inferred (LLM)</div>
+      <div class="legend-row"><div class="l-dot" style="background:transparent;border:1px dashed #7dd3fc;border-radius:2px"></div>FE→BE 연결 (dashed)</div>
     </div>
     <div class="canvas-wrap" id="w-r"><div class="canvas-inner" id="i-r"><div class="loading-msg">렌더링 중...</div></div></div>
     <div class="zoom-ctrl">
@@ -230,6 +231,33 @@ const DIAGRAMS = {
 // ── Runtime ──────────────────────────────────────────────────────────────────
 mermaid.initialize({startOnLoad: false, securityLevel: 'loose', maxTextSize: 1000000, maxEdges: 2000});
 
+// Chunk fallback: renderer/_shared/wrap-fallback.ts emits %%--CHUNK--%% separator
+// between sub-diagrams when output exceeds chunkThreshold (default 1M).
+// Each chunk is a complete mermaid diagram and must be rendered separately.
+const CHUNK_SEP = '%%--CHUNK--%%';
+function splitChunks(diagram) {
+  if (!diagram || diagram.indexOf(CHUNK_SEP) === -1) return [diagram];
+  return diagram.split('\n' + CHUNK_SEP + '\n')
+    .map(c => c.replace(/^%% chunk:\d+\/\d+\n/, ''))
+    .filter(c => c && c.trim());
+}
+
+async function renderChunked(idPrefix, diagram) {
+  const chunks = splitChunks(diagram);
+  if (chunks.length <= 1) {
+    const {svg} = await mermaid.render(idPrefix+'_'+Date.now(), diagram);
+    return svg;
+  }
+  let combined = '';
+  for (let i = 0; i < chunks.length; i++) {
+    const chunk = chunks[i];
+    const {svg} = await mermaid.render(idPrefix+'_c'+i+'_'+Date.now(), chunk);
+    combined += '<div class="chunk-label" style="padding:8px 0;color:#94a3b8;font-size:11px;border-top:1px solid #1e3a5f;margin-top:8px">Chunk '+(i+1)+'/'+chunks.length+'</div>';
+    combined += svg;
+  }
+  return combined;
+}
+
 const rendered = {r:false,s:false,d:false};
 const ST = {r:{s:1,x:0,y:0}, s:{s:1,x:0,y:0}, d:{s:1,x:0,y:0}};
 const drag = {t:null,sx:0,sy:0,ox:0,oy:0};
@@ -252,7 +280,7 @@ async function renderTab(t) {
   const inner = document.getElementById('i-'+t);
   if (!DIAGRAMS[t]) { inner.innerHTML = '<div class="loading-msg">No data</div>'; return; }
   try {
-    const {svg} = await mermaid.render('msvg_'+t+'_'+Date.now(), DIAGRAMS[t]);
+    const svg = await renderChunked('msvg_'+t, DIAGRAMS[t]);
     inner.innerHTML = svg;
     const svgEl = inner.querySelector('svg');
     if (svgEl) {
@@ -287,17 +315,26 @@ function getDomain(name) {
 function parseDbData(erd) {
   const lines = erd.split('\n');
   const tables = {}, proxies = new Set();
+  const tableMetaMap = {};
   let cur = null;
   for (const raw of lines) {
     const line = raw.trim();
-    if (!line || line.startsWith('%%') || line === 'erDiagram') continue;
+    if (line.startsWith('%%')) {
+      const dm = line.match(/^%%\s+table:(\w+)(?:\s+schema:(\S+))?(?:\s+path:(\S+))?/);
+      if (dm && (dm[2] || dm[3])) { tableMetaMap[dm[1]] = {schema: dm[2] || undefined, filePath: dm[3] || undefined}; }
+      continue;
+    }
+    if (!line || line === 'erDiagram') continue;
     const em = line.match(/^(\w+)\s*\{/);
-    if (em) { cur = em[1]; if (!tables[cur]) tables[cur]={columns:[],fkOut:[],routeEdges:[],actionEdges:[]}; continue; }
+    if (em) { cur = em[1]; if (!tables[cur]) tables[cur]={columns:[],fkOut:[],routeEdges:[],actionEdges:[],schema:undefined,filePath:undefined}; continue; }
     if (line === '}') { cur = null; continue; }
     if (cur) {
       const cm = line.match(/^(\S+)\s+(\S+)(\s+PK)?(\s+FK)?/);
       if (cm) tables[cur].columns.push({type:cm[1],name:cm[2],pk:!!cm[3],fk:!!cm[4]});
     }
+  }
+  for (const [name, meta] of Object.entries(tableMetaMap)) {
+    if (tables[name]) { tables[name].schema = meta.schema; tables[name].filePath = meta.filePath; }
   }
   for (const [k,v] of Object.entries(tables)) {
     if (v.columns.length===1 && v.columns[0].type==='string' && v.columns[0].name==='name') { proxies.add(k); delete tables[k]; }
@@ -318,21 +355,54 @@ function parseDbData(erd) {
   return {tables, fkEdges, routeEdges, actionEdges};
 }
 
+function extractModule(filePath) {
+  if (!filePath) return null;
+  const srcM = filePath.match(/(?:^|\/)src\/([^/]+)\//);
+  if (srcM) return srcM[1];
+  const parts = filePath.replace(/^\//, '').split('/');
+  return parts.length > 1 ? parts[0] : null;
+}
+
+function sanitizeSgId(label) {
+  return label.replace(/[^A-Za-z0-9_]/g, '_');
+}
+
 function buildDbGraph(data, showFk, showRoutes, showActions) {
   const {tables, fkEdges, routeEdges, actionEdges} = data;
-  const domainGroups = {};
-  for (const name of Object.keys(tables)) {
-    const d = getDomain(name); if (!domainGroups[d]) domainGroups[d]=[];
-    domainGroups[d].push(name);
+  const tableNames = Object.keys(tables);
+  const hasSchema = tableNames.some(n => tables[n].schema);
+  const hasFilePath = tableNames.some(n => tables[n].filePath);
+  const groups = {};
+  let sgPrefix;
+  if (hasSchema) {
+    sgPrefix = 'SG_';
+    for (const name of tableNames) {
+      const key = tables[name].schema || 'other';
+      if (!groups[key]) groups[key] = [];
+      groups[key].push(name);
+    }
+  } else if (hasFilePath) {
+    sgPrefix = 'MOD_';
+    for (const name of tableNames) {
+      const key = extractModule(tables[name].filePath) || 'other';
+      if (!groups[key]) groups[key] = [];
+      groups[key].push(name);
+    }
+  } else {
+    sgPrefix = 'DG';
+    for (const name of tableNames) {
+      const d = getDomain(name); if (!groups[d]) groups[d]=[];
+      groups[d].push(name);
+    }
   }
   const lines = [FLOW_INIT, 'graph LR'];
   lines.push('  classDef tbl fill:#0c1a30,stroke:#334155,color:#7dd3fc,rx:4');
   lines.push('  classDef route fill:#0a180a,stroke:#166534,color:#4ade80,rx:3');
   lines.push('  classDef action fill:#1a0e00,stroke:#92400e,color:#fbbf24,rx:3');
   let dgIdx = 0;
-  for (const [domain, names] of Object.entries(domainGroups)) {
-    const id = 'DG'+dgIdx++;
-    lines.push('  subgraph '+id+'["'+domain+'"]');
+  for (const [label, names] of Object.entries(groups)) {
+    const id = sgPrefix === 'DG' ? 'DG'+dgIdx++ : sgPrefix+sanitizeSgId(label);
+    lines.push('  subgraph '+id+'["'+label+'"]');
     for (const n of names) lines.push('    '+n+'["'+n+'"]:::tbl');
     lines.push('  end');
   }
@@ -368,7 +438,7 @@ async function renderDbView(view) {
       };
     }
     const diag = dbGraphs[view] || dbGraphs.fk;
-    const {svg} = await mermaid.render('dbsvg_'+view+'_'+Date.now(), diag);
+    const svg = await renderChunked('dbsvg_'+view, diag);
     inner.innerHTML = svg;
     const svgEl = inner.querySelector('svg');
     if (svgEl) {

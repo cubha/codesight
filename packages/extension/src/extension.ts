@@ -5,6 +5,7 @@ import { CodeSightPanel } from './webview.js'
 import { SidebarProvider, type StatusInfo } from './sidebarProvider.js'
 import { PanelProvider } from './panelProvider.js'
 import { runAnalysis } from './analyzer.js'
+import { resolveSelectedFolder } from './folder-utils.js'
 import { detectStack } from '@codebase-viz/llm'
 import type { IRGraph } from '@codebase-viz/types'
 import { setWasmDir } from '@codebase-viz/core'
@@ -34,9 +35,66 @@ interface DiagramCache {
 let sidebarProvider: SidebarProvider | undefined
 let panelProvider: PanelProvider | undefined
 
-function readCache(repoRoot: string): DiagramCache | undefined {
+const STATE_KEY_SELECTED_FOLDER = 'codesight.selectedFolder'
+
+function listWorkspaceFolders(): readonly vscode.WorkspaceFolder[] {
+  return vscode.workspace.workspaceFolders ?? []
+}
+
+function getWorkspaceRoot(context?: vscode.ExtensionContext): string | undefined {
+  const folders = listWorkspaceFolders()
+  const saved = context?.workspaceState.get<string>(STATE_KEY_SELECTED_FOLDER)
+  return resolveSelectedFolder(folders, saved)
+}
+
+async function pickWorkspaceFolder(): Promise<vscode.WorkspaceFolder | undefined> {
+  const folders = listWorkspaceFolders()
+  if (folders.length === 0) return undefined
+  if (folders.length === 1) return folders[0]
+  const items = folders.map(f => ({ label: f.name, description: f.uri.fsPath, folder: f }))
+  const picked = await vscode.window.showQuickPick(items, {
+    placeHolder: 'Select workspace folder to analyze',
+  })
+  return picked?.folder
+}
+
+function buildFolderList(): { name: string; fsPath: string }[] {
+  return listWorkspaceFolders().map(f => ({ name: f.name, fsPath: f.uri.fsPath }))
+}
+
+async function pickPairFolder(mainFsPath: string): Promise<string | undefined> {
+  const others = listWorkspaceFolders().filter(f => f.uri.fsPath !== mainFsPath)
+  if (others.length === 0) return undefined
+
+  const SKIP_LABEL = '$(close) Skip — single project only'
+  const items: { label: string; description?: string; fsPath?: string }[] = [
+    { label: SKIP_LABEL },
+    ...await Promise.all(others.map(async f => {
+      let description = f.uri.fsPath
+      try {
+        const stack = await detectStack(f.uri.fsPath)
+        description = `${stack.framework} · ${f.uri.fsPath}`
+      } catch { /* ignore */ }
+      return { label: f.name, description, fsPath: f.uri.fsPath }
+    })),
+  ]
+
+  const picked = await vscode.window.showQuickPick(items, {
+    placeHolder: 'Select paired BE project (optional) — Esc or Skip to analyze single project',
+  })
+  if (picked === undefined || picked.label === SKIP_LABEL) return undefined
+  return picked.fsPath
+}
+
+function cacheFileName(pairRepoRoot?: string): string {
+  if (pairRepoRoot === undefined) return 'cache.json'
+  const suffix = path.basename(pairRepoRoot).replace(/[^a-z0-9]/gi, '_').toLowerCase()
+  return `cache-pair-${suffix}.json`
+}
+
+function readCache(repoRoot: string, pairRepoRoot?: string): DiagramCache | undefined {
   try {
-    const file = path.join(repoRoot, '.codesight', 'cache.json')
+    const file = path.join(repoRoot, '.codesight', cacheFileName(pairRepoRoot))
     if (!fs.existsSync(file)) return undefined
     return JSON.parse(fs.readFileSync(file, 'utf8')) as DiagramCache
   } catch {
@@ -44,7 +102,7 @@ function readCache(repoRoot: string): DiagramCache | undefined {
   }
 }
 
-function writeCache(repoRoot: string, graph: IRGraph, diagrams: DiagramSet): void {
+function writeCache(repoRoot: string, graph: IRGraph, diagrams: DiagramSet, pairRepoRoot?: string): void {
   try {
     const dir = path.join(repoRoot, '.codesight')
     fs.mkdirSync(dir, { recursive: true })
@@ -55,7 +113,7 @@ function writeCache(repoRoot: string, graph: IRGraph, diagrams: DiagramSet): voi
       tableCount: graph.nodes.filter(n => n.kind === 'table').length,
       diagrams,
     }
-    fs.writeFileSync(path.join(dir, 'cache.json'), JSON.stringify(data))
+    fs.writeFileSync(path.join(dir, cacheFileName(pairRepoRoot)), JSON.stringify(data))
   } catch {
     // non-fatal
   }
@@ -65,6 +123,7 @@ async function doAnalyze(
   context: vscode.ExtensionContext,
   workspaceRoot: string,
   forceRefresh = false,
+  pairRepoRoot?: string,
 ): Promise<void> {
   const config = vscode.workspace.getConfiguration('codesight')
   const enableLLM = config.get<boolean>('enableLLM', false)
@@ -90,7 +149,7 @@ async function doAnalyze(
   const stackStatus = await getStackStatus(workspaceRoot)
 
   if (!forceRefresh) {
-    const cached = readCache(workspaceRoot)
+    const cached = readCache(workspaceRoot, pairRepoRoot)
     if (cached !== undefined) {
       panel.showCached(cached)
       sidebarProvider?.updateStatus({
@@ -112,11 +171,17 @@ async function doAnalyze(
     panelProvider?.setAnalyzing(true, path.basename(workspaceRoot))
     panel.showLoading()
 
-    const { graph, diagrams } = await runAnalysis(
-      workspaceRoot,
-      apiKey !== undefined ? { apiKey, model } : undefined,
-    )
-    writeCache(workspaceRoot, graph, diagrams)
+    const groupingCfg = vscode.workspace.getConfiguration('codesight.grouping')
+    const grouping = {
+      maxNodesPerGroup: groupingCfg.get<number>('maxNodesPerGroup', 30),
+      maxDepth: groupingCfg.get<number>('maxDepth', 8),
+    }
+    const { graph, diagrams } = await runAnalysis(workspaceRoot, {
+      ...(apiKey !== undefined ? { llm: { apiKey, model } } : {}),
+      grouping,
+      ...(pairRepoRoot !== undefined ? { pairRepoRoot } : {}),
+    })
+    writeCache(workspaceRoot, graph, diagrams, pairRepoRoot)
     panel.updateGraph(graph, diagrams)
 
     const result = {
@@ -165,7 +230,7 @@ export function activate(context: vscode.ExtensionContext): void {
   void (async () => {
     const hasApiKey = (await context.secrets.get('codesight.anthropicKey') ?? '') !== ''
     const llmEnabled = vscode.workspace.getConfiguration('codesight').get<boolean>('enableLLM', false)
-    const workspaceRoot = getWorkspaceRoot()
+    const workspaceRoot = getWorkspaceRoot(context)
     const cached = workspaceRoot !== undefined ? readCache(workspaceRoot) : undefined
     const stackStatus = workspaceRoot !== undefined ? await getStackStatus(workspaceRoot) : {}
 
@@ -177,9 +242,21 @@ export function activate(context: vscode.ExtensionContext): void {
       cachedAt: cached?.savedAt,
       routeCount: cached?.routeCount,
       tableCount: cached?.tableCount,
+      folders: buildFolderList(),
+      selectedFolder: workspaceRoot,
       ...stackStatus,
     })
   })()
+
+  context.subscriptions.push(
+    vscode.workspace.onDidChangeWorkspaceFolders(() => {
+      const root = getWorkspaceRoot(context)
+      sidebarProvider?.updateStatus({
+        folders: buildFolderList(),
+        selectedFolder: root,
+      })
+    }),
+  )
 
   context.subscriptions.push(
     vscode.workspace.onDidChangeConfiguration(e => {
@@ -191,29 +268,31 @@ export function activate(context: vscode.ExtensionContext): void {
   )
 
   context.subscriptions.push(
-    // 캐시 없을 때: 분석 실행
+    // 캐시 없을 때: 분석 실행 (multi-root 시 2단계 QuickPick)
     vscode.commands.registerCommand('codesight.analyze', async () => {
-      const workspaceRoot = getWorkspaceRoot()
+      const workspaceRoot = getWorkspaceRoot(context)
       if (workspaceRoot === undefined) {
         void vscode.window.showErrorMessage('CodeSight: No workspace folder open.')
         return
       }
-      await doAnalyze(context, workspaceRoot)
+      const pairRepoRoot = await pickPairFolder(workspaceRoot)
+      await doAnalyze(context, workspaceRoot, false, pairRepoRoot)
     }),
 
-    // 캐시 있을 때: 강제 재분석
+    // 캐시 있을 때: 강제 재분석 (multi-root 시 2단계 QuickPick)
     vscode.commands.registerCommand('codesight.reanalyze', async () => {
-      const workspaceRoot = getWorkspaceRoot()
+      const workspaceRoot = getWorkspaceRoot(context)
       if (workspaceRoot === undefined) {
         void vscode.window.showErrorMessage('CodeSight: No workspace folder open.')
         return
       }
-      await doAnalyze(context, workspaceRoot, true)
+      const pairRepoRoot = await pickPairFolder(workspaceRoot)
+      await doAnalyze(context, workspaceRoot, true, pairRepoRoot)
     }),
 
     // 캐시 있을 때: 웹뷰만 열기 (재분석 없음)
     vscode.commands.registerCommand('codesight.openViewer', async () => {
-      const workspaceRoot = getWorkspaceRoot()
+      const workspaceRoot = getWorkspaceRoot(context)
       if (workspaceRoot === undefined) return
       const cached = readCache(workspaceRoot)
       if (cached === undefined) {
@@ -222,6 +301,31 @@ export function activate(context: vscode.ExtensionContext): void {
       }
       const panel = CodeSightPanel.createOrShow(context.extensionUri)
       panel.showCached(cached)
+    }),
+
+    // 멀티 워크스페이스: 폴더 선택
+    vscode.commands.registerCommand('codesight.selectFolder', async (fsPath?: unknown) => {
+      let target: vscode.WorkspaceFolder | undefined
+      if (typeof fsPath === 'string') {
+        target = listWorkspaceFolders().find(f => f.uri.fsPath === fsPath)
+      }
+      if (target === undefined) {
+        target = await pickWorkspaceFolder()
+      }
+      if (target === undefined) return
+      await context.workspaceState.update(STATE_KEY_SELECTED_FOLDER, target.uri.fsPath)
+      const cached = readCache(target.uri.fsPath)
+      const stackStatus = await getStackStatus(target.uri.fsPath)
+      sidebarProvider?.updateStatus({
+        selectedFolder: target.uri.fsPath,
+        folders: buildFolderList(),
+        hasCache: cached !== undefined,
+        projectName: cached?.projectName,
+        cachedAt: cached?.savedAt,
+        routeCount: cached?.routeCount,
+        tableCount: cached?.tableCount,
+        ...stackStatus,
+      })
     }),
 
     // 사이드바 Export 버튼 → 웹뷰에 triggerExport 전달
@@ -261,10 +365,4 @@ export function activate(context: vscode.ExtensionContext): void {
 
 export function deactivate(): void {
   CodeSightPanel.dispose()
-}
-
-function getWorkspaceRoot(): string | undefined {
-  const folders = vscode.workspace.workspaceFolders
-  if (folders === undefined || folders.length === 0) return undefined
-  return folders[0]?.uri.fsPath
 }

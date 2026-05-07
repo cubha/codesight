@@ -1,0 +1,5 @@
+CREATE TABLE flyway_items (
+    id INTEGER NOT NULL PRIMARY KEY,
+    name VARCHAR(200) NOT NULL,
+    price DECIMAL(10,2) NOT NULL
+);

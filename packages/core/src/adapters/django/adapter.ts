@@ -7,6 +7,7 @@ import {
 import { parseUrls } from './parsers/urls-parser.js'
 import { parseDjangoComponents } from './parsers/component-parser.js'
 import { parseDjangoOrmModels } from './parsers/orm-parser.js'
+import { parseFlywayMigrations, mergeFlywayTables } from '../../db/flyway-parser.js'
 
 export class DjangoAdapter implements IAdapter {
   readonly id = 'django'
@@ -15,11 +16,16 @@ export class DjangoAdapter implements IAdapter {
 
   async analyze(ctx: AdapterContext): Promise<AdapterResult> {
     const { repoRoot, analyzerVersion } = ctx
-    const [routeNodes, componentNodes, tableNodes] = await Promise.all([
+    const [routeNodes, componentNodes, ormTables, flywayNodes] = await Promise.all([
       parseUrls(repoRoot, analyzerVersion).catch(() => []),
       parseDjangoComponents(repoRoot, analyzerVersion).catch(() => []),
       parseDjangoOrmModels(repoRoot, analyzerVersion).catch(() => []),
+      parseFlywayMigrations(repoRoot).catch(() => []),
     ])
+
+    // Django ORM models take precedence; Flyway DDL supplements missing tables/columns
+    const tableNodes = mergeFlywayTables(ormTables, flywayNodes)
+
     return {
       ...EMPTY_ADAPTER_RESULT,
       routeNodes,

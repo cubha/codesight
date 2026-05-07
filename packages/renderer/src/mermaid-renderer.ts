@@ -11,6 +11,14 @@ import {
   type IRGraphMetadata,
   type IRBackendService,
 } from '@codebase-viz/types'
+import { groupRoutesByUrl } from './url-grouper.js'
+import {
+  shouldChunk,
+  chunkByGroups,
+  joinChunks,
+  DEFAULT_CHUNK_THRESHOLD,
+  type ChunkOptions,
+} from './_shared/wrap-fallback.js'
 
 function edgeArrow(edge: IREdge): string {
   return edge.confidence === 'inferred' ? '-.->' : '-->'
@@ -44,6 +52,26 @@ function getTopSection(routePath: string): string {
   const first = parts[0]
   if (first === undefined) return 'root'
   return first.replace(/^\[/, '').replace(/\]$/, '') || 'root'
+}
+
+// Convert url-grouper groupKey (e.g. "/blog", "/") to the section key used internally
+// (e.g. "blog", "root"). Strips leading slash, returns "root" for empty/root.
+function groupKeyToSectionKey(groupKey: string): string {
+  const stripped = groupKey.replace(/^\//, '')
+  return stripped || 'root'
+}
+
+// Build a sections Map from url-grouper output, compatible with buildRouteSectionLines.
+function buildSectionsFromRoutes(routes: RouteNode[]): Map<string, RouteNode[]> {
+  const groups = groupRoutesByUrl(routes)
+  const sections = new Map<string, RouteNode[]>()
+  for (const { groupKey, routes: groupRoutes } of groups) {
+    const secKey = groupKeyToSectionKey(groupKey)
+    const existing = sections.get(secKey) ?? []
+    for (const r of groupRoutes) existing.push(r)
+    sections.set(secKey, existing)
+  }
+  return sections
 }
 
 const SECTION_EMOJI: Record<string, string> = {
@@ -117,13 +145,7 @@ function buildRenderingDiagram(graph: IRGraph): string {
   const routeNodes = graph.nodes.filter(isRouteNode).filter(r => r.routeFileKind === 'page')
   if (routeNodes.length === 0) return 'graph TD\n  empty["(no routes found)"]'
 
-  const sections = new Map<string, RouteNode[]>()
-  for (const r of routeNodes) {
-    const sec = getTopSection(r.path)
-    const existing = sections.get(sec) ?? []
-    existing.push(r)
-    sections.set(sec, existing)
-  }
+  const sections = buildSectionsFromRoutes(routeNodes)
 
   const tableNodes = graph.nodes.filter(isTableNode)
   const hasDirectDB = infra.hasSupabase || infra.hasDexie || infra.hasPrisma || infra.hasFirebase
@@ -297,15 +319,9 @@ function buildScreenComponentDiagram(graph: IRGraph): string {
 
   const lines: string[] = [RENDERING_INIT, 'graph TB', CLASS_DEFS]
 
-  // Group page routes by section
+  // Group page routes by section using url-grouper for hierarchical grouping
   // Each section subgraph uses direction LR so route → components flow horizontally
-  const sections = new Map<string, RouteNode[]>()
-  for (const r of pageRoutes) {
-    const sec = getTopSection(r.path)
-    const existing = sections.get(sec) ?? []
-    existing.push(r)
-    sections.set(sec, existing)
-  }
+  const sections = buildSectionsFromRoutes(pageRoutes)
 
   const compNodeRendered = new Set<string>()
   const edgesForSection: string[] = []
@@ -385,6 +401,13 @@ function buildDbScreenDiagram(graph: IRGraph): string {
 
   const lines: string[] = [DB_DIAGRAM_INIT, 'erDiagram']
 
+  for (const t of tableNodes) {
+    const file = t.provenance.file
+    if (file !== undefined && file !== '') {
+      lines.push(`%% table:${sanitizeId(t.name)} path:${file}`)
+    }
+  }
+
   // Table entities — up to 8 columns with PK/FK flags
   for (const t of tableNodes) {
     lines.push(`  ${sanitizeId(t.name)} {`)
@@ -462,10 +485,104 @@ export interface DiagramSet {
   dbScreen: string
 }
 
-export function buildDiagrams(graph: IRGraph): DiagramSet {
+export interface GroupingOptions {
+  maxNodesPerGroup?: number
+  maxDepth?: number
+}
+
+export interface BuildDiagramsOptions {
+  grouping?: GroupingOptions
+  chunkThreshold?: number
+}
+
+export const DEFAULT_GROUPING: Required<GroupingOptions> = {
+  maxNodesPerGroup: 30,
+  maxDepth: 8,
+}
+
+function buildWithChunkFallback(
+  graph: IRGraph,
+  build: (g: IRGraph) => string,
+  chunkOpts: ChunkOptions,
+  threshold: number,
+): string {
+  const text = build(graph)
+  if (!shouldChunk(text, threshold)) return text
+  const subGraphs = chunkByGroups(graph, chunkOpts)
+  if (subGraphs.length <= 1) return text
+  const parts = subGraphs.map(g => build(g))
+  return joinChunks(parts)
+}
+
+const COMBINED_FALLBACK = '⚠ 결합 다이어그램 1M 초과 — Cytoscape 마이그레이션 대기 중'
+
+function findParentRouteId(componentId: string, feGraph: IRGraph): string | undefined {
+  return feGraph.edges.find(e => e.kind === 'renders' && e.to === componentId)?.from
+}
+
+export function buildCombinedDiagram(
+  feGraph: IRGraph,
+  beGraph: IRGraph,
+  crossEdges: IREdge[],
+  opts?: BuildDiagramsOptions,
+): DiagramSet {
+  const threshold = opts?.chunkThreshold ?? DEFAULT_CHUNK_THRESHOLD
+
+  // Tab1: FE subgraph + BE subgraph + cross-edges
+  const feRoutes = feGraph.nodes.filter(isRouteNode).filter(r => r.routeFileKind === 'page')
+  const beRoutes = beGraph.nodes.filter(isRouteNode).filter(r => r.routeFileKind === 'page')
+
+  const lines: string[] = [RENDERING_INIT, 'graph TD', CLASS_DEFS]
+
+  // FE subgraph
+  if (feRoutes.length > 0) {
+    lines.push(`  subgraph FE_PROJ["🖥 Frontend · ${feGraph.projectName ?? 'FE'}"]`)
+    const feSections = buildSectionsFromRoutes(feRoutes)
+    for (const l of buildRouteSectionLines(feSections, '    ')) lines.push(l)
+    lines.push('  end')
+  }
+
+  // BE subgraph
+  if (beRoutes.length > 0) {
+    lines.push(`  subgraph BE_PROJ["⚙ Backend · ${beGraph.projectName ?? 'BE'}"]`)
+    const beSections = buildSectionsFromRoutes(beRoutes)
+    for (const l of buildRouteSectionLines(beSections, '    ')) lines.push(l)
+    lines.push('  end')
+  }
+
+  // Cross-edges: find parent RouteNode for ComponentNode from ids
+  for (const edge of crossEdges) {
+    if (edge.kind !== 'fe-be-call') continue
+    const visualFrom = findParentRouteId(edge.from, feGraph) ?? edge.from
+    lines.push(`  ${sanitizeId(visualFrom)} -.-> ${sanitizeId(edge.to)}`)
+  }
+
+  const renderingText = lines.join('\n')
+
+  if (!shouldChunk(renderingText, threshold)) {
+    return {
+      rendering: renderingText,
+      screenComponent: buildScreenComponentDiagram(feGraph),
+      dbScreen: buildDbScreenDiagram(beGraph),
+    }
+  }
+
   return {
-    rendering: buildRenderingDiagram(graph),
-    screenComponent: buildScreenComponentDiagram(graph),
-    dbScreen: buildDbScreenDiagram(graph),
+    rendering: `graph TD\n  fallback["${COMBINED_FALLBACK}"]`,
+    screenComponent: buildScreenComponentDiagram(feGraph),
+    dbScreen: buildDbScreenDiagram(beGraph),
+  }
+}
+
+export function buildDiagrams(graph: IRGraph, opts?: BuildDiagramsOptions): DiagramSet {
+  const chunkOpts: ChunkOptions = {
+    maxNodesPerGroup: opts?.grouping?.maxNodesPerGroup ?? DEFAULT_GROUPING.maxNodesPerGroup,
+    maxDepth: opts?.grouping?.maxDepth ?? DEFAULT_GROUPING.maxDepth,
+  }
+  const threshold = opts?.chunkThreshold ?? DEFAULT_CHUNK_THRESHOLD
+  return {
+    rendering: buildWithChunkFallback(graph, buildRenderingDiagram, chunkOpts, threshold),
+    screenComponent: buildWithChunkFallback(graph, buildScreenComponentDiagram, chunkOpts, threshold),
+    dbScreen: buildWithChunkFallback(graph, buildDbScreenDiagram, chunkOpts, threshold),
   }
 }

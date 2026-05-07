@@ -118,13 +118,15 @@ export type IRNode = RouteNode | ComponentNode | TableNode
 
 // ─── IREdge ───────────────────────────────────────────────────────────────────
 // Edge kind convention (enforced by adapter authors, documented here):
-//   'renders'  — RouteNode(page/layout) → ComponentNode
-//   'imports'  — ComponentNode → ComponentNode (direct TSX import)
-//   'queries'  — ComponentNode → TableNode (supabase.from() call)
-//   'calls'    — reserved for Server Action calls (out of scope for MVP)
+//   'renders'    — RouteNode(page/layout) → ComponentNode
+//   'imports'    — ComponentNode → ComponentNode (direct TSX import)
+//   'queries'    — ComponentNode → TableNode (supabase.from() call)
+//   'calls'      — reserved for Server Action calls (out of scope for MVP)
+//   'fe-be-call' — FE fetch/axios call → BE RouteNode (cross-project URL match)
 //
 // `importDepth` is meaningful only for 'imports' edges (1 = direct import).
-export type EdgeKind = 'renders' | 'calls' | 'queries' | 'imports'
+// `crossProject` is meaningful only for 'fe-be-call' edges.
+export type EdgeKind = 'renders' | 'calls' | 'queries' | 'imports' | 'fe-be-call'
 
 type IREdgeBase = {
   id: EdgeId
@@ -132,6 +134,7 @@ type IREdgeBase = {
   to: NodeId
   kind: EdgeKind
   importDepth?: number       // populated only for kind === 'imports'
+  crossProject?: { fromRepoRoot: string; toRepoRoot: string }  // populated only for kind === 'fe-be-call'
   provenance: Provenance
 }
 
