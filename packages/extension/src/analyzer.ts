@@ -1,8 +1,14 @@
 import * as path from 'node:path'
 import * as os from 'node:os'
-import { createDefaultRegistry } from '@codebase-viz/core'
-import { renderMermaid, buildDiagrams, type DiagramSet } from '@codebase-viz/renderer'
-import { createIRGraph, EMPTY_ADAPTER_RESULT, type IRGraph } from '@codebase-viz/types'
+import { createDefaultRegistry, extractFeCalls, matchFeCallsToBeRoutes, remapCrossEdgeFromIds } from '@codebase-viz/core'
+import {
+  renderMermaid,
+  buildDiagrams,
+  DEFAULT_GROUPING,
+  type DiagramSet,
+  type GroupingOptions,
+} from '@codebase-viz/renderer'
+import { createIRGraph, EMPTY_ADAPTER_RESULT, isComponentNode, isRouteNode, type IREdge, type IRGraph } from '@codebase-viz/types'
 import {
   detectStack,
   collectFiles,
@@ -20,12 +26,24 @@ export interface LLMOptions {
 export interface AnalysisResult {
   graph: IRGraph
   diagrams: DiagramSet
+  pair?: { graph: IRGraph; crossEdges: IREdge[] }
+}
+
+export interface RunAnalysisOptions {
+  llm?: LLMOptions
+  grouping?: GroupingOptions
+  pairRepoRoot?: string
 }
 
 export async function runAnalysis(
   repoRoot: string,
-  llmOptions?: LLMOptions,
+  options?: RunAnalysisOptions | LLMOptions,
 ): Promise<AnalysisResult> {
+  const opts: RunAnalysisOptions = options !== undefined && 'apiKey' in options
+    ? { llm: options }
+    : (options ?? {})
+  const llmOptions = opts.llm
+  const grouping: GroupingOptions = { ...DEFAULT_GROUPING, ...(opts.grouping ?? {}) }
   const stack = await detectStack(repoRoot)
   const registry = createDefaultRegistry()
   const adapter = registry.get(stack.adapterId)
@@ -93,7 +111,66 @@ export async function runAnalysis(
   const outputDir = path.join(repoRoot, '.codesight')
   await renderMermaid(finalGraph, outputDir).catch(() => { /* best-effort */ })
 
-  return { graph: finalGraph, diagrams: buildDiagrams(finalGraph) }
+  if (opts.pairRepoRoot !== undefined) {
+    const pairResult = await buildPairResult(finalGraph, opts.pairRepoRoot, grouping)
+    return { graph: finalGraph, diagrams: buildDiagrams(finalGraph, { grouping }), pair: pairResult }
+  }
+
+  return { graph: finalGraph, diagrams: buildDiagrams(finalGraph, { grouping }) }
+}
+
+async function buildPairResult(
+  feGraph: IRGraph,
+  pairRepoRoot: string,
+  grouping: Required<GroupingOptions>,
+): Promise<{ graph: IRGraph; crossEdges: IREdge[] }> {
+  const pairStack = await detectStack(pairRepoRoot)
+  const registry = createDefaultRegistry()
+  const pairAdapter = registry.get(pairStack.adapterId)
+  const pairAdapterResult = pairAdapter !== undefined
+    ? await pairAdapter.analyze({ repoRoot: pairRepoRoot, stack: pairStack, analyzerVersion: 'codebase-viz@0.1.0' })
+    : EMPTY_ADAPTER_RESULT
+
+  const beGraph = createIRGraph({
+    analyzerVersion: 'codebase-viz@0.1.0',
+    repoRoot: pairRepoRoot,
+    projectName: path.basename(pairRepoRoot),
+    metadata: {
+      framework: pairStack.framework,
+      hasSupabase: pairStack.hasSupabase,
+      hasPrisma: pairStack.hasPrisma,
+      hasDexie: pairStack.hasDexie,
+      hasFirebase: false,
+    },
+    nodes: [
+      ...pairAdapterResult.routeNodes,
+      ...pairAdapterResult.componentNodes,
+      ...pairAdapterResult.tableNodes,
+      ...(pairAdapterResult.serverNodes ?? []),
+    ],
+    edges: [
+      ...pairAdapterResult.componentEdges,
+      ...pairAdapterResult.mapperEdges,
+      ...(pairAdapterResult.serverEdges ?? []),
+    ],
+  })
+
+  // Extract FE fetch calls from component file paths
+  const feComponentFiles = feGraph.nodes
+    .filter(isComponentNode)
+    .map(n => path.join(feGraph.repoRoot, n.filePath))
+
+  const feCalls = await extractFeCalls(feComponentFiles, feGraph.repoRoot, 'codebase-viz@0.1.0')
+
+  const beRoutes = beGraph.nodes.filter(isRouteNode)
+  const rawEdges = matchFeCallsToBeRoutes(feCalls, beRoutes, {
+    fromRepoRoot: feGraph.repoRoot,
+    toRepoRoot: pairRepoRoot,
+    analyzerVersion: 'codebase-viz@0.1.0',
+  })
+  const crossEdges = remapCrossEdgeFromIds(rawEdges, feGraph)
+
+  return { graph: beGraph, crossEdges }
 }
 
 export async function getCacheDir(): Promise<string> {

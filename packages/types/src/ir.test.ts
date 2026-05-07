@@ -197,6 +197,43 @@ describe('createEdge', () => {
   })
 })
 
+describe('fe-be-call edge', () => {
+  it('fe-be-call verified 엣지를 생성한다 (exact URL match)', () => {
+    const from = makeNodeId('component', 'src/components/UserList.tsx', 'UserList')
+    const to = makeNodeId('route', 'src/main/java/UserController.java', 'page')
+    const edge = createEdge({
+      id: makeEdgeId('fe-be-call', from, to),
+      from,
+      to,
+      kind: 'fe-be-call',
+      crossProject: { fromRepoRoot: '/repo/frontend', toRepoRoot: '/repo/backend' },
+      provenance: p,
+      confidence: 'verified',
+    })
+    expect(edge.kind).toBe('fe-be-call')
+    expect(edge.crossProject?.fromRepoRoot).toBe('/repo/frontend')
+    expect(edge.confidence).toBe('verified')
+  })
+
+  it('fe-be-call inferred 엣지 — 매칭 실패 dangling edge', () => {
+    const from = makeNodeId('component', 'src/components/Profile.tsx', 'Profile')
+    const to = from // dangling: from === to (no matched BE route)
+    const edge = createEdge({
+      id: makeEdgeId('fe-be-call', from, to),
+      from,
+      to,
+      kind: 'fe-be-call',
+      provenance: p,
+      confidence: 'inferred',
+      inferenceChain: ['no-route-match'],
+    })
+    expect(edge.kind).toBe('fe-be-call')
+    if (edge.confidence === 'inferred') {
+      expect(edge.inferenceChain).toContain('no-route-match')
+    }
+  })
+})
+
 describe('createIRGraph', () => {
   it('schemaVersion, generatedAt을 자동 설정한다', () => {
     const graph = createIRGraph({

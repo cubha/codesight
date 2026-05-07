@@ -1,0 +1,11 @@
+CREATE TABLE IF NOT EXISTS flyway_users (
+    id BIGINT NOT NULL PRIMARY KEY,
+    username VARCHAR(100) NOT NULL,
+    created_at TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS flyway_posts (
+    id BIGINT NOT NULL PRIMARY KEY,
+    title VARCHAR(255) NOT NULL,
+    user_id BIGINT NOT NULL
+);

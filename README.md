@@ -4,7 +4,7 @@
 
 Routes, components, and DB relationships — extracted statically from **13 frameworks**, optionally enriched by LLM, rendered as three live diagram tabs inside VS Code.
 
-> Marketplace: [`cubha.codebase-arch-viz`](https://marketplace.visualstudio.com/items?itemName=cubha.codebase-arch-viz) · Current release: **v1.0.0**
+> Marketplace: [`cubha.codebase-arch-viz`](https://marketplace.visualstudio.com/items?itemName=cubha.codebase-arch-viz) · Current release: **v1.1.0**
 
 ---
 
@@ -14,11 +14,29 @@ Open a project in VS Code → click **Analyze**. CodeSight produces:
 
 | Tab | Content |
 |---|---|
-| **Rendering Architecture** | Route hierarchy with SSR / CSR / ISR / SSG labels per route, HTTP method badges |
+| **Rendering Architecture** | Route hierarchy with URL-based hierarchical grouping, SSR / CSR / ISR / SSG labels, HTTP method badges |
 | **Screen–Component** | Route → component import graph, runtime tags (client / shared / server) |
-| **DB–Screen** | Table schema (Supabase, Prisma, Drizzle, TypeORM, Django ORM, SQLAlchemy, JPA) + which pages query each table |
+| **DB–Screen** | Table schema (Supabase, Prisma, Drizzle, TypeORM, Django ORM, SQLAlchemy, JPA, **Flyway DDL**) + which pages query each table, grouped by schema/module |
 
 Results are cached in `.codesight/cache.json`. Re-analyze on demand.
+
+### Multi-project Analysis (FE↔BE)
+
+When multiple workspace folders are open (e.g. a Next.js frontend + Spring Boot backend), CodeSight supports **paired analysis**:
+
+1. Click **Analyze** → select the main (FE) project
+2. A second prompt appears — select the paired BE project (or **Skip** for single-project mode)
+
+CodeSight statically extracts `fetch()` / `axios.*` call URLs from the FE codebase and matches them against BE route definitions. Matched routes appear as **dashed cross-edges** in the combined Rendering Architecture diagram.
+
+| | Without LLM | With LLM (BYOK) |
+|---|---|---|
+| Literal URL match rate | ~30–50% | ~70–85% |
+| Template literal (same-file const) | ✅ | ✅ |
+| Dynamic segments (`${id}`) | shown as `${…}` placeholder | ✅ |
+| Import-resolved constants | ✗ | ✅ |
+
+Unmatched FE calls appear as **dangling edges** (inferred, `no-route-match`). Diagrams exceeding 1 M characters fall back to a Cytoscape-ready placeholder.
 
 ---
 
@@ -77,6 +95,15 @@ detectStack(repoRoot)
   → [optional] LLM enrichment (analyzer.ts:60–90)  # BYOK, additive only
   → buildDiagrams() → 3-tab Mermaid viewer
   → .codesight/cache.json
+
+# Pair mode (FE↔BE)
+detectStack(pairRepoRoot)
+  → adapter.analyze(pairRepoRoot)              # BE IRGraph
+  → extractFeCalls(feComponentFiles)           # fetch/axios literal extraction
+  → matchFeCallsToBeRoutes(feCalls, beRoutes)  # URL matching
+  → remapCrossEdgeFromIds(edges, feGraph)      # remap to real ComponentNode ids
+  → buildCombinedDiagram(feGraph, beGraph, crossEdges)
+  → .codesight/cache-pair-<be-name>.json
 ```
 
 All nodes carry `provenance` (file + line) and `confidence` (`verified` | `inferred`). The LLM enrichment block is additive — static results are never discarded.
@@ -197,6 +224,7 @@ npx vsce publish --no-dependencies -p <PAT>
 | v0.8.2 | Supabase shared parser for all SPA adapters · Tab3 mapper edges for Nuxt/Vue SPA/Angular/React Router · regex false-positive fix |
 | v0.9.0 | DB FK accuracy (Spring Boot `@OneToOne`, Django M2M, TypeORM nullable) · Flask/Spring HTTP method detection · tsconfig alias resolution · Angular component dedup · MyBatis inheritance |
 | v1.0.0 | Next.js `.js`/`.jsx` routes · Remix splat catch-all · Vue SPA `renders` edges · Angular `loadComponent` renders · Flask FK arrows · Spring Boot column name/FK table mapping · Django `re_path` · NestJS template literals |
+| v1.1.0 | **URL-based hierarchical grouping** (Tab1/Tab2) · **Flyway DDL parser** (Spring Boot + Django) · **Tab3 schema/module grouping** · **1M chunk fallback** (auto-split large diagrams) · **Multi-workspace folder selection** · **FE↔BE cross-project analysis** (fetch/axios → BE route matching, combined diagram, 2-step QuickPick) |
 
 ---
 

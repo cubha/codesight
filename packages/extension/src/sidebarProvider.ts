@@ -12,6 +12,8 @@ export interface StatusInfo {
   framework?: string
   parsingLevel?: 'L1' | 'L2' | 'L3'
   llmRecommended?: boolean
+  folders?: { name: string; fsPath: string }[]
+  selectedFolder?: string
 }
 
 export class SidebarProvider implements vscode.WebviewViewProvider {
@@ -58,6 +60,9 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
           await vscode.workspace
             .getConfiguration('codesight')
             .update('enableLLM', msg.value, vscode.ConfigurationTarget.Global)
+          break
+        case 'selectFolder':
+          await vscode.commands.executeCommand('codesight.selectFolder', msg.value)
           break
       }
     })
@@ -161,6 +166,14 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
 </head>
 <body>
 
+<div class="section" id="folderSection" style="display:none">
+  <div class="label">Workspace Folder</div>
+  <select id="folderSelect" onchange="selectFolder(this.value)"
+    style="width:100%;padding:4px 6px;background:var(--vscode-dropdown-background);
+    color:var(--vscode-dropdown-foreground);border:1px solid var(--vscode-dropdown-border);
+    border-radius:3px;font-size:11px;"></select>
+</div>
+
 <div class="section">
   <div class="label">Status</div>
   <div class="status-box">
@@ -218,6 +231,8 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
   // webview 로드 완료 시 extension에 알림 → extension이 현재 status 전달
   window.addEventListener('load', () => send('ready'));
 
+  function selectFolder(fsPath) { send('selectFolder', fsPath); }
+
   function toggleLLM() {
     llmOn = !llmOn;
     document.getElementById('llmToggle').className = 'toggle' + (llmOn ? ' on' : '');
@@ -227,6 +242,27 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
   window.addEventListener('message', e => {
     const s = e.data;
     if (s.type !== 'status') return;
+
+    // Folder dropdown (multi-workspace)
+    if (Array.isArray(s.folders) && s.folders.length > 0) {
+      const select = document.getElementById('folderSelect');
+      const section = document.getElementById('folderSection');
+      // Only rebuild if folder list changed
+      const sig = s.folders.map(f => f.fsPath).join('|');
+      if (select.dataset.sig !== sig) {
+        select.innerHTML = '';
+        for (const f of s.folders) {
+          const opt = document.createElement('option');
+          opt.value = f.fsPath;
+          opt.textContent = f.name;
+          opt.title = f.fsPath;
+          select.appendChild(opt);
+        }
+        select.dataset.sig = sig;
+      }
+      if (s.selectedFolder) select.value = s.selectedFolder;
+      section.style.display = s.folders.length > 1 ? 'block' : 'none';
+    }
 
     const hasCache = !!s.hasCache;
 
