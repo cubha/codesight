@@ -1,5 +1,35 @@
 # Changelog
 
+## [1.0.0] — 2026-05-07
+
+### Fixed — Tab1 Route accuracy
+
+- **Next.js** — `.js` and `.jsx` route files (`page.js`, `layout.js`, `route.js`) now detected alongside `.tsx`
+- **Remix** — `$.tsx` splat catch-all now converted to `/*` wildcard route with `catch-all` segment type
+- **Django** — `re_path(r'^api/(?P<id>\d+)/$')` regex URL patterns now parsed to `:id` notation
+- **NestJS** — Template literal route prefixes (`` @Controller(`/api/${version}`) ``) now extracted correctly
+
+### Fixed — Tab2 Component accuracy
+
+- **Vue SPA** — `<ComponentTag>` template tags now produce `renders` edges (was incorrectly producing `imports` edges)
+- **Angular** — `loadComponent: () => import('./x').then(m => m.X)` lazy routes now emit `renders` edges to the loaded component
+- **All TS adapters** — `tsconfig.json` path aliases (`@/`, `~/`) resolved when building component import graphs
+
+### Fixed — Tab3 DB accuracy
+
+- **Flask SQLAlchemy** — `ForeignKey('table.id')` columns now populate FK arrows in the DB–Screen tab
+- **FastAPI** — Relative model imports resolved relative to the current file directory
+- **Spring Boot JPA** — `@Column(name="col_name")` mapped to actual DB column name (not Java field name)
+- **Spring Boot JPA** — FK targets resolved via class-to-table map; `@Table(name="...")` overrides handled correctly
+- **Spring Boot MyBatis** — `<resultMap extends="parent">` inheritance resolves parent columns; `<association>`/`<collection>` inner columns parsed
+
+### Improved — Provenance
+
+- Route/component/table nodes now carry accurate line numbers in provenance (was hardcoded `1`)
+- Flask factory pattern (`create_app()`) no longer produces duplicate route nodes
+
+---
+
 ## [0.9.0] — 2026-05-06
 
 ### Fixed — DB FK 관계 정확도 (Phase V)

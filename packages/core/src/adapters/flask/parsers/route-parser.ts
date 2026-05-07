@@ -9,27 +9,10 @@ import {
   type DynamicSegmentType,
 } from '@codebase-viz/types'
 import { createPythonParser } from '../../_shared/tree-sitter-loader.js'
+import { findPyFiles } from '../../_shared/file-finder.js'
 
-const EXCLUDE_DIRS = new Set(['__pycache__', '.git', 'node_modules', 'venv', '.venv', 'env'])
 const HTTP_SHORTHAND = new Set(['get', 'post', 'put', 'delete', 'patch'])
 const SHORTHAND_RE = /@\w+\.(get|post|put|delete|patch)\(/
-
-async function findPyFiles(repoRoot: string): Promise<string[]> {
-  const results: string[] = []
-  async function recurse(dir: string): Promise<void> {
-    const entries = await fs.readdir(dir, { withFileTypes: true }).catch(() => null)
-    if (entries === null) return
-    for (const entry of entries) {
-      if (entry.isDirectory()) {
-        if (!EXCLUDE_DIRS.has(entry.name)) await recurse(path.join(dir, entry.name))
-      } else if (entry.isFile() && entry.name.endsWith('.py')) {
-        results.push(path.join(dir, entry.name))
-      }
-    }
-  }
-  await recurse(repoRoot)
-  return results
-}
 
 function extractStringContent(node: Parser.SyntaxNode): string | undefined {
   for (let i = 0; i < node.childCount; i++) {
@@ -318,5 +301,11 @@ export async function parseFlaskRoutes(
     }
   }
 
-  return routes
+  const seen = new Set<string>()
+  return routes.filter(r => {
+    const key = r.id + ':' + (r.httpMethod ?? '')
+    if (seen.has(key)) return false
+    seen.add(key)
+    return true
+  })
 }

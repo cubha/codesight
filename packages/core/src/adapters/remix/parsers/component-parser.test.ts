@@ -38,6 +38,16 @@ describe('parseRemixComponents', () => {
     expect(nodes.length).toBeGreaterThan(0)
     expect(nodes[0]!.provenance.adapter).toBe('remix-component-parser@0.1')
   })
+
+  it('alias import (~/routes/) → renders 엣지를 생성한다 (N-9)', async () => {
+    // _index.tsx에 `import About from '~/routes/about'` 추가됨 (tsconfig ~/* → app/*)
+    const { edges } = await parseRemixComponents(FIXTURE, '0.0.0-test')
+    const rendersEdges = edges.filter(e => e.kind === 'renders')
+    const indexToAbout = rendersEdges.some(
+      e => String(e.from).includes('_index') && String(e.to).includes('about'),
+    )
+    expect(indexToAbout).toBe(true)
+  })
 })
 
 describe('RemixAdapter', () => {

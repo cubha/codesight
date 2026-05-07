@@ -238,6 +238,46 @@ urlpatterns = [path('users/', views.UserView.as_view())]
     expect(nodes[0]?.httpMethod).toBeUndefined()
   })
 
+  it('두 앱에 동명 @api_view 함수가 있어도 httpMethod가 덮어쓰이지 않는다 (N-16)', async () => {
+    await writeFile('app1/views.py', `
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+
+@api_view(['GET'])
+def user_list(request):
+    return Response([])
+`)
+    await writeFile('app2/views.py', `
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+
+@api_view(['POST'])
+def user_list(request):
+    return Response([])
+`)
+    await writeFile('app1/urls.py', `
+from django.urls import path
+from . import views
+
+urlpatterns = [
+    path('app1/users/', views.user_list),
+]
+`)
+    await writeFile('app2/urls.py', `
+from django.urls import path
+from . import views
+
+urlpatterns = [
+    path('app2/users/', views.user_list),
+]
+`)
+    const nodes = await parseUrls(tmpDir)
+    const app1Route = nodes.find(n => n.path === '/app1/users')
+    const app2Route = nodes.find(n => n.path === '/app2/users')
+    expect(app1Route?.httpMethod).toBe('GET')
+    expect(app2Route?.httpMethod).toBe('POST')
+  })
+
   it('include("myapp.urls") → myapp/urls/__init__.py 패키지 형태도 인식 (N-15)', async () => {
     await writeFile('myproject/urls.py', `
 from django.urls import path, include
@@ -263,5 +303,32 @@ def user_detail(request, pk): pass
     const nodes = await parseUrls(tmpDir)
     const paths = nodes.map(n => n.path)
     expect(paths.some(p => p.includes('users'))).toBe(true)
+  })
+})
+
+describe('parseUrls — re_path 정규식 패턴 (L-1)', () => {
+  it('re_path named group (?P<id>\\d+) → :id 동적 세그먼트 변환', async () => {
+    await writeFile('urls.py', `
+from django.urls import re_path
+from . import views
+
+urlpatterns = [
+    re_path(r'^api/users/$', views.user_list),
+    re_path(r'^api/users/(?P<id>\\d+)/$', views.user_detail),
+    re_path(r'^api/posts/(?P<pk>[0-9]+)/comments/$', views.post_comments),
+]
+`)
+    await writeFile('views.py', `
+def user_list(request): pass
+def user_detail(request, id): pass
+def post_comments(request, pk): pass
+`)
+    const routes = await parseUrls(tmpDir)
+    const paths = routes.map(r => r.path)
+    expect(paths).toContain('/api/users')
+    expect(paths.some(p => p === '/api/users/:id')).toBe(true)
+    const dynamic = routes.find(r => r.path === '/api/users/:id')
+    expect(dynamic?.dynamicSegmentType).toBe('dynamic')
+    expect(paths.some(p => p.includes(':pk'))).toBe(true)
   })
 })

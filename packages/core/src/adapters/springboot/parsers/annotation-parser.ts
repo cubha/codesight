@@ -10,8 +10,8 @@ import {
 } from '@codebase-viz/types'
 import { createJavaParser } from '../../_shared/tree-sitter-loader.js'
 import { normalizeUrlPath } from '../../_shared/url-path-normalizer.js'
+import { findJavaFiles } from '../../_shared/file-finder.js'
 
-const EXCLUDE_DIRS = new Set(['.git', 'node_modules', 'target', 'build', '.gradle'])
 const HTTP_MAPPING_ANNOTATIONS = new Set([
   'GetMapping', 'PostMapping', 'PutMapping', 'DeleteMapping', 'PatchMapping',
 ])
@@ -21,24 +21,6 @@ const MAPPING_TO_METHOD: Record<string, string> = {
   DeleteMapping: 'DELETE', PatchMapping: 'PATCH', RequestMapping: 'GET',
 }
 const CONTROLLER_ANNOTATIONS = new Set(['RestController', 'Controller'])
-
-async function findJavaFiles(repoRoot: string): Promise<string[]> {
-  const results: string[] = []
-  async function recurse(dir: string): Promise<void> {
-    const entries = await fs.readdir(dir, { withFileTypes: true }).catch(() => null)
-    if (entries === null) return
-    for (const entry of entries) {
-      const fullPath = path.join(dir, entry.name)
-      if (entry.isDirectory()) {
-        if (!EXCLUDE_DIRS.has(entry.name)) await recurse(fullPath)
-      } else if (entry.isFile() && entry.name.endsWith('.java')) {
-        results.push(fullPath)
-      }
-    }
-  }
-  await recurse(repoRoot)
-  return results
-}
 
 function extractStringFragment(node: Parser.SyntaxNode): string | undefined {
   for (let k = 0; k < node.childCount; k++) {

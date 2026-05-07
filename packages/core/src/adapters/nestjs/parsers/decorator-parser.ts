@@ -43,6 +43,15 @@ function getStringArg(decorator: Decorator): string {
   if (first.getKind() === SyntaxKind.StringLiteral) {
     return first.getText().slice(1, -1)
   }
+  if (first.getKind() === SyntaxKind.NoSubstitutionTemplateLiteral) {
+    return first.getText().slice(1, -1)
+  }
+  if (first.getKind() === SyntaxKind.TemplateExpression) {
+    const tmpl = first.asKindOrThrow(SyntaxKind.TemplateExpression)
+    const headText = tmpl.getHead().getText()
+    const inner = headText.slice(1, headText.endsWith('${') ? -2 : -1)
+    return inner.replace(/^\/+/, '').replace(/\/+$/, '')
+  }
   return ''
 }
 

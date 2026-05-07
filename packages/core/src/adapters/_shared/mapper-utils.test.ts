@@ -133,4 +133,25 @@ describe('buildMapperEdges', () => {
     const result = buildMapperEdges([route], [], [table], 'codebase-viz@0.1.0')
     expect(result).toEqual([])
   })
+
+  it('PascalCase 테이블명이 kebab-case 파일명과 매칭된다 (N-8)', () => {
+    const route = makeRoute('src/routes/user-profile.ts')
+    const table = makeTable('UserProfile')
+    const result = buildMapperEdges([route], [], [table], 'codebase-viz@0.1.0')
+    expect(result).toHaveLength(1)
+  })
+
+  it('PascalCase 테이블명이 snake_case 파일명과 매칭된다 (N-8)', () => {
+    const route = makeRoute('src/routes/user_profile.ts')
+    const table = makeTable('UserProfile')
+    const result = buildMapperEdges([route], [], [table], 'codebase-viz@0.1.0')
+    expect(result).toHaveLength(1)
+  })
+
+  it('snake_case 테이블명이 kebab-case 파일명과 매칭된다 (N-8)', () => {
+    const route = makeRoute('src/routes/user-profile.ts')
+    const table = makeTable('user_profile')
+    const result = buildMapperEdges([route], [], [table], 'codebase-viz@0.1.0')
+    expect(result).toHaveLength(1)
+  })
 })

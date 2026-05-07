@@ -124,4 +124,25 @@ describe('parseRoutes', () => {
     const nodes = await parseRoutes(tmpDir)
     expect(nodes).toEqual([])
   })
+
+  it('JS 확장자 page.js → RouteNode 생성 (X-3)', async () => {
+    await writeFile('app/blog/page.js', 'export default function BlogPage() {}')
+    const nodes = await parseRoutes(tmpDir)
+    const blogPage = nodes.find(n => n.path === '/blog' && n.routeFileKind === 'page')
+    expect(blogPage).toBeDefined()
+  })
+
+  it('JSX 확장자 page.jsx → RouteNode 생성 (X-3)', async () => {
+    await writeFile('app/contact/page.jsx', 'export default function ContactPage() {}')
+    const nodes = await parseRoutes(tmpDir)
+    const contactPage = nodes.find(n => n.path === '/contact' && n.routeFileKind === 'page')
+    expect(contactPage).toBeDefined()
+  })
+
+  it('route.js → route-handler RouteNode 생성 (X-3)', async () => {
+    await writeFile('app/api/data/route.js', 'export function GET() {}')
+    const nodes = await parseRoutes(tmpDir)
+    const handler = nodes.find(n => n.path === '/api/data' && n.routeFileKind === 'route-handler')
+    expect(handler).toBeDefined()
+  })
 })

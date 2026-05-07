@@ -56,7 +56,10 @@ export async function parseAngularComponents(
   for (const f of componentFiles) project.addSourceFileAtPath(f)
 
   // Build class-name → nodeId map and selector → nodeId map
+  // classToNodeId key: `${relPath}::${className}` (복합키 — 동명 클래스 충돌 방지)
   const classToNodeId = new Map<string, import('@codebase-viz/types').NodeId>()
+  // classNameFallback: className → nodeId (last-write-wins, dep 해석 fallback용)
+  const classNameFallback = new Map<string, import('@codebase-viz/types').NodeId>()
   const selectorToNodeId = new Map<string, import('@codebase-viz/types').NodeId>()
 
   // First pass: collect ComponentNodes + selector map
@@ -79,7 +82,8 @@ export async function parseAngularComponents(
       }
 
       const nodeId = makeNodeId('component', relPath, name)
-      classToNodeId.set(name, nodeId)
+      classToNodeId.set(`${relPath}::${name}`, nodeId)
+      classNameFallback.set(name, nodeId)
 
       // Extract selector for template-based edge resolution
       const args = decorator.getArguments()
@@ -119,7 +123,7 @@ export async function parseAngularComponents(
       const name = cls.getName()
       if (name === undefined) continue
 
-      const fromId = classToNodeId.get(name)
+      const fromId = classToNodeId.get(`${relPath}::${name}`)
       if (fromId === undefined) continue
 
       const provenance: Provenance = {
@@ -144,7 +148,23 @@ export async function parseAngularComponents(
       for (const el of importsInit.asKindOrThrow(SyntaxKind.ArrayLiteralExpression).getElements()) {
         if (!el.isKind(SyntaxKind.Identifier)) continue
         const depName = el.getText()
-        const toId = classToNodeId.get(depName)
+        // 복합키 우선: import 선언에서 depName의 원본 파일 추적
+        let toId: import('@codebase-viz/types').NodeId | undefined
+        const importDeclForDep = sourceFile.getImportDeclarations().find(imp =>
+          imp.getNamedImports().some(ni => ni.getName() === depName),
+        )
+        if (importDeclForDep !== undefined) {
+          const moduleSpec = importDeclForDep.getModuleSpecifierValue()
+          if (moduleSpec.startsWith('.')) {
+            const absBase = path.resolve(path.dirname(filePath), moduleSpec)
+            for (const tryExt of ['.component.ts', '.ts', '']) {
+              const relCandidate = path.relative(repoRoot, absBase + tryExt).replace(/\\/g, '/')
+              const hit = classToNodeId.get(`${relCandidate}::${depName}`)
+              if (hit !== undefined) { toId = hit; break }
+            }
+          }
+        }
+        if (toId === undefined) toId = classNameFallback.get(depName)
         if (toId === undefined) continue
 
         const edgeId = makeEdgeId('imports', fromId, toId)

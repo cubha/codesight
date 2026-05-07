@@ -8,178 +8,21 @@ import {
   type Provenance,
 } from '@codebase-viz/types'
 import { createPythonParser } from '../../_shared/tree-sitter-loader.js'
-
-const EXCLUDE_DIRS = new Set(['__pycache__', '.git', 'node_modules', 'venv', '.venv', 'env'])
+import {
+  extractStringContent,
+  parseNullable,
+  parsePrimaryKey,
+  parseMappedNullable,
+  parseColumnType,
+  parseForeignKeyRef,
+} from '../../_shared/sqlalchemy-utils.js'
+import { findPyFiles } from '../../_shared/file-finder.js'
 
 // Flask-SQLAlchemy 베이스 이름: 단순 identifier 형태
 const SQLALCHEMY_BASES = new Set(['Base', 'DeclarativeBase', 'Model'])
 
 // attribute 형태의 베이스 전체 텍스트 (예: db.Model)
 const SQLALCHEMY_ATTR_BASES = new Set(['db.Model', 'Base.Model'])
-
-const SQLALCHEMY_COLUMN_TYPES = new Set([
-  'String', 'Integer', 'Float', 'Boolean', 'DateTime', 'Date', 'Text', 'JSON',
-  'BigInteger', 'Numeric', 'LargeBinary', 'UUID', 'Enum',
-])
-
-async function findPyFiles(repoRoot: string): Promise<string[]> {
-  const results: string[] = []
-  async function recurse(dir: string): Promise<void> {
-    const entries = await fs.readdir(dir, { withFileTypes: true }).catch(() => null)
-    if (entries === null) return
-    for (const entry of entries) {
-      if (entry.isDirectory()) {
-        if (!EXCLUDE_DIRS.has(entry.name)) await recurse(path.join(dir, entry.name))
-      } else if (entry.isFile() && entry.name.endsWith('.py')) {
-        results.push(path.join(dir, entry.name))
-      }
-    }
-  }
-  await recurse(repoRoot)
-  return results
-}
-
-function extractStringContent(node: import('web-tree-sitter').SyntaxNode): string | undefined {
-  for (let i = 0; i < node.childCount; i++) {
-    const child = node.child(i)
-    if (child !== null && child.type === 'string_content') return child.text
-  }
-  return undefined
-}
-
-/**
- * call의 argument_list에서 keyword_argument를 탐색하여 nullable 값을 추출한다.
- * 기본값: true (SQLAlchemy Column/mapped_column 기본값)
- */
-function parseNullable(callNode: import('web-tree-sitter').SyntaxNode): boolean {
-  const argList = callNode.childForFieldName('arguments')
-  if (argList === null) return true
-
-  for (let i = 0; i < argList.childCount; i++) {
-    const arg = argList.child(i)
-    if (arg === null || arg.type !== 'keyword_argument') continue
-
-    const key = arg.child(0)
-    const val = arg.child(2)
-    if (key?.text === 'nullable' && val !== null) {
-      if (val.text === 'True') return true
-      if (val.text === 'False') return false
-    }
-  }
-
-  return true
-}
-
-/**
- * call의 argument_list에서 primary_key=True 여부를 추출한다.
- */
-function parsePrimaryKey(callNode: import('web-tree-sitter').SyntaxNode): boolean {
-  const argList = callNode.childForFieldName('arguments')
-  if (argList === null) return false
-  for (let i = 0; i < argList.childCount; i++) {
-    const arg = argList.child(i)
-    if (arg === null || arg.type !== 'keyword_argument') continue
-    const key = arg.child(0)
-    const val = arg.child(2)
-    if (key?.text === 'primary_key' && val?.text === 'True') return true
-  }
-  return false
-}
-
-/**
- * Mapped[T] 타입 어노테이션 노드에서 nullable 여부를 추론한다.
- * Optional[T] 또는 T | None 패턴이면 true, 구체 타입이면 false, Mapped 없으면 undefined.
- */
-function parseMappedNullable(typeAnnotationNode: import('web-tree-sitter').SyntaxNode | null): boolean | undefined {
-  if (typeAnnotationNode === null) return undefined
-
-  function findMappedNode(node: import('web-tree-sitter').SyntaxNode): import('web-tree-sitter').SyntaxNode | undefined {
-    if (node.type === 'generic_type' && node.child(0)?.text === 'Mapped') return node
-    if (node.type === 'subscript') {
-      const valueNode = node.childForFieldName('value') ?? node.child(0)
-      if (valueNode?.text === 'Mapped') return node
-    }
-    for (let i = 0; i < node.childCount; i++) {
-      const child = node.child(i)
-      if (child !== null) {
-        const found = findMappedNode(child)
-        if (found !== undefined) return found
-      }
-    }
-    return undefined
-  }
-
-  const mappedNode = findMappedNode(typeAnnotationNode)
-  if (mappedNode === undefined) return undefined
-
-  let typeArgText: string | undefined
-  if (mappedNode.type === 'generic_type') {
-    typeArgText = mappedNode.child(1)?.text
-  } else {
-    const subscriptArg = mappedNode.childForFieldName('subscript') ?? mappedNode.child(2)
-    typeArgText = subscriptArg?.text
-  }
-
-  if (typeArgText === undefined) return undefined
-
-  if (
-    typeArgText.includes('Optional') ||
-    typeArgText.includes('| None') ||
-    typeArgText.includes('None |')
-  ) {
-    return true
-  }
-
-  return false
-}
-
-/**
- * call의 argument_list에서 첫 번째 positional argument(타입명)를 추출한다.
- * ForeignKey(...)가 있으면 타입명 뒤 →FK를 붙인다.
- * 추출 실패 시 funcName(fallback)을 반환한다.
- */
-function parseColumnType(
-  callNode: import('web-tree-sitter').SyntaxNode,
-  fallback: string,
-): string {
-  const argList = callNode.childForFieldName('arguments')
-  if (argList === null) return fallback
-
-  let firstPositionalType: string | undefined
-  let hasForeignKey = false
-
-  for (let i = 0; i < argList.childCount; i++) {
-    const arg = argList.child(i)
-    if (arg === null) continue
-
-    if (arg.type === 'keyword_argument') continue
-    if (arg.type === ',') continue
-
-    if (arg.type === 'call') {
-      const funcNode = arg.childForFieldName('function')
-      const callName =
-        funcNode?.type === 'attribute' ? funcNode.lastChild?.text : funcNode?.text
-      if (callName === 'ForeignKey') {
-        hasForeignKey = true
-        continue
-      }
-      continue
-    }
-
-    if (arg.type === 'identifier' || arg.type === 'attribute') {
-      if (firstPositionalType === undefined) {
-        const typeName =
-          arg.type === 'attribute' ? (arg.lastChild?.text ?? arg.text) : arg.text
-        firstPositionalType = typeName
-      }
-      continue
-    }
-  }
-
-  if (firstPositionalType === undefined) return fallback
-
-  return hasForeignKey ? `${firstPositionalType}→FK` : firstPositionalType
-}
 
 /**
  * 클래스의 베이스가 Flask-SQLAlchemy 모델 베이스인지 확인한다.
@@ -299,11 +142,15 @@ export async function parseFlaskSqlAlchemyModels(
 
             const colType = parseColumnType(right, funcName ?? 'Column')
 
+            const argListNode = right.childForFieldName('arguments')
+            const fkRef = argListNode !== null ? parseForeignKeyRef(argListNode) : undefined
+
             columns.push({
               name: fieldName,
               type: colType,
               nullable,
               ...(isPrimaryKey ? { isPrimaryKey: true } : {}),
+              ...(fkRef !== undefined ? { references: fkRef } : {}),
             })
           }
         }

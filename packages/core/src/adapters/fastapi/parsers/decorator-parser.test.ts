@@ -201,4 +201,25 @@ app.include_router(items.router, prefix='/api')
     const methods = apiItems.map(n => n.httpMethod).sort()
     expect(methods).toEqual(['GET', 'POST'])
   })
+
+  it('상대 import (from .routers import users) 현재 파일 디렉토리 기준 해석 (L-4)', async () => {
+    await writeFile('app/routers/users.py', `
+from fastapi import APIRouter
+router = APIRouter()
+
+@router.get('/users')
+def list_users():
+    return []
+`)
+    await writeFile('app/main.py', `
+from fastapi import FastAPI
+from .routers import users
+
+app = FastAPI()
+app.include_router(users.router, prefix='/api')
+`)
+    const nodes = await parseDecorators(tmpDir)
+    const paths = nodes.map(n => n.path)
+    expect(paths).toContain('/api/users')
+  })
 })

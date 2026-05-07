@@ -32,16 +32,26 @@ describe('parseVueSpaComponents', () => {
     expect(importsEdges.length).toBeGreaterThanOrEqual(1)
   })
 
-  it('template 컴포넌트 태그 → imports 엣지를 생성한다', async () => {
+  it('template 컴포넌트 태그 → renders 엣지를 생성한다', async () => {
     const { edges } = await parseVueSpaComponents(FIXTURE, '0.0.0-test')
-    // Users.vue uses <UserDetail /> in template
-    const edgesFromUsers = edges.filter(e => String(e.from).includes('Users'))
-    expect(edgesFromUsers.length).toBeGreaterThanOrEqual(1)
+    // Users.vue uses <UserDetail /> in template → renders edge
+    const rendersEdges = edges.filter(e => e.kind === 'renders')
+    expect(rendersEdges.length).toBeGreaterThanOrEqual(1)
   })
 
   it('provenance.adapter가 설정된다', async () => {
     const { nodes } = await parseVueSpaComponents(FIXTURE, '0.0.0-test')
     expect(nodes.length).toBeGreaterThan(0)
     expect(nodes[0]!.provenance.adapter).toBe('vue-spa-component-parser@0.1')
+  })
+
+  it('alias import (@/views/) → imports 엣지를 생성한다 (N-9)', async () => {
+    // Home.vue에 `import NavBar from '@/views/NavBar.vue'` 추가됨 (tsconfig.json @/* → src/*)
+    const { edges } = await parseVueSpaComponents(FIXTURE, '0.0.0-test')
+    const importsEdges = edges.filter(e => e.kind === 'imports')
+    const homeToNavBar = importsEdges.some(
+      e => String(e.from).includes('Home') && String(e.to).includes('NavBar'),
+    )
+    expect(homeToNavBar).toBe(true)
   })
 })

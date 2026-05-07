@@ -85,6 +85,25 @@ class Category(db.Model):
     expect(cat).toBeDefined()
   })
 
+  it('ForeignKey → references 생성 (X-1)', async () => {
+    await writeFile('models.py', `
+from flask_sqlalchemy import SQLAlchemy
+db = SQLAlchemy()
+
+class Post(db.Model):
+    __tablename__ = 'posts'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+`)
+    const tables = await parseFlaskSqlAlchemyModels(tmpDir, 'test')
+    const post = tables.find(t => t.name === 'posts')
+    expect(post).toBeDefined()
+    const userIdCol = post?.columns.find(c => c.name === 'user_id')
+    expect(userIdCol?.references).toBeDefined()
+    expect(userIdCol?.references?.table).toBe('users')
+    expect(userIdCol?.references?.column).toBe('id')
+  })
+
   it('provenance adapter 값 확인', async () => {
     await writeFile('models.py', `
 from flask_sqlalchemy import SQLAlchemy

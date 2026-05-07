@@ -245,4 +245,67 @@ public interface UserMapper {
       expect(tbl.inferenceChain.length).toBeGreaterThan(0)
     }
   })
+
+  it('<resultMap extends> → 부모 columns를 상속한다 (N-13)', async () => {
+    await writeFile('src/main/resources/mapper/ExtendMapper.xml', `
+<?xml version="1.0" encoding="UTF-8"?>
+<mapper namespace="com.example.mapper.ExtendMapper">
+
+  <resultMap id="baseRM" type="com.example.model.BaseUser">
+    <id column="USER_ID" property="userId"/>
+    <result column="USER_NAME" property="userName"/>
+  </resultMap>
+
+  <resultMap id="extendedRM" extends="baseRM" type="com.example.model.FullUser">
+    <result column="EMAIL" property="email"/>
+  </resultMap>
+
+  <select id="selectFull" resultMap="extendedRM">
+    SELECT USER_ID, USER_NAME, EMAIL FROM TB_FULL_USER WHERE USER_ID = #{id}
+  </select>
+
+</mapper>
+`)
+    const tables = await parseMybatisMappers(tmpDir, 'test')
+    expect(tables).toHaveLength(1)
+    expect(tables[0]?.name).toBe('TB_FULL_USER')
+    const cols = tables[0]?.columns ?? []
+    expect(cols.find(c => c.name === 'USER_ID')?.isPrimaryKey).toBe(true)
+    expect(cols.find(c => c.name === 'USER_NAME')).toBeDefined()
+    expect(cols.find(c => c.name === 'EMAIL')).toBeDefined()
+    expect(cols).toHaveLength(3)
+  })
+
+  it('<association> 내부 <result> columns를 파싱한다 (N-14)', async () => {
+    await writeFile('src/main/resources/mapper/AssocMapper.xml', `
+<?xml version="1.0" encoding="UTF-8"?>
+<mapper namespace="com.example.mapper.AssocMapper">
+
+  <resultMap id="userWithAddrMap" type="com.example.model.UserWithAddr">
+    <id column="USER_ID" property="userId"/>
+    <result column="USER_NAME" property="userName"/>
+    <association property="address">
+      <result column="STREET" property="street"/>
+      <result column="CITY" property="city"/>
+    </association>
+  </resultMap>
+
+  <select id="selectUserWithAddr" resultMap="userWithAddrMap">
+    SELECT USER_ID, USER_NAME, STREET, CITY FROM TB_USER_ADDR WHERE USER_ID = #{id}
+  </select>
+
+</mapper>
+`)
+    const tables = await parseMybatisMappers(tmpDir, 'test')
+    expect(tables).toHaveLength(1)
+    expect(tables[0]?.name).toBe('TB_USER_ADDR')
+    const cols = tables[0]?.columns ?? []
+    expect(cols.find(c => c.name === 'USER_ID')?.isPrimaryKey).toBe(true)
+    expect(cols.find(c => c.name === 'USER_NAME')).toBeDefined()
+    expect(cols.find(c => c.name === 'STREET')).toBeDefined()
+    expect(cols.find(c => c.name === 'CITY')).toBeDefined()
+    // 중복 없이 각 1개
+    expect(cols.filter(c => c.name === 'STREET')).toHaveLength(1)
+    expect(cols.filter(c => c.name === 'CITY')).toHaveLength(1)
+  })
 })

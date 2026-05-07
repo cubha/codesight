@@ -8,7 +8,7 @@
 **Instant architecture diagrams for 13 frameworks — no API key needed.**  
 Available on **VS Code**, **Cursor**, **VSCodium**, and any editor using the Open VSX registry.
 
-CodeSight analyzes your project statically and renders three interactive diagrams inside your editor: route hierarchy with HTTP methods, component trees, and DB schema with mapper connections.
+CodeSight analyzes your project statically and renders three interactive diagrams inside your editor: route hierarchy with HTTP methods, component trees, and DB schema with FK relations.
 
 ---
 
@@ -25,7 +25,7 @@ Route hierarchy with SSR / CSR / ISR / SSG labels and **HTTP method badges** (`G
 ![Rendering Architecture](https://raw.githubusercontent.com/cubha/codesight/master/packages/extension/media/screenshot-rendering.png)
 
 ### DB–Screen
-Table schema with columns, nullable flags, FK targets, and which pages query each table.
+Table schema with columns, nullable flags, FK arrows, and which routes query each table.
 
 ![DB Screen](https://raw.githubusercontent.com/cubha/codesight/master/packages/extension/media/screenshot-dbscreen.png)
 
@@ -35,49 +35,52 @@ Table schema with columns, nullable flags, FK targets, and which pages query eac
 
 | Framework | Level | Routes | Components | DB |
 |---|---|---|---|---|
-| **Next.js App Router** | **L3** | ✅ SSR/SSG/ISR/CSR | ✅ `.tsx` import graph | ✅ Supabase · Prisma · Drizzle · TypeORM |
-| **NestJS** | **L2** | ✅ `GET/POST` labels | ✅ Controllers · Services · Modules | ✅ TypeORM entities + FK relations |
-| **Django** | **L2** | ✅ CBV/FBV `GET/POST` detection | ✅ View / ViewSet classes | ✅ `models.Model` + nullable/FK/db_table |
-| **FastAPI** | **L2** | ✅ `GET/POST` labels | ✅ Pydantic schemas | ✅ SQLAlchemy + nullable/type/__tablename__ |
-| **Spring Boot** | **L2** | ✅ `GET/POST` labels | ✅ `@Service` / `@Repository` | ✅ JPA `@Entity` + @JoinColumn/nullable |
-| **Flask** | **L2** | ✅ Blueprint routes | ✅ View classes | ✅ SQLAlchemy (Base / db.Model) |
+| **Next.js App Router** | **L3** | ✅ SSR/SSG/ISR/CSR · `.js`/`.jsx`/`.tsx` | ✅ import graph | ✅ Supabase · Prisma · Drizzle · TypeORM |
+| **NestJS** | **L2** | ✅ `GET/POST` labels · template literals | ✅ Controllers · Services · Modules | ✅ TypeORM entities + FK relations |
+| **Django** | **L2** | ✅ CBV/FBV · `re_path` regex | ✅ View / ViewSet classes | ✅ `models.Model` + nullable/FK/db_table |
+| **FastAPI** | **L2** | ✅ `GET/POST` labels · relative imports | ✅ Pydantic schemas | ✅ SQLAlchemy + nullable/type/__tablename__ |
+| **Spring Boot** | **L2** | ✅ `GET/POST` labels | ✅ `@Service` / `@Repository` | ✅ JPA `@Entity` + FK · MyBatis mapper XML |
+| **Flask** | **L2** | ✅ Blueprint routes · HTTP methods | ✅ View classes | ✅ SQLAlchemy (Base / db.Model) + FK relations |
 | **SvelteKit** | **L2** | ✅ `+page`/`+layout`/`+server` | ✅ `.svelte` + runtime tags | ✅ Supabase · Prisma · Drizzle · TypeORM |
 | **Nuxt** | **L2** | ✅ `pages/` | ✅ `.vue` SFC import graph | ✅ Supabase · Prisma · Drizzle · TypeORM |
-| **Next.js Pages Router** | **L2** | ✅ SSG/ISR/SSR detection | ✅ Component graph | ✅ Supabase · Prisma · Drizzle · TypeORM |
-| **Remix** | **L2** | ✅ nested folder routes | ✅ Component graph | ✅ Supabase · Prisma · Drizzle · TypeORM |
-| **React Router** | **L2** | ✅ `createBrowserRouter()` | ✅ Import chain (1-depth) | ✅ Supabase · Prisma · Drizzle · TypeORM |
-| **Vue SPA** | **L2** | ✅ `createRouter()` | ✅ Component graph | ✅ Supabase · Prisma · Drizzle · TypeORM |
-| **Angular** | **L2** | ✅ `provideRouter()` | ✅ Template-based renders | ✅ Supabase · Prisma · Drizzle · TypeORM |
+| **Next.js Pages Router** | **L2** | ✅ SSG/ISR/SSR detection | ✅ component graph | ✅ Supabase · Prisma · Drizzle · TypeORM |
+| **Remix** | **L2** | ✅ nested folder routes · splat (`*`) | ✅ component graph | ✅ Supabase · Prisma · Drizzle · TypeORM |
+| **React Router** | **L2** | ✅ `createBrowserRouter()` | ✅ import chain | ✅ Supabase · Prisma · Drizzle · TypeORM |
+| **Vue SPA** | **L2** | ✅ `createRouter()` | ✅ template `renders` graph | ✅ Supabase · Prisma · Drizzle · TypeORM |
+| **Angular** | **L2** | ✅ `provideRouter()` · lazy `loadComponent` | ✅ template renders + lazy edges | ✅ Supabase · Prisma · Drizzle · TypeORM |
 
-**L3** = all 3 tabs always · **L2** = routes + components + DB (DB shown when project uses a supported ORM) · **L1** = routes only
+**L3** = all 3 tabs always · **L2** = routes + components + DB (DB shown when ORM detected) · **L1** = routes only
 
 Frameworks not in this list (Express, Hono, Rails, Go, etc.) use **LLM primary** mode when an Anthropic API key is provided.
 
 ---
 
-## ✨ What's new in v0.9.0
+## ✨ What's new in v1.0.0
 
-### DB FK accuracy — 5 parsers improved
-Relation fields that previously produced no FK arrow in the DB–Screen tab are now correctly wired:
+### Route accuracy
+- **Next.js** — `.js` and `.jsx` route files (`page.js`, `layout.js`, `route.js`) now detected alongside `.tsx`
+- **Remix** — `$.tsx` splat catch-all converted to wildcard (`/*`) route
+- **Django** — `re_path(r'^api/users/(?P<id>\d+)/$')` regex patterns parsed to clean `:param` notation
+- **NestJS** — Template literal controllers (`` @Controller(`/api/${version}`) ``) correctly extracted
 
-- **Spring Boot `@OneToOne`** — generates a FK column and edge, same as `@ManyToOne`. Respects `@JoinColumn(name=...)`.
-- **Django `ManyToManyField`** — added to relation detection; produces a `references` edge to the target table.
-- **FastAPI / SQLAlchemy `ForeignKey('table.col')`** — target table and column extracted and stored as `references`.
-- **TypeORM `@Column` nullable** — `{ nullable: true }` options and `T | null` TypeScript union types are now parsed correctly (was always `false`).
-- **TypeORM ArrowFunction body** — `() => { return User; }` relation type functions now resolved via ts-morph AST (regex fallback missed block bodies).
+### Component accuracy
+- **Vue SPA** — `<ComponentTag>` in templates now produces `renders` edges (was incorrectly typed as `imports`)
+- **Angular** — `loadComponent: () => import('./x').then(m => m.X)` lazy routes now emit `renders` edges to the loaded component
+- **All TS adapters** — `tsconfig.json` path aliases (`@/`, `~/`, `$lib/`) resolved when building component graphs
 
-### Tab1 HTTP method accuracy — 4 parsers improved
+### DB accuracy
+- **Flask SQLAlchemy** — `ForeignKey('table.id')` columns now show FK arrows in the DB–Screen tab
+- **FastAPI** — Relative imports for SQLAlchemy model files correctly resolved
+- **Spring Boot** — `@Column(name="col_name")` maps to actual DB column name instead of Java field name
+- **Spring Boot** — FK targets resolved through class-to-table mapping (handles `@Table(name="...")` overrides)
+- **Spring Boot MyBatis** — `<resultMap extends="parent">` inheritance and `<association>`/`<collection>` inner columns parsed
 
-- **Flask `methods=[...]`** — `@app.route('/path', methods=['POST'])` now sets `httpMethod`. Previously all Flask routes had no HTTP method.
-- **Flask 2.0+ shorthand decorators** — `@app.get()`, `@app.post()`, `@app.put()`, `@app.delete()`, `@app.patch()` are now recognized as routes with the correct HTTP method.
-- **Spring Boot `@RequestMapping(method=RequestMethod.POST)`** — `method` argument parsed from the annotation; was always returning `GET`.
-- **Spring Boot multi-prefix** — `@RequestMapping({"/api/v1", "/api/v2"})` on a class now generates routes for every prefix combination (was using only the first).
-
-### SvelteKit rendering mode fix
-`export const ssr = false` and `export const prerender = true` live in `+page.ts` / `+page.server.ts`, not in `.svelte` files. The parser now checks these files first — all routes were previously shown as SSR.
-
-### Django `include()` package form
-`include('myapp.urls')` now also resolves `myapp/urls/__init__.py` (Python package form), in addition to `myapp/urls.py`.
+### Previous highlights (v0.8.x → v0.9.0)
+- DB FK relations for `@OneToOne`, `ManyToManyField`, TypeORM nullable
+- Flask/Spring HTTP method detection, SvelteKit rendering mode
+- React Router (13th adapter), Supabase shared parser for all SPA adapters
+- Spring Boot MyBatis mapper XML support
+- Tab3 DB–Screen connected for all 13 adapters
 
 ---
 
@@ -85,9 +88,9 @@ Relation fields that previously produced no FK arrow in the DB–Screen tab are 
 
 | Tab | What you see |
 |---|---|
-| **Rendering Architecture** | Route hierarchy · HTTP method badges · SSR/CSR/ISR/SSG labels · infra layers |
-| **Screen–Component** | Route → component import graph · runtime tags (client/shared/server) |
-| **DB–Screen** | Tables · columns with types/nullable · FK targets · mapper connections to routes |
+| **Rendering Architecture** | Route hierarchy · HTTP method badges · SSR/CSR/ISR/SSG labels |
+| **Screen–Component** | Route → component renders/import graph · runtime tags (client/shared/server) |
+| **DB–Screen** | Tables · columns with types/nullable/FK arrows · mapper connections to routes |
 
 **Sidebar panel**
 - Detected framework, parsing level (L2/L3), route/table count, last cached time
@@ -98,12 +101,12 @@ Relation fields that previously produced no FK arrow in the DB–Screen tab are 
 
 | Mode | What you get | API key |
 |---|---|---|
-| **Static analysis** | Full L3 for Next.js App Router. L2 routes+components+DB for all 12 other adapters (DB shown when ORM detected). | Not required |
-| **LLM-enhanced** (BYOK) | Fills gaps the static parser can't reach; infers dynamic route patterns | Required |
+| **Static analysis** | Full L3 for Next.js App Router. L2 for all 12 other adapters. | Not required |
+| **LLM-enhanced** (BYOK) | Fills gaps the static parser can't reach | Required |
 
 **Quality-of-life**
-- Results are **cached permanently** in `.codesight/cache.json`
-- Offline-friendly — Mermaid is bundled locally, no CDN required
+- Results **cached** in `.codesight/cache.json`
+- Offline-friendly — Mermaid bundled locally, no CDN
 - Pure Node.js — Python/Java AST via bundled WebAssembly, no native installs
 
 ---
@@ -170,9 +173,7 @@ CodeSight uses **Anthropic Claude** for deeper enrichment on top of static analy
 ## 📋 Requirements
 
 - VS Code 1.90+ (or Cursor / VSCodium based on the same version)
-- Node.js 20+
-
-No additional runtimes. Python and Java AST parsing uses bundled WebAssembly modules.
+- No additional runtimes — Python and Java AST via bundled WebAssembly
 
 ---
 

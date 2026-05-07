@@ -64,12 +64,26 @@ function extractTablesFromSql(sql: string): string[] {
 function parseResultMapColumns(body: string): ColumnDef[] {
   const cols: ColumnDef[] = []
   let m: RegExpExecArray | null
+
+  // N-14: extract nested <association>/<collection> bodies and strip them from body
+  // to avoid duplicates when outer id/result regexes scan the full string
+  const nestedBodies: string[] = []
+  const stripped = body.replace(
+    /<(?:association|collection)\b[^>]*>([\s\S]*?)<\/(?:association|collection)>/gi,
+    (_, inner: string) => { nestedBodies.push(inner); return '' },
+  )
+
   const idRe = /<id\b[^>]+column="([^"]+)"[^>]*/gi
-  while ((m = idRe.exec(body)) !== null)
+  while ((m = idRe.exec(stripped)) !== null)
     cols.push({ name: m[1]!, type: 'unknown', nullable: false, isPrimaryKey: true })
   const resRe = /<result\b[^>]+column="([^"]+)"[^>]*/gi
-  while ((m = resRe.exec(body)) !== null)
+  while ((m = resRe.exec(stripped)) !== null)
     cols.push({ name: m[1]!, type: 'unknown', nullable: true, isPrimaryKey: false })
+
+  // recurse into each nested body
+  for (const nested of nestedBodies)
+    cols.push(...parseResultMapColumns(nested))
+
   return cols
 }
 
@@ -78,7 +92,17 @@ function getSimpleName(fqn: string): string {
   return parts[parts.length - 1] ?? fqn
 }
 
-interface RmEntry { id: string; className: string; columns: ColumnDef[]; line: number }
+interface RmEntry { id: string; className: string; columns: ColumnDef[]; extends?: string; line: number }
+
+function resolveExtends(registry: Map<string, RmEntry>): void {
+  for (const entry of registry.values()) {
+    if (entry.extends === undefined) continue
+    const parent = registry.get(entry.extends)
+    if (parent === undefined) continue
+    const parentCols = parent.columns.filter(pc => !entry.columns.some(c => c.name === pc.name))
+    entry.columns = [...parentCols, ...entry.columns]
+  }
+}
 
 function parseXmlToTables(xml: string, relPath: string, analyzerVersion: string): TableNode[] {
   // Tier 1 — build resultMap registry: id → { className, columns }
@@ -88,13 +112,23 @@ function parseXmlToTables(xml: string, relPath: string, analyzerVersion: string)
   while ((rm = rmRe.exec(xml)) !== null) {
     const idM = /\bid="([^"]+)"/.exec(rm[1]!)
     const typeM = /\btype="([^"]+)"/.exec(rm[1]!)
+    const extendsM = /\bextends="([^"]+)"/.exec(rm[1]!)
     if (!idM) continue
     registry.set(idM[1]!, {
       id: idM[1]!,
       className: typeM ? getSimpleName(typeM[1]!) : idM[1]!,
       columns: parseResultMapColumns(rm[2]!),
+      ...(extendsM ? { extends: extendsM[1]! } : {}),
       line: xml.slice(0, rm.index).split('\n').length,
     })
+  }
+  // N-13: resolve extends — prepend parent columns to child
+  resolveExtends(registry)
+
+  // collect ids that are used as extends targets — skip them in Fallback to avoid phantom tables
+  const extendsTargets = new Set<string>()
+  for (const entry of registry.values()) {
+    if (entry.extends !== undefined) extendsTargets.add(entry.extends)
   }
 
   const matched = new Set<string>() // resultMap ids that got a real table name
@@ -132,8 +166,9 @@ function parseXmlToTables(xml: string, relPath: string, analyzerVersion: string)
   }
 
   // Fallback — resultMaps not matched to any SQL table → use class simple name
+  // skip extends-only parent entries (they exist to be merged, not to produce phantom tables)
   for (const entry of registry.values()) {
-    if (!matched.has(entry.id) && entry.columns.length > 0 && !tableMap.has(entry.className)) {
+    if (!matched.has(entry.id) && !extendsTargets.has(entry.id) && entry.columns.length > 0 && !tableMap.has(entry.className)) {
       tableMap.set(entry.className, {
         columns: entry.columns,
         line: entry.line,

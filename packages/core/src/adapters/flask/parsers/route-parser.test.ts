@@ -191,3 +191,39 @@ def delete_item(id):
     await fs.rm(dir, { recursive: true, force: true })
   })
 })
+
+describe('parseFlaskRoutes — application factory 중복 방지 (L-5)', () => {
+  it('application factory 패턴에서 동일 라우트 중복 없음', async () => {
+    const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'cv-flask-factory-'))
+    await fs.writeFile(
+      path.join(dir, 'routes.py'),
+      `from flask import Blueprint
+bp = Blueprint('api', __name__, url_prefix='/api')
+
+@bp.route('/users')
+def users():
+    return []
+
+@bp.route('/posts')
+def posts():
+    return []
+`,
+    )
+    await fs.writeFile(
+      path.join(dir, 'app.py'),
+      `from flask import Flask
+from routes import bp
+
+def create_app():
+    app = Flask(__name__)
+    app.register_blueprint(bp)
+    return app
+`,
+    )
+    const routes = await parseFlaskRoutes(dir, 'test')
+    const ids = routes.map(r => r.id)
+    const uniqueIds = new Set(ids)
+    expect(uniqueIds.size).toBe(ids.length)
+    await fs.rm(dir, { recursive: true, force: true })
+  })
+})

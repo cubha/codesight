@@ -94,7 +94,8 @@ async function buildApiViewMethodMap(
       }
 
       if (funcName !== undefined && apiViewMethods !== undefined) {
-        methodMap.set(funcName, apiViewMethods)
+        const relFilePath = path.relative(repoRoot, filePath).replace(/\\/g, '/')
+        methodMap.set(`${relFilePath}::${funcName}`, apiViewMethods)
       }
     }
   }
@@ -140,7 +141,8 @@ async function buildCbvMethodMap(
       }
 
       if (methods.length > 0) {
-        methodMap.set(className, methods.join(','))
+        const relFilePath = path.relative(repoRoot, filePath).replace(/\\/g, '/')
+        methodMap.set(`${relFilePath}::${className}`, methods.join(','))
       }
     }
   }
@@ -148,11 +150,48 @@ async function buildCbvMethodMap(
   return methodMap
 }
 
-function normalizeDjangoPattern(pattern: string): { urlPath: string; dynamicSegmentType: DynamicSegmentType } {
-  const normalized = pattern
-    .replace(/<\w+:(\w+)>/g, ':$1')
-    .replace(/<(\w+)>/g, ':$1')
-    .replace(/\/+$/, '')
+// urls.py의 relPath에서 views.py 후보 경로들을 유도 (N-16: 동명 함수 충돌 방지용)
+function candidateViewsPaths(urlsRelPath: string): string[] {
+  const dir = path.posix.dirname(urlsRelPath)
+  const candidates = [path.posix.join(dir, 'views.py')]
+  // N-15 패턴: app/urls/__init__.py → app/views.py
+  if (
+    path.posix.basename(urlsRelPath) === '__init__.py' &&
+    path.posix.basename(dir) === 'urls'
+  ) {
+    candidates.push(path.posix.join(path.posix.dirname(dir), 'views.py'))
+  }
+  return candidates
+}
+
+// urls.py의 relPath에서 candidate views 경로 기반으로 복합키 조회 (N-16)
+function lookupMethodMap(
+  methodMap: Map<string, string>,
+  urlsRelPath: string,
+  name: string,
+): string | undefined {
+  for (const candidate of candidateViewsPaths(urlsRelPath)) {
+    const val = methodMap.get(`${candidate}::${name}`)
+    if (val !== undefined) return val
+  }
+  return undefined
+}
+
+function normalizeDjangoPattern(pattern: string, isRegex = false): { urlPath: string; dynamicSegmentType: DynamicSegmentType } {
+  let normalized: string
+  if (isRegex) {
+    normalized = pattern
+      .replace(/^\^/, '').replace(/\$$/, '')
+      .replace(/\(\?P<(\w+)>[^)]+\)/g, ':$1')
+      .replace(/\([^)]+\)/g, ':param')
+      .replace(/\\\//g, '/').replace(/[*+?]$/, '').replace(/\/\?$/, '')
+      .replace(/\/+$/, '')
+  } else {
+    normalized = pattern
+      .replace(/<\w+:(\w+)>/g, ':$1')
+      .replace(/<(\w+)>/g, ':$1')
+      .replace(/\/+$/, '')
+  }
   const urlPath = normalized.startsWith('/') ? normalized : '/' + normalized
   const dynamicSegmentType: DynamicSegmentType = urlPath.includes(':') ? 'dynamic' : 'static'
   return { urlPath, dynamicSegmentType }
@@ -281,12 +320,16 @@ function extractAll(
             } else if (secondArg !== null) {
               const rawPattern = extractStringValue(firstArg)
               if (rawPattern !== undefined && rawPattern !== '') {
-                const { urlPath, dynamicSegmentType } = normalizeDjangoPattern(rawPattern)
+                const { urlPath, dynamicSegmentType } = normalizeDjangoPattern(rawPattern, func.text === 're_path')
                 if (urlPath !== '/') {
                   const viewName = extractViewName(secondArg)
-                  const fbvMethod = viewName !== undefined ? apiViewMethodMap.get(viewName) : undefined
+                  const fbvMethod = viewName !== undefined
+                    ? lookupMethodMap(apiViewMethodMap, relPath, viewName)
+                    : undefined
                   const cbvClassName = extractCbvClassName(secondArg)
-                  const cbvMethod = cbvClassName !== undefined ? cbvMethodMap.get(cbvClassName) : undefined
+                  const cbvMethod = cbvClassName !== undefined
+                    ? lookupMethodMap(cbvMethodMap, relPath, cbvClassName)
+                    : undefined
                   const httpMethod = fbvMethod ?? cbvMethod
                   directRoutes.push(
                     createRouteNode({
