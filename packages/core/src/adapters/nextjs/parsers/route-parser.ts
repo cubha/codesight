@@ -13,12 +13,25 @@ import { normalizeSegment } from '../../_shared/url-path-normalizer.js'
 
 const ROUTE_FILES: Record<string, RouteFileKind> = {
   'page.tsx': 'page',
+  'page.jsx': 'page',
+  'page.js': 'page',
   'layout.tsx': 'layout',
+  'layout.jsx': 'layout',
+  'layout.js': 'layout',
   'loading.tsx': 'loading',
+  'loading.jsx': 'loading',
+  'loading.js': 'loading',
   'error.tsx': 'error',
+  'error.jsx': 'error',
+  'error.js': 'error',
   'template.tsx': 'template',
+  'template.jsx': 'template',
+  'template.js': 'template',
   'not-found.tsx': 'not-found',
+  'not-found.jsx': 'not-found',
+  'not-found.js': 'not-found',
   'route.ts': 'route-handler',
+  'route.js': 'route-handler',
 }
 
 const HTTP_METHOD_RE = /export\s+(?:async\s+)?function\s+(GET|POST|PUT|DELETE|PATCH|HEAD|OPTIONS)\b/g

@@ -14,6 +14,31 @@ import {
 const PAGE_EXTENSIONS = new Set(['.tsx', '.jsx', '.ts', '.js'])
 const EXCLUDE_DIRS = new Set(['.git', 'node_modules', '.next', 'dist', 'build'])
 
+type PathsMap = Map<string, string>
+
+async function loadTsConfigPaths(repoRoot: string): Promise<PathsMap> {
+  for (const name of ['tsconfig.json', 'jsconfig.json']) {
+    try {
+      const raw = await fs.readFile(path.join(repoRoot, name), 'utf-8')
+      const parsed = JSON.parse(raw) as { compilerOptions?: { paths?: Record<string, string[]> } }
+      const tsPathsRecord = parsed.compilerOptions?.paths
+      if (tsPathsRecord == null) continue
+      const map: PathsMap = new Map()
+      for (const [alias, targets] of Object.entries(tsPathsRecord)) {
+        const firstTarget = targets[0]
+        if (firstTarget === undefined) continue
+        const aliasPrefix = alias.endsWith('/*') ? alias.slice(0, -2) : alias
+        const targetDir = firstTarget.endsWith('/*') ? firstTarget.slice(0, -2) : firstTarget
+        map.set(aliasPrefix, path.resolve(repoRoot, targetDir))
+      }
+      return map
+    } catch {
+      // not found or unparseable
+    }
+  }
+  return new Map()
+}
+
 async function walkDir(dir: string): Promise<string[]> {
   const results: string[] = []
   async function recurse(d: string): Promise<void> {
@@ -49,6 +74,7 @@ export async function parseNextPagesComponents(
   if (files.length === 0) return { nodes: [], edges: [] }
 
   const relFileSet = new Set(files.map(f => path.relative(repoRoot, f).replace(/\\/g, '/')))
+  const aliasPaths = await loadTsConfigPaths(repoRoot)
 
   const nodes: ComponentNode[] = []
   const edges: IREdge[] = []
@@ -92,9 +118,21 @@ export async function parseNextPagesComponents(
 
     for (const imp of sourceFile.getImportDeclarations()) {
       const spec = imp.getModuleSpecifierValue()
-      if (!spec.startsWith('.')) continue
 
-      const resolved = path.resolve(path.dirname(filePath), spec)
+      let baseResolved: string | undefined
+      if (spec.startsWith('.')) {
+        baseResolved = path.resolve(path.dirname(filePath), spec)
+      } else {
+        for (const [aliasPrefix, targetDir] of aliasPaths) {
+          if (spec === aliasPrefix || spec.startsWith(aliasPrefix + '/')) {
+            baseResolved = path.join(targetDir, spec.slice(aliasPrefix.length))
+            break
+          }
+        }
+      }
+      if (baseResolved === undefined) continue
+
+      const resolved = baseResolved
       const ext = path.extname(spec)
       const candidates = ext !== ''
         ? [resolved]

@@ -17,7 +17,11 @@ import {
   type Provenance,
 } from '@codebase-viz/types'
 
-const SERVER_FILE_GLOBS = ['src/actions', 'src/utils', 'app/actions', 'app/utils', 'lib/actions', 'lib/utils']
+const SERVER_FILE_GLOBS = [
+  'src/actions', 'src/utils', 'src/lib', 'src/server', 'src/db',
+  'app/actions', 'app/utils', 'app/lib', 'app/server', 'app/db',
+  'lib',
+]
 
 function makeProvenance(repoRoot: string, absPath: string, line: number): Provenance {
   return {
@@ -32,7 +36,7 @@ async function extractTableCalls(
   project: Project,
   absPath: string,
   tableMap: Map<string, TableNode>,
-): Promise<string[]> {
+): Promise<Array<{ tableName: string; line: number }>> {
   let sourceFile
   try {
     sourceFile = project.addSourceFileAtPath(absPath)
@@ -40,7 +44,8 @@ async function extractTableCalls(
     return []
   }
 
-  const found: string[] = []
+  const found: Array<{ tableName: string; line: number }> = []
+  const seen = new Set<string>()
   for (const callExpr of sourceFile.getDescendantsOfKind(SyntaxKind.CallExpression)) {
     const expr = callExpr.getExpression()
     if (!expr.isKind(SyntaxKind.PropertyAccessExpression)) continue
@@ -52,8 +57,9 @@ async function extractTableCalls(
     if (firstArg === undefined || !firstArg.isKind(SyntaxKind.StringLiteral)) continue
 
     const tableName = firstArg.asKindOrThrow(SyntaxKind.StringLiteral).getLiteralValue()
-    if (tableMap.has(tableName) && !found.includes(tableName)) {
-      found.push(tableName)
+    if (tableMap.has(tableName) && !seen.has(tableName)) {
+      seen.add(tableName)
+      found.push({ tableName, line: callExpr.getStartLineNumber() })
     }
   }
   return found
@@ -93,14 +99,14 @@ export async function mapScreenToTable(graph: IRGraph): Promise<IREdge[]> {
   for (const node of graph.nodes.filter(isComponentNode)) {
     const absPath = path.join(graph.repoRoot, node.filePath)
     const tables = await extractTableCalls(project, absPath, tableMap)
-    for (const t of tables) addEdge(node.id, t, node.filePath, 1)
+    for (const { tableName, line } of tables) addEdge(node.id, tableName, node.filePath, line)
   }
 
   // Scan routeNodes (server components + route handlers)
   for (const node of graph.nodes.filter(isRouteNode)) {
     const absPath = path.join(graph.repoRoot, node.filePath)
     const tables = await extractTableCalls(project, absPath, tableMap)
-    for (const t of tables) addEdge(node.id, t, node.filePath, 1)
+    for (const { tableName, line } of tables) addEdge(node.id, tableName, node.filePath, line)
   }
 
   return edges
@@ -162,7 +168,7 @@ export async function mapServerFilesToTable(
 
       if (!nodes.some(n => n.id === nodeId)) nodes.push(compNode)
 
-      for (const tableName of tables) {
+      for (const { tableName, line } of tables) {
         const tableNode = tableMap.get(tableName)
         if (tableNode === undefined) continue
         const edgeId = makeEdgeId('queries', nodeId, tableNode.id)
@@ -174,7 +180,7 @@ export async function mapServerFilesToTable(
             from: nodeId,
             to: tableNode.id,
             kind: 'queries',
-            provenance: makeProvenance(repoRoot, absPath, 1),
+            provenance: makeProvenance(repoRoot, absPath, line),
             confidence: 'inferred',
             inferenceChain: ['server-file-scan'],
           }),

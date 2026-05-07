@@ -7,25 +7,10 @@ import {
   type Provenance,
 } from '@codebase-viz/types'
 import { createPythonParser } from '../../_shared/tree-sitter-loader.js'
+import { PY_EXCLUDE_DIRS, findFiles } from '../../_shared/file-finder.js'
 
-const EXCLUDE_DIRS = new Set(['__pycache__', '.git', 'node_modules', 'venv', '.venv', 'env', 'migrations'])
-
-async function findPyFiles(repoRoot: string): Promise<string[]> {
-  const results: string[] = []
-  async function recurse(dir: string): Promise<void> {
-    const entries = await fs.readdir(dir, { withFileTypes: true }).catch(() => null)
-    if (entries === null) return
-    for (const entry of entries) {
-      if (entry.isDirectory()) {
-        if (!EXCLUDE_DIRS.has(entry.name)) await recurse(path.join(dir, entry.name))
-      } else if (entry.isFile() && entry.name.endsWith('.py')) {
-        results.push(path.join(dir, entry.name))
-      }
-    }
-  }
-  await recurse(repoRoot)
-  return results
-}
+const DJANGO_EXCLUDE_DIRS = new Set([...PY_EXCLUDE_DIRS, 'migrations'])
+const findPyFiles = (dir: string) => findFiles(dir, '.py', DJANGO_EXCLUDE_DIRS)
 
 const DJANGO_BASE_CLASSES = new Set([
   'View', 'TemplateView', 'ListView', 'DetailView', 'CreateView', 'UpdateView', 'DeleteView',
@@ -37,7 +22,14 @@ export async function parseDjangoComponents(
   analyzerVersion: string,
 ): Promise<ComponentNode[]> {
   const pyFiles = await findPyFiles(repoRoot)
-  const viewFiles = pyFiles.filter(f => path.basename(f) === 'views.py' || f.includes('views'))
+  const viewFiles = pyFiles.filter(f => {
+    const basename = path.basename(f)
+    // basename에 'views' 포함 여부로 판단 (views.py, views_api.py, user_views.py 등)
+    if (basename.includes('views')) return true
+    // 경로 세그먼트 중 'views' 디렉토리가 있는 경우 (myapp/views/users.py 등)
+    const segments = f.replace(/\\/g, '/').split('/')
+    return segments.some(seg => seg === 'views')
+  })
 
   if (viewFiles.length === 0) return []
 

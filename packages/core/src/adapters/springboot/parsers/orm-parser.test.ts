@@ -342,6 +342,77 @@ public class UserProfile {
     expect(fkCol?.references?.column).toBe('id')
   })
 
+  it('@Column(name = "user_name") → ColumnDef 컬럼명 user_name (N-11b)', async () => {
+    await writeFile('User.java', `
+import jakarta.persistence.*;
+
+@Entity
+public class User {
+    @Id
+    private Long id;
+
+    @Column(name = "user_name")
+    private String username;
+}
+`)
+    const tables = await parseJpaEntities(tmpDir, 'test')
+    expect(tables).toHaveLength(1)
+    const cols = tables[0]?.columns ?? []
+    expect(cols.some(c => c.name === 'user_name')).toBe(true)
+    expect(cols.some(c => c.name === 'username')).toBe(false)
+  })
+
+  it('@Column(name=...) + nullable=false 둘 다 파싱 (N-11b)', async () => {
+    await writeFile('Product.java', `
+import jakarta.persistence.*;
+
+@Entity
+public class Product {
+    @Id
+    private Long id;
+
+    @Column(name = "product_name", nullable = false)
+    private String name;
+}
+`)
+    const tables = await parseJpaEntities(tmpDir, 'test')
+    const col = (tables[0]?.columns ?? []).find(c => c.name === 'product_name')
+    expect(col).toBeDefined()
+    expect(col?.nullable).toBe(false)
+  })
+
+  it('@ManyToOne FK 타겟 클래스가 @Table(name=)를 가진 경우 실제 테이블명으로 references 해석 (N-12)', async () => {
+    await writeFile('User.java', `
+import jakarta.persistence.*;
+
+@Entity
+@Table(name = "users")
+public class User {
+    @Id
+    private Long id;
+}
+`)
+    await writeFile('Post.java', `
+import jakarta.persistence.*;
+
+@Entity
+public class Post {
+    @Id
+    private Long id;
+
+    @ManyToOne
+    private User author;
+}
+`)
+    const tables = await parseJpaEntities(tmpDir, 'test')
+    const postTable = tables.find(t => t.name === 'Post')
+    expect(postTable).toBeDefined()
+    const fkCol = (postTable?.columns ?? []).find(c => c.name === 'author_id')
+    expect(fkCol).toBeDefined()
+    // User의 @Table(name="users") → references.table = "users", 클래스명 "User" 아님
+    expect(fkCol?.references?.table).toBe('users')
+  })
+
   it('@OneToMany 필드는 FK 컬럼 없음 (inverse side 스킵)', async () => {
     await writeFile('User.java', `
 import jakarta.persistence.*;

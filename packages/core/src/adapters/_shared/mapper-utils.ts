@@ -29,6 +29,11 @@ import {
  */
 function tokenMatch(fileBase: string, tableName: string): boolean {
   if (fileBase === tableName) return true
+  // PascalCase / snake_case / kebab-case 정규화: 구분자 제거 후 비교
+  // 예: 'user-profile' vs 'userprofile' (UserProfile 테이블 lowercase), 'user_profile' vs 'userprofile'
+  const strippedFile = fileBase.replace(/[-_.]/g, '')
+  const strippedTable = tableName.replace(/[-_.]/g, '')
+  if (strippedFile === tableName || strippedFile === strippedTable) return true
   // 토큰 경계: 앞뒤가 단어 구분자(-, _, ., 문자열 시작/끝)인 경우만 매칭
   const escaped = tableName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
   const re = new RegExp(`(?:^|[-_.])${escaped}(?:[-_.]|$)`)

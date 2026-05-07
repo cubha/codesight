@@ -43,11 +43,29 @@ describe('parseAngularComponents', () => {
   it('template 내 selector 태그 → renders 엣지 생성 (IV-4)', async () => {
     // home.component.ts에 <app-users /> 포함됨 (fixture에 이미 추가됨)
     const { nodes, edges } = await parseAngularComponents(FIXTURE, '0.0.0-test')
-    const homeNode = nodes.find(n => n.name === 'HomeComponent')
+    // alt-home.component.ts도 HomeComponent이므로 filePath로 특정
+    const homeNode = nodes.find(n => n.name === 'HomeComponent' && n.filePath.endsWith('home.component.ts') && !n.filePath.includes('alt-'))
     const usersNode = nodes.find(n => n.name === 'UsersComponent')
     expect(homeNode).toBeDefined()
     expect(usersNode).toBeDefined()
     const rendersEdges = edges.filter(e => e.kind === 'renders')
     expect(rendersEdges.some(e => e.from === homeNode?.id && e.to === usersNode?.id)).toBe(true)
+  })
+
+  it('동일 클래스명이 두 파일에 있어도 각 파일이 별도 nodeId를 가진다 (N-17)', async () => {
+    // alt-home.component.ts도 HomeComponent 클래스 가짐
+    const { nodes } = await parseAngularComponents(FIXTURE, '0.0.0-test')
+    const homeNodes = nodes.filter(n => n.name === 'HomeComponent')
+    expect(homeNodes.length).toBe(2)
+    expect(homeNodes[0]!.id).not.toBe(homeNodes[1]!.id)
+  })
+
+  it('동명 클래스 충돌 시에도 imports 엣지가 올바른 컴포넌트를 가리킨다 (N-17)', async () => {
+    const { nodes, edges } = await parseAngularComponents(FIXTURE, '0.0.0-test')
+    const usersNode = nodes.find(n => n.name === 'UsersComponent')
+    expect(usersNode).toBeDefined()
+    // home.component.ts의 HomeComponent가 UsersComponent를 imports → edge exists
+    const importsEdges = edges.filter(e => e.kind === 'imports')
+    expect(importsEdges.some(e => e.to === usersNode!.id)).toBe(true)
   })
 })

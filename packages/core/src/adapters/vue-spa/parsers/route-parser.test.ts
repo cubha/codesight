@@ -50,6 +50,35 @@ describe('parseVueRoutes', () => {
   })
 })
 
+describe('parseVueRoutes — external routes file (N-21)', () => {
+  it('routes 배열이 외부 파일(import)로 분리된 경우에도 RouteNode를 파싱한다', async () => {
+    const tmpDir2 = await fs.mkdtemp(path.join(os.tmpdir(), 'cv-vue-external-'))
+    await fs.mkdir(path.join(tmpDir2, 'src', 'router'), { recursive: true })
+    await fs.writeFile(
+      path.join(tmpDir2, 'src', 'router', 'routes.ts'),
+      `export const routes = [
+  { path: '/dashboard', component: () => import('../views/Dashboard.vue') },
+  { path: '/dashboard/users', component: () => import('../views/Users.vue') },
+]`,
+    )
+    await fs.writeFile(
+      path.join(tmpDir2, 'src', 'router', 'index.ts'),
+      `import { createRouter, createWebHistory } from 'vue-router'
+import { routes } from './routes'
+const router = createRouter({
+  history: createWebHistory(),
+  routes: routes,
+})
+export default router`,
+    )
+    const routes = await parseVueRoutes(tmpDir2, 'test@0.1')
+    const paths = routes.map(r => r.path)
+    expect(paths).toContain('/dashboard')
+    expect(paths).toContain('/dashboard/users')
+    await fs.rm(tmpDir2, { recursive: true, force: true })
+  })
+})
+
 describe('parseVueRoutes — nested children (B-1)', () => {
   it('nested children 라우트를 부모 prefix와 결합한다', async () => {
     const tmpDir2 = await fs.mkdtemp(path.join(os.tmpdir(), 'cv-vue-nested-'))

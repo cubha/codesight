@@ -16,6 +16,31 @@ const VUE_SCRIPT_RE = /<script(?:\s[^>]*)?>(?<content>[\s\S]*?)<\/script>/
 const VUE_TEMPLATE_RE = /<template(?:\s[^>]*)?>(?<content>[\s\S]*?)<\/template>/
 const COMPONENT_TAG_RE = /<([A-Z][A-Za-z0-9]*)/g
 
+type PathsMap = Map<string, string>
+
+async function loadTsConfigPaths(repoRoot: string): Promise<PathsMap> {
+  for (const name of ['tsconfig.json', 'jsconfig.json']) {
+    try {
+      const raw = await fs.readFile(path.join(repoRoot, name), 'utf-8')
+      const parsed = JSON.parse(raw) as { compilerOptions?: { paths?: Record<string, string[]> } }
+      const tsPathsRecord = parsed.compilerOptions?.paths
+      if (tsPathsRecord == null) continue
+      const map: PathsMap = new Map()
+      for (const [alias, targets] of Object.entries(tsPathsRecord)) {
+        const firstTarget = targets[0]
+        if (firstTarget === undefined) continue
+        const aliasPrefix = alias.endsWith('/*') ? alias.slice(0, -2) : alias
+        const targetDir = firstTarget.endsWith('/*') ? firstTarget.slice(0, -2) : firstTarget
+        map.set(aliasPrefix, path.resolve(repoRoot, targetDir))
+      }
+      return map
+    } catch {
+      // not found or unparseable
+    }
+  }
+  return new Map()
+}
+
 async function findVueFiles(repoRoot: string): Promise<string[]> {
   const results: string[] = []
   async function recurse(dir: string): Promise<void> {
@@ -41,6 +66,7 @@ export async function parseVueSpaComponents(
   if (vueFiles.length === 0) return { nodes: [], edges: [] }
 
   const vueRelSet = new Set(vueFiles.map(f => path.relative(repoRoot, f).replace(/\\/g, '/')))
+  const aliasPaths = await loadTsConfigPaths(repoRoot)
 
   const nodes: ComponentNode[] = []
   const edges: IREdge[] = []
@@ -84,9 +110,21 @@ export async function parseVueSpaComponents(
 
       for (const imp of sf.getImportDeclarations()) {
         const spec = imp.getModuleSpecifierValue()
-        if (!spec.startsWith('.')) continue
 
-        const resolved = path.resolve(path.dirname(filePath), spec)
+        let baseResolved: string | undefined
+        if (spec.startsWith('.')) {
+          baseResolved = path.resolve(path.dirname(filePath), spec)
+        } else {
+          for (const [aliasPrefix, targetDir] of aliasPaths) {
+            if (spec === aliasPrefix || spec.startsWith(aliasPrefix + '/')) {
+              baseResolved = path.join(targetDir, spec.slice(aliasPrefix.length))
+              break
+            }
+          }
+        }
+        if (baseResolved === undefined) continue
+
+        const resolved = baseResolved
         const ext = path.extname(spec)
         const candidates = ext !== ''
           ? [resolved]
@@ -125,14 +163,13 @@ export async function parseVueSpaComponents(
         for (const rel of vueRelSet) {
           if (path.basename(rel, '.vue') === tagName) {
             const toId = makeNodeId('component', rel, tagName)
-            const edgeId = makeEdgeId('imports', nodeId, toId)
+            const edgeId = makeEdgeId('renders', nodeId, toId)
             if (!edges.some(e => e.id === edgeId)) {
               edges.push(createEdge({
                 id: edgeId,
                 from: nodeId,
                 to: toId,
-                kind: 'imports',
-                importDepth: 1,
+                kind: 'renders',
                 provenance,
                 confidence: 'inferred',
                 inferenceChain: [`vue-spa: <${tagName}> in template of ${relPath}`],

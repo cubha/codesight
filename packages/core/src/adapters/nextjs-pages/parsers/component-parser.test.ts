@@ -46,6 +46,16 @@ describe('parseNextPagesComponents', () => {
     expect(nodes[0]!.provenance.adapter).toBe('nextjs-pages-component-parser@0.1')
   })
 
+  it('alias import (@/_components/) → renders 엣지를 생성한다 (N-9)', async () => {
+    // about.tsx에 `import UserBadge from '@/_components/UserBadge'` 추가됨 (tsconfig @/* → pages/*)
+    const { edges } = await parseNextPagesComponents(FIXTURE, '0.0.0-test')
+    const rendersEdges = edges.filter(e => e.kind === 'renders')
+    const aboutToUserBadge = rendersEdges.some(
+      e => String(e.from).includes('about') && String(e.to).includes('UserBadge'),
+    )
+    expect(aboutToUserBadge).toBe(true)
+  })
+
   it('hasSupabase=true면 tableNodes 배열을 반환한다 (빈 fixture여도 배열)', async () => {
     const adapter = new NextJsPagesAdapter()
     const result = await adapter.analyze({

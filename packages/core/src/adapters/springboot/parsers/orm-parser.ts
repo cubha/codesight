@@ -8,25 +8,7 @@ import {
   type Provenance,
 } from '@codebase-viz/types'
 import { createJavaParser } from '../../_shared/tree-sitter-loader.js'
-
-const EXCLUDE_DIRS = new Set(['.git', 'node_modules', 'target', 'build', '.gradle'])
-
-async function findJavaFiles(repoRoot: string): Promise<string[]> {
-  const results: string[] = []
-  async function recurse(dir: string): Promise<void> {
-    const entries = await fs.readdir(dir, { withFileTypes: true }).catch(() => null)
-    if (entries === null) return
-    for (const entry of entries) {
-      if (entry.isDirectory()) {
-        if (!EXCLUDE_DIRS.has(entry.name)) await recurse(path.join(dir, entry.name))
-      } else if (entry.isFile() && entry.name.endsWith('.java')) {
-        results.push(path.join(dir, entry.name))
-      }
-    }
-  }
-  await recurse(repoRoot)
-  return results
-}
+import { findJavaFiles } from '../../_shared/file-finder.js'
 
 function getAnnotationName(annotNode: import('web-tree-sitter').SyntaxNode): string | undefined {
   for (let i = 0; i < annotNode.childCount; i++) {
@@ -39,6 +21,61 @@ function getAnnotationName(annotNode: import('web-tree-sitter').SyntaxNode): str
   return undefined
 }
 
+function collectClassTableNames(
+  rootNode: import('web-tree-sitter').SyntaxNode,
+  classToTableMap: Map<string, string>,
+): void {
+  function scan(node: import('web-tree-sitter').SyntaxNode): void {
+    if (node.type === 'class_declaration') {
+      let isEntity = false
+      let tableName: string | undefined
+
+      for (let i = 0; i < node.childCount; i++) {
+        const child = node.child(i)
+        if (child === null || child.type !== 'modifiers') continue
+        for (let j = 0; j < child.childCount; j++) {
+          const mod = child.child(j)
+          if (mod === null || (mod.type !== 'annotation' && mod.type !== 'marker_annotation')) continue
+          const annotName = getAnnotationName(mod)
+          if (annotName === 'Entity') {
+            isEntity = true
+          } else if (annotName === 'Table') {
+            for (let k = 0; k < mod.childCount; k++) {
+              const argNode = mod.child(k)
+              if (argNode === null || argNode.type !== 'annotation_argument_list') continue
+              for (let l = 0; l < argNode.childCount; l++) {
+                const pair = argNode.child(l)
+                if (pair === null || pair.type !== 'element_value_pair') continue
+                const keyNode = pair.child(0)
+                const valNode = pair.child(2)
+                if (keyNode?.text === 'name' && valNode?.type === 'string_literal') {
+                  for (let m = 0; m < valNode.childCount; m++) {
+                    const frag = valNode.child(m)
+                    if (frag !== null && frag.type === 'string_fragment') tableName = frag.text
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+
+      if (isEntity) {
+        const nameNode = node.childForFieldName('name')
+        if (nameNode !== null) {
+          classToTableMap.set(nameNode.text, tableName ?? nameNode.text)
+        }
+      }
+      return
+    }
+    for (let i = 0; i < node.childCount; i++) {
+      const child = node.child(i)
+      if (child !== null) scan(child)
+    }
+  }
+  scan(rootNode)
+}
+
 export async function parseJpaEntities(
   repoRoot: string,
   analyzerVersion: string,
@@ -47,6 +84,17 @@ export async function parseJpaEntities(
   if (javaFiles.length === 0) return []
 
   const parser = await createJavaParser()
+
+  // Pass 1: 클래스명 → 실제 테이블명 역방향 맵 구축
+  const classToTableMap = new Map<string, string>()
+  for (const filePath of javaFiles) {
+    const source = await fs.readFile(filePath, 'utf-8').catch(() => null)
+    if (source === null || !source.includes('@Entity')) continue
+    const tree = parser.parse(source)
+    collectClassTableNames(tree.rootNode, classToTableMap)
+  }
+
+  // Pass 2: 기존 로직 실행 (classToTableMap 활용)
   const tables: TableNode[] = []
 
   for (const filePath of javaFiles) {
@@ -115,6 +163,7 @@ export async function parseJpaEntities(
             let isPrimary = false
             let isManyToOne = false
             let nullable: boolean = true
+            let columnName: string | undefined
             let joinColumnName: string | undefined
 
             for (let j = 0; j < member.childCount; j++) {
@@ -139,6 +188,12 @@ export async function parseJpaEntities(
                         if (keyNode?.text === 'nullable') {
                           if (valNode?.type === 'false') nullable = false
                           else if (valNode?.type === 'true') nullable = true
+                        }
+                        if (keyNode?.text === 'name' && valNode?.type === 'string_literal') {
+                          for (let n = 0; n < valNode.childCount; n++) {
+                            const frag = valNode.child(n)
+                            if (frag !== null && frag.type === 'string_fragment') columnName = frag.text
+                          }
                         }
                       }
                     }
@@ -183,13 +238,13 @@ export async function parseJpaEntities(
               if (nameChild !== null) {
                 const typeNode = member.childForFieldName('type')
                 const colType = typeNode?.text ?? 'unknown'
-                const colName = joinColumnName ?? (isManyToOne ? nameChild.text + '_id' : nameChild.text)
+                const colName = columnName ?? joinColumnName ?? (isManyToOne ? nameChild.text + '_id' : nameChild.text)
                 columns.push({
                   name: colName,
                   type: colType,
                   nullable,
                   isPrimaryKey: isPrimary,
-                  ...(isManyToOne && colType !== 'unknown' ? { references: { table: colType, column: 'id' } } : {}),
+                  ...(isManyToOne && colType !== 'unknown' ? { references: { table: classToTableMap.get(colType) ?? colType, column: 'id' } } : {}),
                 })
               }
             }

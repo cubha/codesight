@@ -109,6 +109,48 @@ describe('parseControllers', () => {
   })
 })
 
+describe('parseControllers — template literal @Controller (L-3)', () => {
+  it('@Controller(`api`) NoSubstitutionTemplateLiteral prefix 추출', async () => {
+    const tmpDirL3 = await fs.mkdtemp(path.join(os.tmpdir(), 'nestjs-l3-'))
+    await fs.mkdir(path.join(tmpDirL3, 'src'), { recursive: true })
+    await fs.writeFile(
+      path.join(tmpDirL3, 'src', 'items.controller.ts'),
+      `import { Controller, Get } from '@nestjs/common'
+@Controller(\`items\`)
+export class ItemsController {
+  @Get()
+  list() { return [] }
+  @Get(':id')
+  detail() { return null }
+}`,
+    )
+    const { routes } = await parseControllers(tmpDirL3)
+    const paths = routes.map(r => r.path)
+    expect(paths).toContain('/items')
+    expect(paths).toContain('/items/:id')
+    await fs.rm(tmpDirL3, { recursive: true, force: true })
+  })
+
+  it('@Controller(`/api/${version}`) TemplateExpression — 정적 prefix 추출', async () => {
+    const tmpDirL3b = await fs.mkdtemp(path.join(os.tmpdir(), 'nestjs-l3b-'))
+    await fs.mkdir(path.join(tmpDirL3b, 'src'), { recursive: true })
+    await fs.writeFile(
+      path.join(tmpDirL3b, 'src', 'v2.controller.ts'),
+      `import { Controller, Get } from '@nestjs/common'
+const version = 'v2'
+@Controller(\`/api/\${version}\`)
+export class V2Controller {
+  @Get('health')
+  health() { return 'ok' }
+}`,
+    )
+    const { routes } = await parseControllers(tmpDirL3b)
+    const paths = routes.map(r => r.path)
+    expect(paths.some(p => p.startsWith('/api/'))).toBe(true)
+    await fs.rm(tmpDirL3b, { recursive: true, force: true })
+  })
+})
+
 describe('parseModulesAndProviders', () => {
   it('@Module 2개 + @Injectable 1개 추출', async () => {
     const { modules, services } = await parseModulesAndProviders(tmpDir)

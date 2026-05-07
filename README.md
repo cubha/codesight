@@ -4,7 +4,7 @@
 
 Routes, components, and DB relationships — extracted statically from **13 frameworks**, optionally enriched by LLM, rendered as three live diagram tabs inside VS Code.
 
-> Marketplace: [`cubha.codebase-arch-viz`](https://marketplace.visualstudio.com/items?itemName=cubha.codebase-arch-viz) · Current release: **v0.8.1**
+> Marketplace: [`cubha.codebase-arch-viz`](https://marketplace.visualstudio.com/items?itemName=cubha.codebase-arch-viz) · Current release: **v1.0.0**
 
 ---
 
@@ -124,7 +124,7 @@ pnpm install
 # Type-check all packages
 pnpm typecheck
 
-# Run all tests (385 tests)
+# Run all tests (443 tests)
 pnpm test
 
 # Or use the project verify script (tsc + vitest)
@@ -193,7 +193,10 @@ npx vsce publish --no-dependencies -p <PAT>
 | v0.6.0 | 5 new frameworks (Flask, Next.js Pages, Vue SPA, Remix, Angular) + DB Multi-ORM (Prisma/Drizzle/TypeORM/Django ORM/SQLAlchemy/JPA) + SFC/backend component graphs |
 | v0.7.0 | HTTP method labels (NestJS/FastAPI/Spring Boot) · SvelteKit runtime detection · ORM column quality · DB–Screen mapper connections |
 | v0.8.0 | React Router adapter (13th) · Tab3 DB connected for all 13 adapters · TypeORM/Django FK references · Django CBV method detection · Flask SQLAlchemy ORM parser |
-| v0.8.1 | Spring Boot MyBatis support (mapper XML `<resultMap>` + `@Mapper`) · Mermaid large diagram fix (`maxTextSize`) · DB–Screen empty state cleanup |
+| v0.8.1 | Spring Boot MyBatis support (mapper XML `<resultMap>` + `@Mapper`) · Mermaid large diagram fix · DB–Screen empty state cleanup |
+| v0.8.2 | Supabase shared parser for all SPA adapters · Tab3 mapper edges for Nuxt/Vue SPA/Angular/React Router · regex false-positive fix |
+| v0.9.0 | DB FK accuracy (Spring Boot `@OneToOne`, Django M2M, TypeORM nullable) · Flask/Spring HTTP method detection · tsconfig alias resolution · Angular component dedup · MyBatis inheritance |
+| v1.0.0 | Next.js `.js`/`.jsx` routes · Remix splat catch-all · Vue SPA `renders` edges · Angular `loadComponent` renders · Flask FK arrows · Spring Boot column name/FK table mapping · Django `re_path` · NestJS template literals |
 
 ---
 

@@ -56,7 +56,7 @@ function remixRelPathToRoute(
     const parts = seg.split('.')
     const routeParts = parts
       .filter(part => !part.startsWith('_'))  // strip pathless layout prefixes like _auth
-      .map(part => part.replace(/\$(\w+)/g, ':$1'))  // $id → :id
+      .map(part => part.replace(/\$(\w*)/g, (_, name: string) => name.length > 0 ? `:${name}` : '*'))  // $id → :id, $ → *
     return routeParts.join('/')
   })
 
@@ -64,7 +64,9 @@ function remixRelPathToRoute(
   const urlPath = '/' + joined
   const clean = urlPath === '//' ? '/' : urlPath.replace(/\/+$/, '') || '/'
 
-  const dynamicSegmentType: DynamicSegmentType = clean.includes(':') ? 'dynamic' : 'static'
+  const dynamicSegmentType: DynamicSegmentType =
+    clean.includes('*') ? 'catch-all' :
+    clean.includes(':') ? 'dynamic' : 'static'
   return { urlPath: clean, dynamicSegmentType }
 }
 

@@ -7,5 +7,6 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import NavBar from '@/views/NavBar.vue'
 const message = ref('Hello Vue SPA')
 </script>

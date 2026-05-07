@@ -120,10 +120,34 @@ export async function parseVueRoutes(
       if (routesInit.isKind(SyntaxKind.ArrayLiteralExpression)) {
         routesArray = routesInit
       } else if (routesInit.isKind(SyntaxKind.Identifier)) {
-        // routes defined as const routes = [...]
-        const varDecls = sourceFile.getVariableDeclarations()
-        const varDecl = varDecls.find(v => v.getName() === routesInit.getText())
+        const varName = routesInit.getText()
+        const varDecl = sourceFile.getVariableDeclarations().find(v => v.getName() === varName)
         routesArray = varDecl?.getInitializer()
+
+        if (routesArray === undefined) {
+          for (const impDecl of sourceFile.getImportDeclarations()) {
+            const hasNamedImport = impDecl.getNamedImports().some(ni => ni.getName() === varName)
+            if (!hasNamedImport) continue
+            const moduleSpec = impDecl.getModuleSpecifierValue()
+            if (!moduleSpec.startsWith('.')) continue
+
+            const absBase = path.resolve(path.dirname(filePath), moduleSpec)
+            for (const tryExt of ['.ts', '/index.ts', '.js', '/index.js']) {
+              const candidate = absBase + tryExt
+              let importedSf = project.getSourceFile(candidate)
+              if (importedSf === undefined) {
+                try { importedSf = project.addSourceFileAtPath(candidate) } catch { continue }
+              }
+              if (importedSf === undefined) continue
+              const vd = importedSf.getVariableDeclarations().find(v => v.getName() === varName)
+              if (vd !== undefined) {
+                routesArray = vd.getInitializer()
+                break
+              }
+            }
+            if (routesArray !== undefined) break
+          }
+        }
       }
 
       if (routesArray === undefined) continue

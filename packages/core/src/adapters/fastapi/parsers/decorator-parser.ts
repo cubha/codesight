@@ -10,27 +10,9 @@ import {
 } from '@codebase-viz/types'
 import { createPythonParser } from '../../_shared/tree-sitter-loader.js'
 import { normalizeUrlPath } from '../../_shared/url-path-normalizer.js'
+import { findPyFiles } from '../../_shared/file-finder.js'
 
-const EXCLUDE_DIRS = new Set(['__pycache__', '.git', 'node_modules', 'venv', '.venv', 'env'])
 const HTTP_METHODS = new Set(['get', 'post', 'put', 'delete', 'patch', 'head', 'options'])
-
-async function findPyFiles(repoRoot: string): Promise<string[]> {
-  const results: string[] = []
-  async function recurse(dir: string): Promise<void> {
-    const entries = await fs.readdir(dir, { withFileTypes: true }).catch(() => null)
-    if (entries === null) return
-    for (const entry of entries) {
-      const fullPath = path.join(dir, entry.name)
-      if (entry.isDirectory()) {
-        if (!EXCLUDE_DIRS.has(entry.name)) await recurse(fullPath)
-      } else if (entry.isFile() && entry.name.endsWith('.py')) {
-        results.push(fullPath)
-      }
-    }
-  }
-  await recurse(repoRoot)
-  return results
-}
 
 function extractStringValue(node: Parser.SyntaxNode): string | undefined {
   for (let i = 0; i < node.childCount; i++) {
@@ -81,6 +63,7 @@ interface ImportEntry {
   localName: string     // local variable name (or alias)
   sourceModule: string  // dotted module: 'routers.users'
   originalName?: string // from X import Y as Z → Y
+  isRelative?: boolean  // true when from . or from .. import
 }
 
 interface IncludeRouterCall {
@@ -115,6 +98,7 @@ function analyzeFile(rootNode: Parser.SyntaxNode): FileAnalysis {
     if (node.type === 'import_from_statement') {
       let moduleParts = ''
       let pastImport = false
+      let isRelative = false
 
       for (let i = 0; i < node.childCount; i++) {
         const child = node.child(i)
@@ -126,19 +110,20 @@ function analyzeFile(rootNode: Parser.SyntaxNode): FileAnalysis {
         }
 
         if (!pastImport && (child.type === 'dotted_name' || child.type === 'relative_import')) {
+          isRelative = child.type === 'relative_import'
           moduleParts = child.text.replace(/^\.+/, '')
         }
 
         if (pastImport) {
           if (child.type === 'identifier' || child.type === 'dotted_name') {
-            imports.push({ localName: child.text, sourceModule: `${moduleParts}.${child.text}` })
+            imports.push({ localName: child.text, sourceModule: `${moduleParts}.${child.text}`, isRelative })
           } else if (child.type === 'aliased_import') {
             const nameNode = child.child(0)
             const aliasNode = child.child(2)
             if (nameNode !== null) {
               const originalName = nameNode.text
               const localName = aliasNode !== null ? aliasNode.text : originalName
-              imports.push({ localName, sourceModule: moduleParts, originalName })
+              imports.push({ localName, sourceModule: moduleParts, originalName, isRelative })
             }
           }
         }
@@ -239,24 +224,33 @@ function resolveImportToRelPath(
   imports: ImportEntry[],
   pyFilesSet: Set<string>,
   repoRoot: string,
+  currentFileDir?: string,
 ): string | undefined {
   const imp = imports.find(i => i.localName === localName)
   if (imp === undefined) return undefined
 
-  // sourceModule might be 'routers.users' (from 'from routers import users' → sourceModule='routers.users')
-  // or 'routers' (from 'from routers import users as u' → sourceModule='routers', originalName='users')
-  let modulePath = imp.sourceModule.replace(/\./g, '/')
+  let baseDir = repoRoot
+  if (imp.isRelative === true && currentFileDir !== undefined) {
+    baseDir = currentFileDir
+  }
+
+  const moduleSegment = imp.sourceModule.replace(/\./g, '/')
   const candidates = [
-    modulePath + '.py',
-    modulePath + '/__init__.py',
+    moduleSegment + '.py',
+    moduleSegment + '/__init__.py',
   ]
   for (const c of candidates) {
-    if (pyFilesSet.has(path.join(repoRoot, c))) return c
+    const absCandidate = path.join(baseDir, c)
+    if (pyFilesSet.has(absCandidate)) {
+      return path.relative(repoRoot, absCandidate).replace(/\\/g, '/')
+    }
   }
-  // fallback: 'routers/users.py' from imp.originalName
   if (imp.originalName !== undefined) {
-    const modWithOrig = imp.sourceModule.replace(/\./g, '/') + '/' + imp.originalName + '.py'
-    if (pyFilesSet.has(path.join(repoRoot, modWithOrig))) return modWithOrig
+    const modWithOrig = moduleSegment + '/' + imp.originalName + '.py'
+    const absCandidate = path.join(baseDir, modWithOrig)
+    if (pyFilesSet.has(absCandidate)) {
+      return path.relative(repoRoot, absCandidate).replace(/\\/g, '/')
+    }
   }
   return undefined
 }
@@ -328,9 +322,10 @@ export async function parseDecorators(
   const included = new Set<string>()
 
   for (const [absPath, { analysis, relPath }] of fileMap) {
+    const currentFileDir = path.dirname(absPath)
     for (const inc of analysis.includeRouterCalls) {
       // resolve: routerObj is the imported module name or identifier
-      const targetRelPath = resolveImportToRelPath(inc.routerObj, analysis.imports, pyFilesSet, repoRoot)
+      const targetRelPath = resolveImportToRelPath(inc.routerObj, analysis.imports, pyFilesSet, repoRoot, currentFileDir)
       if (targetRelPath === undefined) continue
 
       const targetAbsPath = path.join(repoRoot, targetRelPath)

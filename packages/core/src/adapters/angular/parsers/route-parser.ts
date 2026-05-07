@@ -29,6 +29,29 @@ async function findTsFiles(repoRoot: string): Promise<string[]> {
   return results
 }
 
+function extractLoadComponentClass(
+  prop: import('ts-morph').PropertyAssignment,
+): string | undefined {
+  const init = prop.getInitializer()
+  if (init === undefined) return undefined
+
+  for (const call of init.getDescendantsOfKind(SyntaxKind.CallExpression)) {
+    const expr = call.getExpression()
+    if (!expr.isKind(SyntaxKind.PropertyAccessExpression)) continue
+    const propAccess = expr.asKindOrThrow(SyntaxKind.PropertyAccessExpression)
+    if (propAccess.getName() !== 'then') continue
+
+    const thenArgs = call.getArguments()
+    if (thenArgs.length === 0) continue
+    const thenArg = thenArgs[0]!
+    if (!thenArg.isKind(SyntaxKind.ArrowFunction)) continue
+    const body = thenArg.asKindOrThrow(SyntaxKind.ArrowFunction).getBody()
+    if (!body.isKind(SyntaxKind.PropertyAccessExpression)) continue
+    return body.asKindOrThrow(SyntaxKind.PropertyAccessExpression).getName()
+  }
+  return undefined
+}
+
 function resolveLoadChildrenPaths(
   prop: import('ts-morph').PropertyAssignment,
   parentPath: string,
@@ -83,6 +106,7 @@ function extractPathsFromRoutesArray(
   parentPath = '',
   project?: import('ts-morph').Project,
   currentFileDir?: string,
+  loadComponentMap?: Map<string, string>,
 ): string[] {
   const paths: string[] = []
   if (!arrayNode.isKind(SyntaxKind.ArrayLiteralExpression)) return paths
@@ -111,12 +135,19 @@ function extractPathsFromRoutesArray(
 
     paths.push(fullPath)
 
+    // Capture loadComponent class name for renders edge generation
+    const loadComponentProp = obj.getProperty('loadComponent')
+    if (loadComponentProp?.isKind(SyntaxKind.PropertyAssignment) && loadComponentMap !== undefined) {
+      const className = extractLoadComponentClass(loadComponentProp.asKindOrThrow(SyntaxKind.PropertyAssignment))
+      if (className !== undefined) loadComponentMap.set(fullPath, className)
+    }
+
     // Recurse into children: [] passing accumulated path as prefix
     const childrenProp = obj.getProperty('children')
     if (childrenProp?.isKind(SyntaxKind.PropertyAssignment)) {
       const childInit = childrenProp.asKindOrThrow(SyntaxKind.PropertyAssignment).getInitializer()
       if (childInit !== undefined) {
-        paths.push(...extractPathsFromRoutesArray(childInit, fullPath, project, currentFileDir))
+        paths.push(...extractPathsFromRoutesArray(childInit, fullPath, project, currentFileDir, loadComponentMap))
       }
     }
 
@@ -136,7 +167,7 @@ function extractPathsFromRoutesArray(
 export async function parseAngularRoutes(
   repoRoot: string,
   analyzerVersion: string,
-): Promise<RouteNode[]> {
+): Promise<{ routes: RouteNode[]; loadComponentMap: Map<string, string> }> {
   const allFiles = await findTsFiles(repoRoot)
 
   const routerFiles: string[] = []
@@ -148,7 +179,7 @@ export async function parseAngularRoutes(
       routerFiles.push(f)
     }
   }
-  if (routerFiles.length === 0) return []
+  if (routerFiles.length === 0) return { routes: [], loadComponentMap: new Map() }
 
   const project = new Project({
     compilerOptions: {
@@ -162,6 +193,7 @@ export async function parseAngularRoutes(
   for (const f of routerFiles) project.addSourceFileAtPath(f)
 
   const routes: RouteNode[] = []
+  const loadComponentMap = new Map<string, string>()
 
   for (const sourceFile of project.getSourceFiles()) {
     const filePath = sourceFile.getFilePath()
@@ -197,7 +229,8 @@ export async function parseAngularRoutes(
 
       if (routesArray === undefined) continue
 
-      const extractedPaths = extractPathsFromRoutesArray(routesArray, '', project, fileDir)
+      const rawPathMap = new Map<string, string>()
+      const extractedPaths = extractPathsFromRoutesArray(routesArray, '', project, fileDir, rawPathMap)
 
       for (const rawPath of extractedPaths) {
         const urlPath = rawPath === '' ? '/' : rawPath.startsWith('/') ? rawPath : ('/' + rawPath)
@@ -210,9 +243,10 @@ export async function parseAngularRoutes(
           analyzerVersion,
         }
 
+        const routeId = makeNodeId('route', relPath, urlPath)
         routes.push(
           createRouteNode({
-            id: makeNodeId('route', relPath, urlPath),
+            id: routeId,
             path: urlPath,
             filePath: relPath,
             routeFileKind: 'page',
@@ -223,9 +257,12 @@ export async function parseAngularRoutes(
             confidence: 'verified',
           }),
         )
+
+        const compClass = rawPathMap.get(rawPath)
+        if (compClass !== undefined) loadComponentMap.set(routeId, compClass)
       }
     }
   }
 
-  return routes
+  return { routes, loadComponentMap }
 }

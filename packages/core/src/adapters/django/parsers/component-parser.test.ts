@@ -152,4 +152,37 @@ class ProfileView(View):
     expect(nodes).toHaveLength(1)
     expect(nodes[0]?.name).toBe('ProfileView')
   })
+
+  it('overview.py 같은 이름은 view 파일로 인식하지 않는다 (N-18)', async () => {
+    await writeFile('src/overview.py', `
+class SomeClass:
+    pass
+`)
+    await writeFile('api/views.py', `
+class UserView(View):
+    pass
+`)
+    const nodes = await parseDjangoComponents(tmpDir, 'test')
+    expect(nodes).toHaveLength(1)
+    expect(nodes[0]?.name).toBe('UserView')
+  })
+
+  it('views/ 디렉토리 내 파일은 view 파일로 인식한다 (N-18)', async () => {
+    await writeFile('myapp/views/users.py', `
+class UserView(View):
+    pass
+`)
+    const nodes = await parseDjangoComponents(tmpDir, 'test')
+    expect(nodes).toHaveLength(1)
+    expect(nodes[0]?.name).toBe('UserView')
+  })
+
+  it('reviews/ 디렉토리 내 models.py는 view 파일로 인식하지 않는다 (N-18)', async () => {
+    await writeFile('reviews/models.py', `
+class ReviewModel:
+    pass
+`)
+    const nodes = await parseDjangoComponents(tmpDir, 'test')
+    expect(nodes).toEqual([])
+  })
 })

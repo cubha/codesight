@@ -75,6 +75,20 @@ describe('parseRemixRoutes', () => {
     await fs.rm(tmpNoRoutes, { recursive: true, force: true })
   })
 
+  it('$ 단독 splat → /* catch-all 변환 (X-4)', async () => {
+    const tmpSplat = await fs.mkdtemp(path.join(os.tmpdir(), 'cv-remix-splat-'))
+    await fs.mkdir(path.join(tmpSplat, 'app', 'routes'), { recursive: true })
+    await fs.writeFile(
+      path.join(tmpSplat, 'app', 'routes', '$.tsx'),
+      'export default function CatchAll() {}',
+    )
+    const routes = await parseRemixRoutes(tmpSplat, 'test@0.1')
+    const splat = routes.find(r => r.path.includes('*'))
+    expect(splat).toBeDefined()
+    expect(splat?.dynamicSegmentType).toBe('catch-all')
+    await fs.rm(tmpSplat, { recursive: true, force: true })
+  })
+
   it('pathless layout _auth.login.tsx → /login (B-5)', async () => {
     const tmpPathless = await fs.mkdtemp(path.join(os.tmpdir(), 'cv-remix-pathless-'))
     await fs.mkdir(path.join(tmpPathless, 'app', 'routes'), { recursive: true })
