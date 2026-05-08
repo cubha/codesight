@@ -2,19 +2,19 @@
   "fixtures": {
     "mini-next-app": {
       "rendering": 1414,
-      "screenComponent": 1464,
+      "screenComponent": 2271,
       "dbScreen": 755,
       "exceeded": false
     },
     "mini-nuxt-app": {
       "rendering": 997,
-      "screenComponent": 1035,
+      "screenComponent": 1713,
       "dbScreen": 396,
       "exceeded": false
     },
     "mini-sveltekit-app": {
       "rendering": 899,
-      "screenComponent": 937,
+      "screenComponent": 1619,
       "dbScreen": 396,
       "exceeded": false
     },
@@ -32,7 +32,7 @@
     },
     "mini-fastapi-app": {
       "rendering": 1459,
-      "screenComponent": 1176,
+      "screenComponent": 1846,
       "dbScreen": 611,
       "exceeded": false
     },
@@ -44,37 +44,37 @@
     },
     "mini-flask-app": {
       "rendering": 1290,
-      "screenComponent": 1162,
+      "screenComponent": 1832,
       "dbScreen": 396,
       "exceeded": false
     },
     "mini-vue-spa-app": {
       "rendering": 973,
-      "screenComponent": 1011,
+      "screenComponent": 1681,
       "dbScreen": 396,
       "exceeded": false
     },
     "mini-angular-app": {
       "rendering": 1050,
-      "screenComponent": 1039,
+      "screenComponent": 1709,
       "dbScreen": 396,
       "exceeded": false
     },
     "mini-remix-app": {
       "rendering": 917,
-      "screenComponent": 955,
+      "screenComponent": 1633,
       "dbScreen": 396,
       "exceeded": false
     },
     "mini-react-router-app": {
       "rendering": 953,
-      "screenComponent": 1597,
+      "screenComponent": 2341,
       "dbScreen": 396,
       "exceeded": false
     },
     "mini-nextpages-app": {
       "rendering": 1437,
-      "screenComponent": 1158,
+      "screenComponent": 1836,
       "dbScreen": 396,
       "exceeded": false
     }

@@ -4,7 +4,7 @@
 
 Routes, components, and DB relationships — extracted statically from **13 frameworks**, optionally enriched by LLM, rendered as three live diagram tabs inside VS Code.
 
-> Marketplace: [`cubha.codebase-arch-viz`](https://marketplace.visualstudio.com/items?itemName=cubha.codebase-arch-viz) · Current release: **v1.1.1**
+> Marketplace: [`cubha.codebase-arch-viz`](https://marketplace.visualstudio.com/items?itemName=cubha.codebase-arch-viz) · Current release: **v1.1.2**
 
 ---
 
@@ -226,6 +226,7 @@ npx vsce publish --no-dependencies -p <PAT>
 | v1.0.0 | Next.js `.js`/`.jsx` routes · Remix splat catch-all · Vue SPA `renders` edges · Angular `loadComponent` renders · Flask FK arrows · Spring Boot column name/FK table mapping · Django `re_path` · NestJS template literals |
 | v1.1.0 | **URL-based hierarchical grouping** (Tab1/Tab2) · **Flyway DDL parser** (Spring Boot + Django) · **Tab3 schema/module grouping** · **1M chunk fallback** (auto-split large diagrams) · **Multi-workspace folder selection** · **FE↔BE cross-project analysis** (fetch/axios → BE route matching, combined diagram, 2-step QuickPick) |
 | v1.1.1 | **react-router JSX `<Routes>` parser** (BrowserRouter + Routes + Route 4 patterns) · **vite+react adapterId fix** · **stack-detector priority fix** · **LCP 분기점 행 그리드** (Tab1·Tab2·Tab3, GROUPS_PER_ROW=5) · **전체 컬럼 ERD** (8개 절단 제거) · **멀티행 스택 뷰어** |
+| v1.1.2 | **Tab1 X폭발 수정** (flat 렌더링, 7,407→1,380px) · **Tab2 X폭발 수정** (nested comp subgraph + TAB2_GROUPS_PER_ROW=2, 32,035→1,381px) · **Tab3 chunk 폭발** (tableCount 기준 교체) · **Tab3 source 그룹화** (Pages/Actions subgraph) · **ERD th/td 색상 분리** (TH 어두운/TD 흰색·연회색) · **Tab3 전체 뷰 기본값** (ALL 토글 맨앞·기본 활성) |
 
 ---
 

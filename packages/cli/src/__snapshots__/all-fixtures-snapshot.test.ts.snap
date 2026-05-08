@@ -50,7 +50,8 @@ graph TD
 `;
 
 exports[`Phase XI — fixture baseline snapshots (P1) > mini-angular-app > Tab2 screen-component diagram 1`] = `
-"%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0c1a30','primaryTextColor':'#7dd3fc','primaryBorderColor':'#0e3a6e','edgeLabelBackground':'#0c1a30','lineColor':'#334155','secondaryColor':'#0f172a','clusterBkg':'#060c18','clusterBorder':'#1e3a5f','fontFamily':'JetBrains Mono'}}}%%
+"%% chunk:1/2
+%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0c1a30','primaryTextColor':'#7dd3fc','primaryBorderColor':'#0e3a6e','edgeLabelBackground':'#0c1a30','lineColor':'#334155','secondaryColor':'#0f172a','clusterBkg':'#060c18','clusterBorder':'#1e3a5f','fontFamily':'JetBrains Mono'}}}%%
 graph TB
   classDef ssr fill:#0d1a0d,stroke:#16a34a,color:#86efac
   classDef csr fill:#2d1200,stroke:#c2410c,color:#fb923c
@@ -58,12 +59,20 @@ graph TB
   classDef isr fill:#1a1a0d,stroke:#ca8a04,color:#fde047
   classDef ppr fill:#0d1a2d,stroke:#2563eb,color:#93c5fd
   classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
-  subgraph ROOT_S["🏠 /root"]
-    route_src_app_user_detail_user_detail_module_ts__["/ · CSR"]:::csr
-  end
   subgraph ABOUT_S["👤 /about"]
+    route_src_app_user_detail_user_detail_module_ts__["/ · CSR"]:::csr
     route_src_app_app_config_ts__about["/about · CSR"]:::csr
   end
+%%--CHUNK--%%
+%% chunk:2/2
+%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0c1a30','primaryTextColor':'#7dd3fc','primaryBorderColor':'#0e3a6e','edgeLabelBackground':'#0c1a30','lineColor':'#334155','secondaryColor':'#0f172a','clusterBkg':'#060c18','clusterBorder':'#1e3a5f','fontFamily':'JetBrains Mono'}}}%%
+graph TB
+  classDef ssr fill:#0d1a0d,stroke:#16a34a,color:#86efac
+  classDef csr fill:#2d1200,stroke:#c2410c,color:#fb923c
+  classDef ssg fill:#1a0d1a,stroke:#7c3aed,color:#c4b5fd
+  classDef isr fill:#1a1a0d,stroke:#ca8a04,color:#fde047
+  classDef ppr fill:#0d1a2d,stroke:#2563eb,color:#93c5fd
+  classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
   subgraph USERS_S["📄 /users"]
     route_src_app_app_config_ts__users["/users · CSR"]:::csr
     route_src_app_app_config_ts__users__id["/users/:id · CSR"]:::csr
@@ -71,7 +80,7 @@ graph TB
 `;
 
 exports[`Phase XI — fixture baseline snapshots (P1) > mini-angular-app > Tab3 db-screen diagram 1`] = `
-"%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0a2030','primaryTextColor':'#e2e8f0','primaryBorderColor':'#1e4060','lineColor':'#f59e0b','secondaryColor':'#0f172a','tertiaryColor':'#1a0a20','attributeBackgroundColorEven':'#0f1e30','attributeBackgroundColorOdd':'#091624','nodeBorder':'#1e4060','clusterBkg':'#0a0e1a','fontFamily':'JetBrains Mono'}}}%%
+"%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0a2030','primaryTextColor':'#e2e8f0','primaryBorderColor':'#1e4060','lineColor':'#f59e0b','secondaryColor':'#0f172a','tertiaryColor':'#1a0a20','attributeBackgroundColorEven':'#ffffff','attributeBackgroundColorOdd':'#f1f5f9','nodeBorder':'#1e4060','clusterBkg':'#0a0e1a','fontFamily':'JetBrains Mono'}}}%%
 erDiagram"
 `;
 
@@ -144,7 +153,7 @@ graph TB
 `;
 
 exports[`Phase XI — fixture baseline snapshots (P1) > mini-django-app > Tab3 db-screen diagram 1`] = `
-"%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0a2030','primaryTextColor':'#e2e8f0','primaryBorderColor':'#1e4060','lineColor':'#f59e0b','secondaryColor':'#0f172a','tertiaryColor':'#1a0a20','attributeBackgroundColorEven':'#0f1e30','attributeBackgroundColorOdd':'#091624','nodeBorder':'#1e4060','clusterBkg':'#0a0e1a','fontFamily':'JetBrains Mono'}}}%%
+"%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0a2030','primaryTextColor':'#e2e8f0','primaryBorderColor':'#1e4060','lineColor':'#f59e0b','secondaryColor':'#0f172a','tertiaryColor':'#1a0a20','attributeBackgroundColorEven':'#ffffff','attributeBackgroundColorOdd':'#f1f5f9','nodeBorder':'#1e4060','clusterBkg':'#0a0e1a','fontFamily':'JetBrains Mono'}}}%%
 erDiagram
 %% table:users path:api/models.py
 %% table:posts path:api/models.py
@@ -231,7 +240,8 @@ graph TD
 `;
 
 exports[`Phase XI — fixture baseline snapshots (P1) > mini-fastapi-app > Tab2 screen-component diagram 1`] = `
-"%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0c1a30','primaryTextColor':'#7dd3fc','primaryBorderColor':'#0e3a6e','edgeLabelBackground':'#0c1a30','lineColor':'#334155','secondaryColor':'#0f172a','clusterBkg':'#060c18','clusterBorder':'#1e3a5f','fontFamily':'JetBrains Mono'}}}%%
+"%% chunk:1/2
+%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0c1a30','primaryTextColor':'#7dd3fc','primaryBorderColor':'#0e3a6e','edgeLabelBackground':'#0c1a30','lineColor':'#334155','secondaryColor':'#0f172a','clusterBkg':'#060c18','clusterBorder':'#1e3a5f','fontFamily':'JetBrains Mono'}}}%%
 graph TB
   classDef ssr fill:#0d1a0d,stroke:#16a34a,color:#86efac
   classDef csr fill:#2d1200,stroke:#c2410c,color:#fb923c
@@ -244,17 +254,25 @@ graph TB
     route_routers_users_py__api_users__user_id_GET["/api/users/:user_id · SSR"]:::ssr
     route_routers_posts_py__api_posts_GET["/api/posts · SSR"]:::ssr
     route_routers_posts_py__api_posts__post_id_GET["/api/posts/:post_id · SSR"]:::ssr
-  end
-  subgraph ROOT_S["🏠 /root"]
     route_main_py___get["/ · SSR"]:::ssr
   end
+%%--CHUNK--%%
+%% chunk:2/2
+%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0c1a30','primaryTextColor':'#7dd3fc','primaryBorderColor':'#0e3a6e','edgeLabelBackground':'#0c1a30','lineColor':'#334155','secondaryColor':'#0f172a','clusterBkg':'#060c18','clusterBorder':'#1e3a5f','fontFamily':'JetBrains Mono'}}}%%
+graph TB
+  classDef ssr fill:#0d1a0d,stroke:#16a34a,color:#86efac
+  classDef csr fill:#2d1200,stroke:#c2410c,color:#fb923c
+  classDef ssg fill:#1a0d1a,stroke:#7c3aed,color:#c4b5fd
+  classDef isr fill:#1a1a0d,stroke:#ca8a04,color:#fde047
+  classDef ppr fill:#0d1a2d,stroke:#2563eb,color:#93c5fd
+  classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
   subgraph HEALTH_S["📄 /health"]
     route_main_py__health_get["/health · SSR"]:::ssr
   end"
 `;
 
 exports[`Phase XI — fixture baseline snapshots (P1) > mini-fastapi-app > Tab3 db-screen diagram 1`] = `
-"%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0a2030','primaryTextColor':'#e2e8f0','primaryBorderColor':'#1e4060','lineColor':'#f59e0b','secondaryColor':'#0f172a','tertiaryColor':'#1a0a20','attributeBackgroundColorEven':'#0f1e30','attributeBackgroundColorOdd':'#091624','nodeBorder':'#1e4060','clusterBkg':'#0a0e1a','fontFamily':'JetBrains Mono'}}}%%
+"%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0a2030','primaryTextColor':'#e2e8f0','primaryBorderColor':'#1e4060','lineColor':'#f59e0b','secondaryColor':'#0f172a','tertiaryColor':'#1a0a20','attributeBackgroundColorEven':'#ffffff','attributeBackgroundColorOdd':'#f1f5f9','nodeBorder':'#1e4060','clusterBkg':'#0a0e1a','fontFamily':'JetBrains Mono'}}}%%
 erDiagram
 %% table:users path:models.py
 %% table:posts path:models.py
@@ -317,7 +335,8 @@ graph TD
 `;
 
 exports[`Phase XI — fixture baseline snapshots (P1) > mini-flask-app > Tab2 screen-component diagram 1`] = `
-"%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0c1a30','primaryTextColor':'#7dd3fc','primaryBorderColor':'#0e3a6e','edgeLabelBackground':'#0c1a30','lineColor':'#334155','secondaryColor':'#0f172a','clusterBkg':'#060c18','clusterBorder':'#1e3a5f','fontFamily':'JetBrains Mono'}}}%%
+"%% chunk:1/2
+%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0c1a30','primaryTextColor':'#7dd3fc','primaryBorderColor':'#0e3a6e','edgeLabelBackground':'#0c1a30','lineColor':'#334155','secondaryColor':'#0f172a','clusterBkg':'#060c18','clusterBorder':'#1e3a5f','fontFamily':'JetBrains Mono'}}}%%
 graph TB
   classDef ssr fill:#0d1a0d,stroke:#16a34a,color:#86efac
   classDef csr fill:#2d1200,stroke:#c2410c,color:#fb923c
@@ -325,12 +344,20 @@ graph TB
   classDef isr fill:#1a1a0d,stroke:#ca8a04,color:#fde047
   classDef ppr fill:#0d1a2d,stroke:#2563eb,color:#93c5fd
   classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
-  subgraph ROOT_S["🏠 /root"]
-    route_app_py__["/ · SSR"]:::ssr
-  end
   subgraph HEALTH_S["📄 /health"]
+    route_app_py__["/ · SSR"]:::ssr
     route_app_py__health["/health · SSR"]:::ssr
   end
+%%--CHUNK--%%
+%% chunk:2/2
+%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0c1a30','primaryTextColor':'#7dd3fc','primaryBorderColor':'#0e3a6e','edgeLabelBackground':'#0c1a30','lineColor':'#334155','secondaryColor':'#0f172a','clusterBkg':'#060c18','clusterBorder':'#1e3a5f','fontFamily':'JetBrains Mono'}}}%%
+graph TB
+  classDef ssr fill:#0d1a0d,stroke:#16a34a,color:#86efac
+  classDef csr fill:#2d1200,stroke:#c2410c,color:#fb923c
+  classDef ssg fill:#1a0d1a,stroke:#7c3aed,color:#c4b5fd
+  classDef isr fill:#1a1a0d,stroke:#ca8a04,color:#fde047
+  classDef ppr fill:#0d1a2d,stroke:#2563eb,color:#93c5fd
+  classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
   subgraph API_S["⚡ /api"]
     route_blueprints_posts_py__api_posts["/api/posts · SSR"]:::ssr
     route_blueprints_posts_py__api_posts__post_id["/api/posts/:post_id · SSR"]:::ssr
@@ -340,7 +367,7 @@ graph TB
 `;
 
 exports[`Phase XI — fixture baseline snapshots (P1) > mini-flask-app > Tab3 db-screen diagram 1`] = `
-"%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0a2030','primaryTextColor':'#e2e8f0','primaryBorderColor':'#1e4060','lineColor':'#f59e0b','secondaryColor':'#0f172a','tertiaryColor':'#1a0a20','attributeBackgroundColorEven':'#0f1e30','attributeBackgroundColorOdd':'#091624','nodeBorder':'#1e4060','clusterBkg':'#0a0e1a','fontFamily':'JetBrains Mono'}}}%%
+"%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0a2030','primaryTextColor':'#e2e8f0','primaryBorderColor':'#1e4060','lineColor':'#f59e0b','secondaryColor':'#0f172a','tertiaryColor':'#1a0a20','attributeBackgroundColorEven':'#ffffff','attributeBackgroundColorOdd':'#f1f5f9','nodeBorder':'#1e4060','clusterBkg':'#0a0e1a','fontFamily':'JetBrains Mono'}}}%%
 erDiagram"
 `;
 
@@ -421,7 +448,7 @@ graph TB
 `;
 
 exports[`Phase XI — fixture baseline snapshots (P1) > mini-nest-app > Tab3 db-screen diagram 1`] = `
-"%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0a2030','primaryTextColor':'#e2e8f0','primaryBorderColor':'#1e4060','lineColor':'#f59e0b','secondaryColor':'#0f172a','tertiaryColor':'#1a0a20','attributeBackgroundColorEven':'#0f1e30','attributeBackgroundColorOdd':'#091624','nodeBorder':'#1e4060','clusterBkg':'#0a0e1a','fontFamily':'JetBrains Mono'}}}%%
+"%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0a2030','primaryTextColor':'#e2e8f0','primaryBorderColor':'#1e4060','lineColor':'#f59e0b','secondaryColor':'#0f172a','tertiaryColor':'#1a0a20','attributeBackgroundColorEven':'#ffffff','attributeBackgroundColorOdd':'#f1f5f9','nodeBorder':'#1e4060','clusterBkg':'#0a0e1a','fontFamily':'JetBrains Mono'}}}%%
 erDiagram
 %% table:users path:src/user.entity.ts
   users {
@@ -528,7 +555,8 @@ graph TD
 `;
 
 exports[`Phase XI — fixture baseline snapshots (P1) > mini-next-app > Tab2 screen-component diagram 1`] = `
-"%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0c1a30','primaryTextColor':'#7dd3fc','primaryBorderColor':'#0e3a6e','edgeLabelBackground':'#0c1a30','lineColor':'#334155','secondaryColor':'#0f172a','clusterBkg':'#060c18','clusterBorder':'#1e3a5f','fontFamily':'JetBrains Mono'}}}%%
+"%% chunk:1/2
+%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0c1a30','primaryTextColor':'#7dd3fc','primaryBorderColor':'#0e3a6e','edgeLabelBackground':'#0c1a30','lineColor':'#334155','secondaryColor':'#0f172a','clusterBkg':'#060c18','clusterBorder':'#1e3a5f','fontFamily':'JetBrains Mono'}}}%%
 graph TB
   classDef ssr fill:#0d1a0d,stroke:#16a34a,color:#86efac
   classDef csr fill:#2d1200,stroke:#c2410c,color:#fb923c
@@ -538,26 +566,42 @@ graph TB
   classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
   subgraph ABOUT_S["👤 /about"]
     route_app__marketing__about_page["/about · SSR"]:::ssr
+    subgraph ABOUT_C
+      component_app__marketing__about_page_tsx_page["page"]
+    end
   end
   subgraph BLOG_S["📝 /blog"]
     route_app_blog__slug__page["/blog/:slug · SSR"]:::ssr
+    subgraph BLOG_C
+      component_app_blog__slug__page_tsx_page["page"]
+    end
   end
-  subgraph ROOT_S["🏠 /root"]
-    route_app_page["/ · SSR"]:::ssr
-  end
-  component_app__marketing__about_page_tsx_page["page"]
-  component_app_blog__slug__page_tsx_page["page"]
-  component_app_page_tsx_page["page"]
-  component_components_Header_tsx_Header["Header"]
   route_app__marketing__about_page --> component_app__marketing__about_page_tsx_page
   route_app_blog__slug__page --> component_app_blog__slug__page_tsx_page
+%%--CHUNK--%%
+%% chunk:2/2
+%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0c1a30','primaryTextColor':'#7dd3fc','primaryBorderColor':'#0e3a6e','edgeLabelBackground':'#0c1a30','lineColor':'#334155','secondaryColor':'#0f172a','clusterBkg':'#060c18','clusterBorder':'#1e3a5f','fontFamily':'JetBrains Mono'}}}%%
+graph TB
+  classDef ssr fill:#0d1a0d,stroke:#16a34a,color:#86efac
+  classDef csr fill:#2d1200,stroke:#c2410c,color:#fb923c
+  classDef ssg fill:#1a0d1a,stroke:#7c3aed,color:#c4b5fd
+  classDef isr fill:#1a1a0d,stroke:#ca8a04,color:#fde047
+  classDef ppr fill:#0d1a2d,stroke:#2563eb,color:#93c5fd
+  classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
+  subgraph ROOT_S["🏠 /root"]
+    route_app_page["/ · SSR"]:::ssr
+    subgraph ROOT_C
+      component_app_page_tsx_page["page"]
+      component_components_Header_tsx_Header["Header"]
+    end
+  end
   route_app_page --> component_app_page_tsx_page
   route_app_page -.-> component_components_Header_tsx_Header
   component_app_page_tsx_page --> component_components_Header_tsx_Header"
 `;
 
 exports[`Phase XI — fixture baseline snapshots (P1) > mini-next-app > Tab3 db-screen diagram 1`] = `
-"%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0a2030','primaryTextColor':'#e2e8f0','primaryBorderColor':'#1e4060','lineColor':'#f59e0b','secondaryColor':'#0f172a','tertiaryColor':'#1a0a20','attributeBackgroundColorEven':'#0f1e30','attributeBackgroundColorOdd':'#091624','nodeBorder':'#1e4060','clusterBkg':'#0a0e1a','fontFamily':'JetBrains Mono'}}}%%
+"%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0a2030','primaryTextColor':'#e2e8f0','primaryBorderColor':'#1e4060','lineColor':'#f59e0b','secondaryColor':'#0f172a','tertiaryColor':'#1a0a20','attributeBackgroundColorEven':'#ffffff','attributeBackgroundColorOdd':'#f1f5f9','nodeBorder':'#1e4060','clusterBkg':'#0a0e1a','fontFamily':'JetBrains Mono'}}}%%
 erDiagram
 %% table:posts path:types/supabase.ts
 %% table:profiles path:types/supabase.ts
@@ -639,7 +683,8 @@ graph TD
 `;
 
 exports[`Phase XI — fixture baseline snapshots (P1) > mini-nextpages-app > Tab2 screen-component diagram 1`] = `
-"%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0c1a30','primaryTextColor':'#7dd3fc','primaryBorderColor':'#0e3a6e','edgeLabelBackground':'#0c1a30','lineColor':'#334155','secondaryColor':'#0f172a','clusterBkg':'#060c18','clusterBorder':'#1e3a5f','fontFamily':'JetBrains Mono'}}}%%
+"%% chunk:1/2
+%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0c1a30','primaryTextColor':'#7dd3fc','primaryBorderColor':'#0e3a6e','edgeLabelBackground':'#0c1a30','lineColor':'#334155','secondaryColor':'#0f172a','clusterBkg':'#060c18','clusterBorder':'#1e3a5f','fontFamily':'JetBrains Mono'}}}%%
 graph TB
   classDef ssr fill:#0d1a0d,stroke:#16a34a,color:#86efac
   classDef csr fill:#2d1200,stroke:#c2410c,color:#fb923c
@@ -654,16 +699,24 @@ graph TB
   subgraph ABOUT_S["👤 /about"]
     route_pages_about_tsx_page["/about · SSR"]:::ssr
   end
-  subgraph ROOT_S["🏠 /root"]
+%%--CHUNK--%%
+%% chunk:2/2
+%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0c1a30','primaryTextColor':'#7dd3fc','primaryBorderColor':'#0e3a6e','edgeLabelBackground':'#0c1a30','lineColor':'#334155','secondaryColor':'#0f172a','clusterBkg':'#060c18','clusterBorder':'#1e3a5f','fontFamily':'JetBrains Mono'}}}%%
+graph TB
+  classDef ssr fill:#0d1a0d,stroke:#16a34a,color:#86efac
+  classDef csr fill:#2d1200,stroke:#c2410c,color:#fb923c
+  classDef ssg fill:#1a0d1a,stroke:#7c3aed,color:#c4b5fd
+  classDef isr fill:#1a1a0d,stroke:#ca8a04,color:#fde047
+  classDef ppr fill:#0d1a2d,stroke:#2563eb,color:#93c5fd
+  classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
+  subgraph USERS__ID_S["📄 /users/:id"]
     route_pages_index_tsx_page["/ · SSR"]:::ssr
-  end
-  subgraph USERS_S["📄 /users"]
     route_pages_users__id__tsx_page["/users/:id · SSR"]:::ssr
   end"
 `;
 
 exports[`Phase XI — fixture baseline snapshots (P1) > mini-nextpages-app > Tab3 db-screen diagram 1`] = `
-"%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0a2030','primaryTextColor':'#e2e8f0','primaryBorderColor':'#1e4060','lineColor':'#f59e0b','secondaryColor':'#0f172a','tertiaryColor':'#1a0a20','attributeBackgroundColorEven':'#0f1e30','attributeBackgroundColorOdd':'#091624','nodeBorder':'#1e4060','clusterBkg':'#0a0e1a','fontFamily':'JetBrains Mono'}}}%%
+"%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0a2030','primaryTextColor':'#e2e8f0','primaryBorderColor':'#1e4060','lineColor':'#f59e0b','secondaryColor':'#0f172a','tertiaryColor':'#1a0a20','attributeBackgroundColorEven':'#ffffff','attributeBackgroundColorOdd':'#f1f5f9','nodeBorder':'#1e4060','clusterBkg':'#0a0e1a','fontFamily':'JetBrains Mono'}}}%%
 erDiagram"
 `;
 
@@ -715,7 +768,8 @@ graph TD
 `;
 
 exports[`Phase XI — fixture baseline snapshots (P1) > mini-nuxt-app > Tab2 screen-component diagram 1`] = `
-"%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0c1a30','primaryTextColor':'#7dd3fc','primaryBorderColor':'#0e3a6e','edgeLabelBackground':'#0c1a30','lineColor':'#334155','secondaryColor':'#0f172a','clusterBkg':'#060c18','clusterBorder':'#1e3a5f','fontFamily':'JetBrains Mono'}}}%%
+"%% chunk:1/2
+%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0c1a30','primaryTextColor':'#7dd3fc','primaryBorderColor':'#0e3a6e','edgeLabelBackground':'#0c1a30','lineColor':'#334155','secondaryColor':'#0f172a','clusterBkg':'#060c18','clusterBorder':'#1e3a5f','fontFamily':'JetBrains Mono'}}}%%
 graph TB
   classDef ssr fill:#0d1a0d,stroke:#16a34a,color:#86efac
   classDef csr fill:#2d1200,stroke:#c2410c,color:#fb923c
@@ -729,16 +783,24 @@ graph TB
   subgraph CLIENT_ONLY_S["📄 /client-only"]
     route_pages_client_only_vue["/client-only · CSR"]:::csr
   end
-  subgraph ROOT_S["🏠 /root"]
+%%--CHUNK--%%
+%% chunk:2/2
+%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0c1a30','primaryTextColor':'#7dd3fc','primaryBorderColor':'#0e3a6e','edgeLabelBackground':'#0c1a30','lineColor':'#334155','secondaryColor':'#0f172a','clusterBkg':'#060c18','clusterBorder':'#1e3a5f','fontFamily':'JetBrains Mono'}}}%%
+graph TB
+  classDef ssr fill:#0d1a0d,stroke:#16a34a,color:#86efac
+  classDef csr fill:#2d1200,stroke:#c2410c,color:#fb923c
+  classDef ssg fill:#1a0d1a,stroke:#7c3aed,color:#c4b5fd
+  classDef isr fill:#1a1a0d,stroke:#ca8a04,color:#fde047
+  classDef ppr fill:#0d1a2d,stroke:#2563eb,color:#93c5fd
+  classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
+  subgraph USERS__ID_S["📄 /users/:id"]
     route_pages_index_vue["/ · SSR"]:::ssr
-  end
-  subgraph USERS_S["📄 /users"]
     route_pages_users__id__vue["/users/:id · SSR"]:::ssr
   end"
 `;
 
 exports[`Phase XI — fixture baseline snapshots (P1) > mini-nuxt-app > Tab3 db-screen diagram 1`] = `
-"%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0a2030','primaryTextColor':'#e2e8f0','primaryBorderColor':'#1e4060','lineColor':'#f59e0b','secondaryColor':'#0f172a','tertiaryColor':'#1a0a20','attributeBackgroundColorEven':'#0f1e30','attributeBackgroundColorOdd':'#091624','nodeBorder':'#1e4060','clusterBkg':'#0a0e1a','fontFamily':'JetBrains Mono'}}}%%
+"%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0a2030','primaryTextColor':'#e2e8f0','primaryBorderColor':'#1e4060','lineColor':'#f59e0b','secondaryColor':'#0f172a','tertiaryColor':'#1a0a20','attributeBackgroundColorEven':'#ffffff','attributeBackgroundColorOdd':'#f1f5f9','nodeBorder':'#1e4060','clusterBkg':'#0a0e1a','fontFamily':'JetBrains Mono'}}}%%
 erDiagram"
 `;
 
@@ -792,7 +854,8 @@ graph TD
 `;
 
 exports[`Phase XI — fixture baseline snapshots (P1) > mini-react-router-app > Tab2 screen-component diagram 1`] = `
-"%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0c1a30','primaryTextColor':'#7dd3fc','primaryBorderColor':'#0e3a6e','edgeLabelBackground':'#0c1a30','lineColor':'#334155','secondaryColor':'#0f172a','clusterBkg':'#060c18','clusterBorder':'#1e3a5f','fontFamily':'JetBrains Mono'}}}%%
+"%% chunk:1/2
+%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0c1a30','primaryTextColor':'#7dd3fc','primaryBorderColor':'#0e3a6e','edgeLabelBackground':'#0c1a30','lineColor':'#334155','secondaryColor':'#0f172a','clusterBkg':'#060c18','clusterBorder':'#1e3a5f','fontFamily':'JetBrains Mono'}}}%%
 graph TB
   classDef ssr fill:#0d1a0d,stroke:#16a34a,color:#86efac
   classDef csr fill:#2d1200,stroke:#c2410c,color:#fb923c
@@ -800,28 +863,40 @@ graph TB
   classDef isr fill:#1a1a0d,stroke:#ca8a04,color:#fde047
   classDef ppr fill:#0d1a2d,stroke:#2563eb,color:#93c5fd
   classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
-  subgraph ROOT_S["🏠 /root"]
-    route_src_router_tsx__["/ · CSR"]:::csr
-  end
   subgraph ABOUT_S["👤 /about"]
+    route_src_router_tsx__["/ · CSR"]:::csr
     route_src_router_tsx__about["/about · CSR"]:::csr
+    subgraph ABOUT_C
+      component_src_pages_HomePage_tsx_HomePage["HomePage [CSR]"]
+      component_src_pages_AboutPage_tsx_AboutPage["AboutPage [CSR]"]
+    end
   end
+  route_src_router_tsx__ --> component_src_pages_HomePage_tsx_HomePage
+  route_src_router_tsx__about --> component_src_pages_AboutPage_tsx_AboutPage
+%%--CHUNK--%%
+%% chunk:2/2
+%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0c1a30','primaryTextColor':'#7dd3fc','primaryBorderColor':'#0e3a6e','edgeLabelBackground':'#0c1a30','lineColor':'#334155','secondaryColor':'#0f172a','clusterBkg':'#060c18','clusterBorder':'#1e3a5f','fontFamily':'JetBrains Mono'}}}%%
+graph TB
+  classDef ssr fill:#0d1a0d,stroke:#16a34a,color:#86efac
+  classDef csr fill:#2d1200,stroke:#c2410c,color:#fb923c
+  classDef ssg fill:#1a0d1a,stroke:#7c3aed,color:#c4b5fd
+  classDef isr fill:#1a1a0d,stroke:#ca8a04,color:#fde047
+  classDef ppr fill:#0d1a2d,stroke:#2563eb,color:#93c5fd
+  classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
   subgraph USERS_S["📄 /users"]
     route_src_router_tsx__users["/users · CSR"]:::csr
     route_src_router_tsx__users__id["/users/:id · CSR"]:::csr
+    subgraph USERS_C
+      component_src_pages_UserListPage_tsx_UserListPage["UserListPage [CSR]"]
+      component_src_pages_UserDetailPage_tsx_UserDetailPage["UserDetailPage [CSR]"]
+    end
   end
-  component_src_pages_HomePage_tsx_HomePage["HomePage [CSR]"]
-  component_src_pages_AboutPage_tsx_AboutPage["AboutPage [CSR]"]
-  component_src_pages_UserListPage_tsx_UserListPage["UserListPage [CSR]"]
-  component_src_pages_UserDetailPage_tsx_UserDetailPage["UserDetailPage [CSR]"]
-  route_src_router_tsx__ --> component_src_pages_HomePage_tsx_HomePage
-  route_src_router_tsx__about --> component_src_pages_AboutPage_tsx_AboutPage
   route_src_router_tsx__users --> component_src_pages_UserListPage_tsx_UserListPage
   route_src_router_tsx__users__id --> component_src_pages_UserDetailPage_tsx_UserDetailPage"
 `;
 
 exports[`Phase XI — fixture baseline snapshots (P1) > mini-react-router-app > Tab3 db-screen diagram 1`] = `
-"%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0a2030','primaryTextColor':'#e2e8f0','primaryBorderColor':'#1e4060','lineColor':'#f59e0b','secondaryColor':'#0f172a','tertiaryColor':'#1a0a20','attributeBackgroundColorEven':'#0f1e30','attributeBackgroundColorOdd':'#091624','nodeBorder':'#1e4060','clusterBkg':'#0a0e1a','fontFamily':'JetBrains Mono'}}}%%
+"%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0a2030','primaryTextColor':'#e2e8f0','primaryBorderColor':'#1e4060','lineColor':'#f59e0b','secondaryColor':'#0f172a','tertiaryColor':'#1a0a20','attributeBackgroundColorEven':'#ffffff','attributeBackgroundColorOdd':'#f1f5f9','nodeBorder':'#1e4060','clusterBkg':'#0a0e1a','fontFamily':'JetBrains Mono'}}}%%
 erDiagram"
 `;
 
@@ -867,7 +942,8 @@ graph TD
 `;
 
 exports[`Phase XI — fixture baseline snapshots (P1) > mini-remix-app > Tab2 screen-component diagram 1`] = `
-"%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0c1a30','primaryTextColor':'#7dd3fc','primaryBorderColor':'#0e3a6e','edgeLabelBackground':'#0c1a30','lineColor':'#334155','secondaryColor':'#0f172a','clusterBkg':'#060c18','clusterBorder':'#1e3a5f','fontFamily':'JetBrains Mono'}}}%%
+"%% chunk:1/2
+%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0c1a30','primaryTextColor':'#7dd3fc','primaryBorderColor':'#0e3a6e','edgeLabelBackground':'#0c1a30','lineColor':'#334155','secondaryColor':'#0f172a','clusterBkg':'#060c18','clusterBorder':'#1e3a5f','fontFamily':'JetBrains Mono'}}}%%
 graph TB
   classDef ssr fill:#0d1a0d,stroke:#16a34a,color:#86efac
   classDef csr fill:#2d1200,stroke:#c2410c,color:#fb923c
@@ -875,19 +951,27 @@ graph TB
   classDef isr fill:#1a1a0d,stroke:#ca8a04,color:#fde047
   classDef ppr fill:#0d1a2d,stroke:#2563eb,color:#93c5fd
   classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
-  subgraph ROOT_S["🏠 /root"]
-    route_app_routes__index_tsx_page["/ · SSR"]:::ssr
-  end
   subgraph ABOUT_S["👤 /about"]
+    route_app_routes__index_tsx_page["/ · SSR"]:::ssr
     route_app_routes_about_tsx_page["/about · SSR"]:::ssr
   end
-  subgraph USERS_S["📄 /users"]
+%%--CHUNK--%%
+%% chunk:2/2
+%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0c1a30','primaryTextColor':'#7dd3fc','primaryBorderColor':'#0e3a6e','edgeLabelBackground':'#0c1a30','lineColor':'#334155','secondaryColor':'#0f172a','clusterBkg':'#060c18','clusterBorder':'#1e3a5f','fontFamily':'JetBrains Mono'}}}%%
+graph TB
+  classDef ssr fill:#0d1a0d,stroke:#16a34a,color:#86efac
+  classDef csr fill:#2d1200,stroke:#c2410c,color:#fb923c
+  classDef ssg fill:#1a0d1a,stroke:#7c3aed,color:#c4b5fd
+  classDef isr fill:#1a1a0d,stroke:#ca8a04,color:#fde047
+  classDef ppr fill:#0d1a2d,stroke:#2563eb,color:#93c5fd
+  classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
+  subgraph USERS__ID_S["📄 /users/:id"]
     route_app_routes_users__id_tsx_page["/users/:id · SSR"]:::ssr
   end"
 `;
 
 exports[`Phase XI — fixture baseline snapshots (P1) > mini-remix-app > Tab3 db-screen diagram 1`] = `
-"%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0a2030','primaryTextColor':'#e2e8f0','primaryBorderColor':'#1e4060','lineColor':'#f59e0b','secondaryColor':'#0f172a','tertiaryColor':'#1a0a20','attributeBackgroundColorEven':'#0f1e30','attributeBackgroundColorOdd':'#091624','nodeBorder':'#1e4060','clusterBkg':'#0a0e1a','fontFamily':'JetBrains Mono'}}}%%
+"%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0a2030','primaryTextColor':'#e2e8f0','primaryBorderColor':'#1e4060','lineColor':'#f59e0b','secondaryColor':'#0f172a','tertiaryColor':'#1a0a20','attributeBackgroundColorEven':'#ffffff','attributeBackgroundColorOdd':'#f1f5f9','nodeBorder':'#1e4060','clusterBkg':'#0a0e1a','fontFamily':'JetBrains Mono'}}}%%
 erDiagram"
 `;
 
@@ -977,7 +1061,7 @@ graph TB
 `;
 
 exports[`Phase XI — fixture baseline snapshots (P1) > mini-spring-app > Tab3 db-screen diagram 1`] = `
-"%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0a2030','primaryTextColor':'#e2e8f0','primaryBorderColor':'#1e4060','lineColor':'#f59e0b','secondaryColor':'#0f172a','tertiaryColor':'#1a0a20','attributeBackgroundColorEven':'#0f1e30','attributeBackgroundColorOdd':'#091624','nodeBorder':'#1e4060','clusterBkg':'#0a0e1a','fontFamily':'JetBrains Mono'}}}%%
+"%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0a2030','primaryTextColor':'#e2e8f0','primaryBorderColor':'#1e4060','lineColor':'#f59e0b','secondaryColor':'#0f172a','tertiaryColor':'#1a0a20','attributeBackgroundColorEven':'#ffffff','attributeBackgroundColorOdd':'#f1f5f9','nodeBorder':'#1e4060','clusterBkg':'#0a0e1a','fontFamily':'JetBrains Mono'}}}%%
 erDiagram
 %% table:users path:src/main/java/com/example/entity/User.java
 %% table:flyway_users path:src/main/resources/db/migration/V1__init.sql
@@ -1043,7 +1127,8 @@ graph TD
 `;
 
 exports[`Phase XI — fixture baseline snapshots (P1) > mini-sveltekit-app > Tab2 screen-component diagram 1`] = `
-"%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0c1a30','primaryTextColor':'#7dd3fc','primaryBorderColor':'#0e3a6e','edgeLabelBackground':'#0c1a30','lineColor':'#334155','secondaryColor':'#0f172a','clusterBkg':'#060c18','clusterBorder':'#1e3a5f','fontFamily':'JetBrains Mono'}}}%%
+"%% chunk:1/2
+%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0c1a30','primaryTextColor':'#7dd3fc','primaryBorderColor':'#0e3a6e','edgeLabelBackground':'#0c1a30','lineColor':'#334155','secondaryColor':'#0f172a','clusterBkg':'#060c18','clusterBorder':'#1e3a5f','fontFamily':'JetBrains Mono'}}}%%
 graph TB
   classDef ssr fill:#0d1a0d,stroke:#16a34a,color:#86efac
   classDef csr fill:#2d1200,stroke:#c2410c,color:#fb923c
@@ -1051,19 +1136,27 @@ graph TB
   classDef isr fill:#1a1a0d,stroke:#ca8a04,color:#fde047
   classDef ppr fill:#0d1a2d,stroke:#2563eb,color:#93c5fd
   classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
-  subgraph ROOT_S["🏠 /root"]
-    route_src_routes_page["/ · SSR"]:::ssr
-  end
   subgraph ABOUT_S["👤 /about"]
+    route_src_routes_page["/ · SSR"]:::ssr
     route_src_routes_about_page["/about · SSR"]:::ssr
   end
-  subgraph BLOG_S["📝 /blog"]
+%%--CHUNK--%%
+%% chunk:2/2
+%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0c1a30','primaryTextColor':'#7dd3fc','primaryBorderColor':'#0e3a6e','edgeLabelBackground':'#0c1a30','lineColor':'#334155','secondaryColor':'#0f172a','clusterBkg':'#060c18','clusterBorder':'#1e3a5f','fontFamily':'JetBrains Mono'}}}%%
+graph TB
+  classDef ssr fill:#0d1a0d,stroke:#16a34a,color:#86efac
+  classDef csr fill:#2d1200,stroke:#c2410c,color:#fb923c
+  classDef ssg fill:#1a0d1a,stroke:#7c3aed,color:#c4b5fd
+  classDef isr fill:#1a1a0d,stroke:#ca8a04,color:#fde047
+  classDef ppr fill:#0d1a2d,stroke:#2563eb,color:#93c5fd
+  classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
+  subgraph BLOG__SLUG_S["📄 /blog/:slug"]
     route_src_routes_blog__slug__page["/blog/:slug · SSR"]:::ssr
   end"
 `;
 
 exports[`Phase XI — fixture baseline snapshots (P1) > mini-sveltekit-app > Tab3 db-screen diagram 1`] = `
-"%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0a2030','primaryTextColor':'#e2e8f0','primaryBorderColor':'#1e4060','lineColor':'#f59e0b','secondaryColor':'#0f172a','tertiaryColor':'#1a0a20','attributeBackgroundColorEven':'#0f1e30','attributeBackgroundColorOdd':'#091624','nodeBorder':'#1e4060','clusterBkg':'#0a0e1a','fontFamily':'JetBrains Mono'}}}%%
+"%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0a2030','primaryTextColor':'#e2e8f0','primaryBorderColor':'#1e4060','lineColor':'#f59e0b','secondaryColor':'#0f172a','tertiaryColor':'#1a0a20','attributeBackgroundColorEven':'#ffffff','attributeBackgroundColorOdd':'#f1f5f9','nodeBorder':'#1e4060','clusterBkg':'#0a0e1a','fontFamily':'JetBrains Mono'}}}%%
 erDiagram"
 `;
 
@@ -1116,7 +1209,8 @@ graph TD
 `;
 
 exports[`Phase XI — fixture baseline snapshots (P1) > mini-vue-spa-app > Tab2 screen-component diagram 1`] = `
-"%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0c1a30','primaryTextColor':'#7dd3fc','primaryBorderColor':'#0e3a6e','edgeLabelBackground':'#0c1a30','lineColor':'#334155','secondaryColor':'#0f172a','clusterBkg':'#060c18','clusterBorder':'#1e3a5f','fontFamily':'JetBrains Mono'}}}%%
+"%% chunk:1/2
+%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0c1a30','primaryTextColor':'#7dd3fc','primaryBorderColor':'#0e3a6e','edgeLabelBackground':'#0c1a30','lineColor':'#334155','secondaryColor':'#0f172a','clusterBkg':'#060c18','clusterBorder':'#1e3a5f','fontFamily':'JetBrains Mono'}}}%%
 graph TB
   classDef ssr fill:#0d1a0d,stroke:#16a34a,color:#86efac
   classDef csr fill:#2d1200,stroke:#c2410c,color:#fb923c
@@ -1124,12 +1218,20 @@ graph TB
   classDef isr fill:#1a1a0d,stroke:#ca8a04,color:#fde047
   classDef ppr fill:#0d1a2d,stroke:#2563eb,color:#93c5fd
   classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
-  subgraph ROOT_S["🏠 /root"]
-    route_src_router_index_ts__["/ · CSR"]:::csr
-  end
   subgraph ABOUT_S["👤 /about"]
+    route_src_router_index_ts__["/ · CSR"]:::csr
     route_src_router_index_ts__about["/about · CSR"]:::csr
   end
+%%--CHUNK--%%
+%% chunk:2/2
+%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0c1a30','primaryTextColor':'#7dd3fc','primaryBorderColor':'#0e3a6e','edgeLabelBackground':'#0c1a30','lineColor':'#334155','secondaryColor':'#0f172a','clusterBkg':'#060c18','clusterBorder':'#1e3a5f','fontFamily':'JetBrains Mono'}}}%%
+graph TB
+  classDef ssr fill:#0d1a0d,stroke:#16a34a,color:#86efac
+  classDef csr fill:#2d1200,stroke:#c2410c,color:#fb923c
+  classDef ssg fill:#1a0d1a,stroke:#7c3aed,color:#c4b5fd
+  classDef isr fill:#1a1a0d,stroke:#ca8a04,color:#fde047
+  classDef ppr fill:#0d1a2d,stroke:#2563eb,color:#93c5fd
+  classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
   subgraph USERS_S["📄 /users"]
     route_src_router_index_ts__users["/users · CSR"]:::csr
     route_src_router_index_ts__users__id["/users/:id · CSR"]:::csr
@@ -1137,6 +1239,6 @@ graph TB
 `;
 
 exports[`Phase XI — fixture baseline snapshots (P1) > mini-vue-spa-app > Tab3 db-screen diagram 1`] = `
-"%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0a2030','primaryTextColor':'#e2e8f0','primaryBorderColor':'#1e4060','lineColor':'#f59e0b','secondaryColor':'#0f172a','tertiaryColor':'#1a0a20','attributeBackgroundColorEven':'#0f1e30','attributeBackgroundColorOdd':'#091624','nodeBorder':'#1e4060','clusterBkg':'#0a0e1a','fontFamily':'JetBrains Mono'}}}%%
+"%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0a2030','primaryTextColor':'#e2e8f0','primaryBorderColor':'#1e4060','lineColor':'#f59e0b','secondaryColor':'#0f172a','tertiaryColor':'#1a0a20','attributeBackgroundColorEven':'#ffffff','attributeBackgroundColorOdd':'#f1f5f9','nodeBorder':'#1e4060','clusterBkg':'#0a0e1a','fontFamily':'JetBrains Mono'}}}%%
 erDiagram"
 `;

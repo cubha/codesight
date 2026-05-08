@@ -180,6 +180,9 @@ function buildRouteSectionLines(sections: Map<string, RouteNode[]>, indent: stri
 }
 
 const GROUPS_PER_ROW = 5
+// Tab2는 section당 8+ 컴포넌트를 가질 수 있어, 동일 row 내 section 수를 제한한다.
+// nested comp subgraph 방식에서 section 1개 ≈ 580px, 2개 ≈ 1200px → 2개가 안전 상한.
+const TAB2_GROUPS_PER_ROW = 2
 
 // Descend past single-child transit nodes (e.g. /api → /api/v1) to the first real branching level.
 // Stops if the single node has its own routes (to avoid silently dropping them).
@@ -196,9 +199,22 @@ function chunkGroups<T>(items: T[], size: number): T[][] {
   return result
 }
 
+// Row 다이어그램은 flat 렌더링: 각 group의 모든 routes를 1줄씩 나열 (에지 없음).
+// Mermaid graph TD에서 에지 없는 노드를 줄 단위로 나열하면 세로 배치가 보장된다.
+// buildNestedSubgraphLines(재귀 중첩)는 여러 형제 subgraph를 가로 배치해 X폭발을 일으키므로 사용하지 않는다.
 function buildRouteRowDiagram(groups: NestedGroup[]): string {
   const lines = [RENDERING_INIT, 'graph TD', CLASS_DEFS]
-  for (const l of buildNestedSubgraphLines(groups, '  ')) lines.push(l)
+  for (const group of groups) {
+    const allRoutes = collectNestedRoutes([group])
+    const leafSeg = group.groupKey.split('/').filter(Boolean).pop()
+    if (leafSeg === undefined) {
+      for (const r of allRoutes) lines.push(renderingRouteLabel(r, '  '))
+    } else {
+      lines.push(`  subgraph ${sanitizeId(leafSeg.toUpperCase())}_G["${sectionLabel(leafSeg)}"]`)
+      for (const r of allRoutes) lines.push(renderingRouteLabel(r, '    '))
+      lines.push('  end')
+    }
+  }
   return lines.join('\n')
 }
 
@@ -224,38 +240,51 @@ function renderScreenSection(
   const lines: string[] = [RENDERING_INIT, 'graph TB', CLASS_DEFS]
   const sections = buildSectionsFromRoutes(pageRoutes)
   const compNodeRendered = new Set<string>()
-  const compNodeLines: string[] = []
-  const edgesForSection: string[] = []
+  const allEdges: string[] = []
 
   for (const [secKey, nodes] of sections) {
-    const subId = `${sanitizeId(secKey.toUpperCase())}_S`
-    lines.push(`  subgraph ${subId}["${sectionLabel(secKey)}"]`)
+    const routeSubId = `${sanitizeId(secKey.toUpperCase())}_S`
+    lines.push(`  subgraph ${routeSubId}["${sectionLabel(secKey)}"]`)
     for (const r of nodes) {
-      const routeNodeId = sanitizeId(r.id)
       const badge = r.renderingMode === 'unknown' ? '?' : r.renderingMode
-      lines.push(`    ${routeNodeId}["${r.path} · ${badge}"]:::${modeClass(r.renderingMode)}`)
+      lines.push(`    ${sanitizeId(r.id)}["${r.path} · ${badge}"]:::${modeClass(r.renderingMode)}`)
     }
-    lines.push(`  end`)
+    lines.push('  end')
+
+    // Section 내부에 component subgraph를 중첩: graph TB에서 nested subgraph는
+    // 형제 section이 늘어도 세로 적층을 유지해 X폭발을 방지한다.
+    // 공유 컴포넌트(first-claim): 먼저 등장한 section이 소유하고 이후 section은 에지만 추가한다.
+    const sectionCompLines: string[] = []
     for (const r of nodes) {
       const comps = routeToComps.get(r.id) ?? []
       for (const compId of comps) {
         const edge = rowRendersEdges.find(e => e.from === r.id && e.to === compId)
         if (edge !== undefined) {
-          edgesForSection.push(`  ${sanitizeId(r.id)} ${edgeArrow(edge)} ${sanitizeId(compId)}`)
+          allEdges.push(`  ${sanitizeId(r.id)} ${edgeArrow(edge)} ${sanitizeId(compId)}`)
         }
         if (compNodeRendered.has(compId)) continue
         compNodeRendered.add(compId)
         const comp = connectedComponents.find(c => c.id === compId)
         if (comp === undefined) continue
-        const compNodeId = sanitizeId(comp.id)
         const label = comp.runtime === 'client' ? `${comp.name} [CSR]` : comp.name
-        compNodeLines.push(`  ${compNodeId}["${label}"]`)
+        sectionCompLines.push(`      ${sanitizeId(comp.id)}["${label}"]`)
+      }
+    }
+    if (sectionCompLines.length > 0) {
+      // route section의 end 앞에 comp subgraph를 삽입해야 하므로 마지막 'end'를 교체한다.
+      const lastEnd = lines.lastIndexOf('  end')
+      if (lastEnd !== -1) {
+        lines.splice(lastEnd, 1,
+          `    subgraph ${sanitizeId(secKey.toUpperCase())}_C`,
+          ...sectionCompLines,
+          `    end`,
+          `  end`,
+        )
       }
     }
   }
 
-  for (const cl of compNodeLines) lines.push(cl)
-  for (const e of edgesForSection) lines.push(e)
+  for (const e of allEdges) lines.push(e)
 
   const connectedIdSet = new Set(connectedComponents.map(c => c.id))
   for (const edge of importsEdges) {
@@ -447,8 +476,8 @@ function buildScreenComponentDiagram(graph: IRGraph): string {
   const routeGroups = groupRoutesByUrl(pageRoutes)
   const branchingGroups = findBranchingGroups(routeGroups)
 
-  if (branchingGroups.length > GROUPS_PER_ROW) {
-    return joinChunks(chunkGroups(branchingGroups, GROUPS_PER_ROW).map(rowGroups => {
+  if (branchingGroups.length > TAB2_GROUPS_PER_ROW) {
+    return joinChunks(chunkGroups(branchingGroups, TAB2_GROUPS_PER_ROW).map(rowGroups => {
       const rowRouteIds = new Set(collectNestedRoutes(rowGroups).map(r => r.id))
       const rowRoutes = pageRoutes.filter(r => rowRouteIds.has(r.id))
       return renderScreenSection(rowRoutes, rendersEdges, importsEdges, componentNodes)
@@ -458,7 +487,9 @@ function buildScreenComponentDiagram(graph: IRGraph): string {
   return renderScreenSection(pageRoutes, rendersEdges, importsEdges, componentNodes)
 }
 
-const DB_DIAGRAM_INIT = `%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0a2030','primaryTextColor':'#e2e8f0','primaryBorderColor':'#1e4060','lineColor':'#f59e0b','secondaryColor':'#0f172a','tertiaryColor':'#1a0a20','attributeBackgroundColorEven':'#0f1e30','attributeBackgroundColorOdd':'#091624','nodeBorder':'#1e4060','clusterBkg':'#0a0e1a','fontFamily':'JetBrains Mono'}}}%%`
+// th(테이블명 헤더): primaryColor 어두운 배경 + primaryTextColor 밝은 텍스트 유지
+// td(컬럼 행): 밝은 배경(attributeBackgroundColor*) + 어두운 텍스트 (viewer CSS 인젝션으로 보완)
+const DB_DIAGRAM_INIT = `%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0a2030','primaryTextColor':'#e2e8f0','primaryBorderColor':'#1e4060','lineColor':'#f59e0b','secondaryColor':'#0f172a','tertiaryColor':'#1a0a20','attributeBackgroundColorEven':'#ffffff','attributeBackgroundColorOdd':'#f1f5f9','nodeBorder':'#1e4060','clusterBkg':'#0a0e1a','fontFamily':'JetBrains Mono'}}}%%`
 
 function getSourceLabel(node: IRNode): string | undefined {
   if (isRouteNode(node)) {
@@ -660,6 +691,39 @@ export function buildCombinedDiagram(
   }
 }
 
+// Tab3 전용: tableCount 기반 임계값 + 테이블 슬라이스 분할
+function buildDbScreenWithFallback(
+  graph: IRGraph,
+  chunkOpts: ChunkOptions,
+  threshold: number,
+  nodeThr: number,
+): string {
+  const text = buildDbScreenDiagram(graph)
+  if (text.includes(CHUNK_SEPARATOR)) return text
+  const tableCount = graph.nodes.filter(isTableNode).length
+  if (!shouldChunk(text, threshold, tableCount, nodeThr)) return text
+
+  // 테이블 슬라이스 — 각 chunk에 해당 테이블로 향하는 edges의 source 노드도 포함
+  const tables = graph.nodes.filter(isTableNode)
+  const tableChunks = chunkGroups(tables, chunkOpts.maxNodesPerGroup)
+  if (tableChunks.length <= 1) return text
+
+  const parts = tableChunks.map(tableSlice => {
+    const tableIds = new Set(tableSlice.map(t => t.id))
+    const relatedEdges = graph.edges.filter(e => tableIds.has(e.to) || tableIds.has(e.from))
+    const sourceIds = new Set(relatedEdges.map(e => e.from).filter(id => !tableIds.has(id)))
+    const subNodes = [...tableSlice, ...graph.nodes.filter(n => sourceIds.has(n.id))]
+    const subNodeIds = new Set(subNodes.map(n => n.id))
+    const subGraph: IRGraph = {
+      ...graph,
+      nodes: subNodes,
+      edges: graph.edges.filter(e => subNodeIds.has(e.from) && subNodeIds.has(e.to)),
+    }
+    return buildDbScreenDiagram(subGraph)
+  })
+  return joinChunks(parts)
+}
+
 export function buildDiagrams(graph: IRGraph, opts?: BuildDiagramsOptions): DiagramSet {
   const chunkOpts: ChunkOptions = {
     maxNodesPerGroup: opts?.grouping?.maxNodesPerGroup ?? DEFAULT_GROUPING.maxNodesPerGroup,
@@ -671,6 +735,6 @@ export function buildDiagrams(graph: IRGraph, opts?: BuildDiagramsOptions): Diag
   return {
     rendering: buildWithChunkFallback(graph, buildRenderingDiagram, chunkOpts, threshold, routeCount, nodeThr),
     screenComponent: buildWithChunkFallback(graph, buildScreenComponentDiagram, chunkOpts, threshold, routeCount, nodeThr),
-    dbScreen: buildWithChunkFallback(graph, buildDbScreenDiagram, chunkOpts, threshold, routeCount, nodeThr),
+    dbScreen: buildDbScreenWithFallback(graph, chunkOpts, threshold, nodeThr),
   }
 }

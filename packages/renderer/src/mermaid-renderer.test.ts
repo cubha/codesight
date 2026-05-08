@@ -230,9 +230,9 @@ describe('renderMermaid', () => {
     const content = await fs.readFile(path.join(OUTPUT_DIR, 'screen-component.md'), 'utf8')
     expect(content).not.toContain('direction LR')
     expect(content).toContain('BlogCard')
+    // SubTask B: 컴포넌트는 per-section subgraph 내부에 위치 (4-space indent)
     const compLine = content.split('\n').find(l => l.includes('BlogCard'))
-    expect(compLine?.startsWith('  ')).toBe(true)
-    expect(compLine?.startsWith('    ')).toBe(false)
+    expect(compLine?.startsWith('    ')).toBe(true)
   })
 
   it('DB — 9개 이상 컬럼 테이블의 모든 컬럼을 ERD에 출력한다', async () => {

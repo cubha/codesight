@@ -127,6 +127,19 @@
     .cn-label { font-size: 10px; color: var(--text-muted); }
     .canvas-wrap.row-mode { overflow-y: auto; overflow-x: hidden; cursor: default; }
     .row-diagram { width: 100%; }
+    /* erDiagram th/td 분리 스타일 (Mermaid 11 기준)
+       Mermaid 11은 row-rect-even/odd g 안의 path에 SVG fill 속성으로 색상 지정.
+       SVG presentation attribute < CSS 우선순위이므로 CSS override가 유효하다.
+       th(g.outer-path): primaryColor(#0a2030) 어두운 배경 + 밝은 텍스트 → 유지
+       td even row: 흰색 배경
+       td odd row: 연회색 배경
+       td 텍스트: 어두운 색으로 강제 */
+    .erDiagram g.row-rect-even path { fill: #ffffff !important; }
+    .erDiagram g.row-rect-odd path  { fill: #f1f5f9 !important; }
+    .erDiagram .label.attribute-type p,
+    .erDiagram .label.attribute-name p,
+    .erDiagram .label.attribute-keys p,
+    .erDiagram .label.attribute-comment p { color: #1e293b !important; font-weight: 500; }
   </style>
 </head>
 <body>
@@ -185,7 +198,11 @@
       <div class="db-canvas-area">
         <div class="db-toggle-bar">
           <span class="db-toggle-label">View</span>
-          <button class="tb-btn active" data-v="fk" onclick="setDbView('fk')">
+          <button class="tb-btn active" data-v="all" onclick="setDbView('all')">
+            <span class="tb-pip" style="background:linear-gradient(135deg,#38bdf8 33%,#4ade80 66%,#f59e0b 100%)"></span>전체
+          </button>
+          <div class="tb-sep"></div>
+          <button class="tb-btn" data-v="fk" onclick="setDbView('fk')">
             <span class="tb-pip" style="background:#38bdf8"></span>FK 관계
           </button>
           <button class="tb-btn" data-v="routes" onclick="setDbView('routes')">
@@ -193,10 +210,6 @@
           </button>
           <button class="tb-btn" data-v="actions" onclick="setDbView('actions')">
             <span class="tb-pip" style="background:#f59e0b"></span>서버 액션
-          </button>
-          <div class="tb-sep"></div>
-          <button class="tb-btn" data-v="all" onclick="setDbView('all')">
-            <span class="tb-pip" style="background:linear-gradient(135deg,#38bdf8 33%,#4ade80 66%,#f59e0b 100%)"></span>전체
           </button>
         </div>
         <div class="db-canvas-wrap">
@@ -253,6 +266,14 @@ function splitChunks(diagram) {
 }
 
 const GROUPS_PER_ROW = 5;
+
+// erDiagram row-rect 색상 후처리: Mermaid 11은 SVG attribute로 색상을 설정해
+// 외부 CSS override가 불가하므로 렌더링 후 setAttribute로 직접 변경한다.
+function applyErdColors(svgEl) {
+  if (!svgEl) return;
+  svgEl.querySelectorAll('g.row-rect-even path[fill]').forEach(p => p.setAttribute('fill', '#ffffff'));
+  svgEl.querySelectorAll('g.row-rect-odd path[fill]').forEach(p => p.setAttribute('fill', '#f1f5f9'));
+}
 
 async function renderChunked(idPrefix, diagram) {
   const chunks = splitChunks(diagram);
@@ -315,7 +336,7 @@ function scaleRowSvgs(wrap, inner) {
 const rendered = {r:false,s:false,d:false};
 const ST = {r:{s:1,x:0,y:0}, s:{s:1,x:0,y:0}, d:{s:1,x:0,y:0}};
 const drag = {t:null,sx:0,sy:0,ox:0,oy:0};
-var dbCurrentView = 'fk';
+var dbCurrentView = 'all';
 var dbGraphs = null;
 var activeTab = 'r';
 
@@ -470,12 +491,19 @@ function buildSingleDbGraph(groupEntries, sgPrefix, fkEdges, routeEdges, actionE
     for (const n of names) lines.push('    '+n+'["'+n+'"]:::tbl');
     lines.push('  end');
   }
-  const srcs = new Set();
-  if (showRoutes) for (const e of routeEdges) { if (rowSet.has(e.to)) srcs.add(e.from+'|route'); }
-  if (showActions) for (const e of actionEdges) { if (rowSet.has(e.to)) srcs.add(e.from+'|action'); }
-  for (const s of srcs) {
-    const [name,kind] = s.split('|');
-    lines.push('  '+name+'["'+(kind==='route'?'⬡ ':'⚡ ')+name+'"]:::'+kind);
+  const routeSrcs = [], actionSrcs = [];
+  if (showRoutes) for (const e of routeEdges) { if (rowSet.has(e.to) && !routeSrcs.includes(e.from)) routeSrcs.push(e.from); }
+  if (showActions) for (const e of actionEdges) { if (rowSet.has(e.to) && !actionSrcs.includes(e.from)) actionSrcs.push(e.from); }
+  // graph LR에서 free 소스 노드는 Y축으로 쌓여 폭발하므로 Pages/Actions subgraph로 묶는다.
+  if (routeSrcs.length > 0) {
+    lines.push('  subgraph PAGES_SRC["⬡ Pages"]');
+    for (const name of routeSrcs) lines.push('    '+name+'["⬡ '+name+'"]:::route');
+    lines.push('  end');
+  }
+  if (actionSrcs.length > 0) {
+    lines.push('  subgraph ACTIONS_SRC["⚡ Actions"]');
+    for (const name of actionSrcs) lines.push('    '+name+'["⚡ '+name+'"]:::action');
+    lines.push('  end');
   }
   const edgeColors = [];
   if (showFk) for (const e of fkEdges) {
@@ -510,6 +538,8 @@ async function renderDbView(view) {
     const diag = dbGraphs[view] || dbGraphs.fk;
     const html = await renderChunked('dbsvg_'+view, diag);
     inner.innerHTML = html;
+    // erDiagram이 렌더링된 경우 row-rect 색상 후처리 적용
+    inner.querySelectorAll('svg.erDiagram, svg[class*="er"]').forEach(applyErdColors);
     if (inner.querySelector('.row-diagram')) {
       activateRowMode('d', inner);
     } else {
