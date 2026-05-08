@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.1.4] — 2026-05-09
+
+### Improved — Stack Detection
+
+- Turbo / Lerna / Nx monorepos now correctly detected: scans `apps/`, `packages/`, `services/` sub-directories when root `package.json` has no framework deps
+- Multi-service projects without a root `package.json` (e.g. `backend/` + `frontend/` at root) now auto-detected
+- Flutter recognized via `pubspec.yaml` (`sdk: flutter`) — reported as Flutter · L1 · LLM recommended
+- Last-resort fallback: all top-level directories are scanned for Python/Java/JS/TS frameworks
+- Sidebar now shows proper display names for Django, FastAPI, Flask, Spring Boot, Angular, Vue SPA, React Router, Remix, Flutter (previously showed raw identifiers)
+
 ## [1.0.0] — 2026-05-07
 
 ### Fixed — Tab1 Route accuracy

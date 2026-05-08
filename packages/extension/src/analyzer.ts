@@ -190,7 +190,7 @@ async function buildPairResult(
   return { graph: beGraph, crossEdges }
 }
 
-export const ANALYZER_VERSION = 'codebase-viz@1.1.3'
+export const ANALYZER_VERSION = 'codebase-viz@1.1.4'
 
 interface CacheEntry {
   analyzerVersion: string
