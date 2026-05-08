@@ -16,6 +16,7 @@ export type FrameworkKind =
   | 'react-router'
   | 'remix'
   | 'angular'
+  | 'flutter'
   | 'unknown'
 
 export interface StackInfo {

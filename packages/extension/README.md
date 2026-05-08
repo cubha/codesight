@@ -55,32 +55,23 @@ Frameworks not in this list (Express, Hono, Rails, Go, etc.) use **LLM primary**
 
 ---
 
-## ✨ What's new in v1.0.0
+## ✨ What's new in v1.1.4
 
-### Route accuracy
-- **Next.js** — `.js` and `.jsx` route files (`page.js`, `layout.js`, `route.js`) now detected alongside `.tsx`
-- **Remix** — `$.tsx` splat catch-all converted to wildcard (`/*`) route
-- **Django** — `re_path(r'^api/users/(?P<id>\d+)/$')` regex patterns parsed to clean `:param` notation
-- **NestJS** — Template literal controllers (`` @Controller(`/api/${version}`) ``) correctly extracted
+### Stack detection improvements
 
-### Component accuracy
-- **Vue SPA** — `<ComponentTag>` in templates now produces `renders` edges (was incorrectly typed as `imports`)
-- **Angular** — `loadComponent: () => import('./x').then(m => m.X)` lazy routes now emit `renders` edges to the loaded component
-- **All TS adapters** — `tsconfig.json` path aliases (`@/`, `~/`, `$lib/`) resolved when building component graphs
+CodeSight now correctly identifies frameworks in projects that previously showed "Stack: Unknown":
 
-### DB accuracy
-- **Flask SQLAlchemy** — `ForeignKey('table.id')` columns now show FK arrows in the DB–Screen tab
-- **FastAPI** — Relative imports for SQLAlchemy model files correctly resolved
-- **Spring Boot** — `@Column(name="col_name")` maps to actual DB column name instead of Java field name
-- **Spring Boot** — FK targets resolved through class-to-table mapping (handles `@Table(name="...")` overrides)
-- **Spring Boot MyBatis** — `<resultMap extends="parent">` inheritance and `<association>`/`<collection>` inner columns parsed
+- **Turbo / Lerna / Nx monorepos** — root `package.json` contains only build tools (turbo, concurrently). CodeSight now scans `apps/`, `packages/`, and `services/` sub-directories and selects the highest-capability framework found (L3 > L2 > L1, static adapter preferred).
+- **Multi-service projects without a root `package.json`** — projects with `backend/`, `frontend/`, `client/`, `web/`, `server/`, `api/` service directories are now auto-detected.
+- **Flutter** — `pubspec.yaml` with `sdk: flutter` is now recognized (reported as Flutter · L1 · LLM recommended).
+- **Last-resort fallback** — if no standard structure is found, all top-level directories are scanned for Python, Java, and JS/TS frameworks.
+- **Sidebar framework names** — Django, FastAPI, Flask, Spring Boot, Angular, Vue SPA, React Router, Remix, and Flutter now display their proper names in the sidebar (previously showed raw identifier).
 
-### Previous highlights (v0.8.x → v0.9.0)
-- DB FK relations for `@OneToOne`, `ManyToManyField`, TypeORM nullable
-- Flask/Spring HTTP method detection, SvelteKit rendering mode
-- React Router (13th adapter), Supabase shared parser for all SPA adapters
-- Spring Boot MyBatis mapper XML support
-- Tab3 DB–Screen connected for all 13 adapters
+### Previous highlights
+
+**v1.1.3** — Tab1/Tab2 zoom & drag rewrite (single drag object, no tab-switch interference) · fitToView formula fix · Tab3 DB ERD 4-toggle (All · FK · Page queries · Server actions)
+
+**v1.1.x** — URL-based hierarchical grouping · Flyway DDL parser · FE↔BE cross-project analysis · React Router JSX parser · Tab1/Tab2 layout fixes
 
 ---
 

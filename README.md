@@ -4,7 +4,7 @@
 
 Routes, components, and DB relationships — extracted statically from **13 frameworks**, optionally enriched by LLM, rendered as three live diagram tabs inside VS Code.
 
-> Marketplace: [`cubha.codebase-arch-viz`](https://marketplace.visualstudio.com/items?itemName=cubha.codebase-arch-viz) · Current release: **v1.1.3**
+> Marketplace: [`cubha.codebase-arch-viz`](https://marketplace.visualstudio.com/items?itemName=cubha.codebase-arch-viz) · Current release: **v1.1.4**
 
 ---
 
@@ -151,7 +151,7 @@ pnpm install
 # Type-check all packages
 pnpm typecheck
 
-# Run all tests (607 tests)
+# Run all tests (612 tests)
 pnpm test
 
 # Or use the project verify script (tsc + vitest)
@@ -184,7 +184,10 @@ npx vitest run packages/core/src/adapters/django/
 3. Register in `packages/core/src/adapters/registry.ts` → `createDefaultRegistry()`
 4. Export from `packages/core/src/adapters/index.ts`
 5. Add `FrameworkKind` entry in `packages/types/src/stack.ts`
-6. Add detection logic in `packages/llm/src/stack-detector.ts` → `FRAMEWORK_PROFILES` + `detectStack()`
+6. Add detection logic in `packages/llm/src/stack-detector.ts`:
+   - **JS/TS frameworks**: add a branch in `frameworkFromDeps()` (checks `package.json` deps)
+   - **Python/Java/other**: add a branch in the Step 2 block inside `detectStack()` (checks `requirements.txt`, `pom.xml`, `pubspec.yaml`, etc.)
+   - Register in `FRAMEWORK_PROFILES` with `adapterId`, `parsingLevel`, and `llmRecommended`
 7. Add fixture in `fixtures/mini-<framework>-app/`
 8. Add integration test case in `packages/cli/src/stack-routing.integration.test.ts`
 
@@ -227,6 +230,8 @@ npx vsce publish --no-dependencies -p <PAT>
 | v1.1.0 | **URL-based hierarchical grouping** (Tab1/Tab2) · **Flyway DDL parser** (Spring Boot + Django) · **Tab3 schema/module grouping** · **1M chunk fallback** (auto-split large diagrams) · **Multi-workspace folder selection** · **FE↔BE cross-project analysis** (fetch/axios → BE route matching, combined diagram, 2-step QuickPick) |
 | v1.1.1 | **react-router JSX `<Routes>` parser** (BrowserRouter + Routes + Route 4 patterns) · **vite+react adapterId fix** · **stack-detector priority fix** · **LCP 분기점 행 그리드** (Tab1·Tab2·Tab3, GROUPS_PER_ROW=5) · **전체 컬럼 ERD** (8개 절단 제거) · **멀티행 스택 뷰어** |
 | v1.1.2 | **Tab1 X폭발 수정** (flat 렌더링, 7,407→1,380px) · **Tab2 X폭발 수정** (nested comp subgraph + TAB2_GROUPS_PER_ROW=2, 32,035→1,381px) · **Tab3 chunk 폭발** (tableCount 기준 교체) · **Tab3 source 그룹화** (Pages/Actions subgraph) · **ERD th/td 색상 분리** (TH 어두운/TD 흰색·연회색) · **Tab3 전체 뷰 기본값** (ALL 토글 맨앞·기본 활성) |
+| v1.1.3 | **Tab1/Tab2 줌·드래그 수정** (단일 drag 객체 + document 이벤트, 탭 전환 간섭 제거) · **fitToView 수식 수정** (SVG 자연 크기 기준) · **⌂ 리셋 → fitToView** · **Tab3 DB ERD 토글** (전체·FK관계·페이지쿼리·서버액션 4-toggle) |
+| v1.1.4 | **스택 감지 개선** — Turbo/Lerna 모노레포(`apps/packages/services/` 하위 스캔) · 루트 `package.json` 없는 멀티서비스 프로젝트(`backend/frontend/` 등 직접 스캔) · 전체 최상위 디렉터리 fallback · Flutter(`pubspec.yaml`) 감지 추가 · 사이드바 스택 표시 전 프레임워크 표시명 전수 보완 |
 
 ---
 

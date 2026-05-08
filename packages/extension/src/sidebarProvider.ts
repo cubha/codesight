@@ -309,7 +309,16 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
       'sveltekit':         'SvelteKit',
       'expo':              'Expo',
       'vite-react':        'Vite + React',
+      'react-router':      'React Router',
+      'remix':             'Remix',
+      'angular':           'Angular',
+      'vue-spa':           'Vue SPA',
       'nestjs':            'NestJS',
+      'django':            'Django',
+      'fastapi':           'FastAPI',
+      'flask':             'Flask',
+      'springboot':        'Spring Boot',
+      'flutter':           'Flutter',
       'unknown':           'Unknown',
     };
     if (s.framework) {
