@@ -1,5 +1,28 @@
 # Changelog
 
+## [1.1.3] — 2026-05-09
+
+### Bug Fixes
+
+**Viewer — Tab1/Tab2 줌 & 드래그 수정**
+
+- **Fix #16 — drag 구현 교체**: 패널별 클로저 + `window.mousemove` × 3 방식을 단일 `drag` 객체 + `document.addEventListener` 방식으로 교체. 탭 전환 중 드래그 상태 간섭 제거.
+- **Fix #17 — fitToView 수식**: `getBoundingClientRect()` (transform 후 크기 반환) → `svg.getAttribute('width')` (SVG 자연 크기 기준)으로 교체. 뷰포트 리사이즈 후 재호출 시 오차 제거.
+- **Fix #18 — ⌂ 리셋 동작**: `ST[id]={s:1,x:0,y:0}` (scale 1.0 고정 리셋) → `fitToView(id)` 호출로 교체. 대형 다이어그램에서 리셋 시 fit-to-view 동작.
+
+**Viewer — Tab3 DB ERD 토글 추가**
+
+- **Fix #19 — DB 토글 바**: Tab3 진입 시 `전체(All)` · `FK 관계` · `페이지 쿼리` · `서버 액션` 4개 뷰 토글 추가. 기본값 `전체`.
+- **Fix #20 — FK 관계 뷰**: 테이블 스키마 + FK 관계만 표시하는 전용 erDiagram 뷰.
+- **Fix #21 — 페이지 쿼리 뷰**: 라우트 → 테이블 도메인 그룹 flow graph 뷰.
+
+### Other Changes
+
+- `README.md`: DB-Screen 4-toggle view 설명 추가
+- `ANALYZER_VERSION` 상수를 `'codebase-viz@1.1.3'`으로 업데이트
+
+---
+
 ## [1.1.2] — 2026-05-08
 
 ### Bug Fixes
