@@ -14,20 +14,22 @@ CodeSight analyzes your project statically and renders three interactive diagram
 
 ## 🖼️ How It Looks
 
+### Routes & Components — at a glance
+Switch tabs once and see every route, every component, with SSR/CSR/ISR/SSG labels colour-coded.
+Mouse wheel to zoom, click and drag to pan — explore freely.
+
+![Routes & Components](https://github.com/cubha/codesight/raw/master/packages/extension/media/demo-tab-switch.gif)
+
+### DB–Screen — four views, one click
+Toggle between **All / FK Relations / Page Queries / Server Actions** to isolate what you need.
+The right sidebar shows every column, FK, and which routes/actions query the table.
+
+![DB Multi-View](https://github.com/cubha/codesight/raw/master/packages/extension/media/demo-db-toggle.gif)
+
 ### Sidebar Panel
 Control everything from the sidebar — analyze, re-analyze, open the viewer, export diagrams, and manage your API key.
 
-![Sidebar Panel](https://raw.githubusercontent.com/cubha/codesight/master/packages/extension/media/screenshot-sidebar.png)
-
-### Rendering Architecture
-Route hierarchy with SSR / CSR / ISR / SSG labels and **HTTP method badges** (`GET /users · SSR`) for backend frameworks.
-
-![Rendering Architecture](https://raw.githubusercontent.com/cubha/codesight/master/packages/extension/media/screenshot-rendering.png)
-
-### DB–Screen
-Table schema with columns, nullable flags, FK arrows, and which routes query each table.
-
-![DB Screen](https://raw.githubusercontent.com/cubha/codesight/master/packages/extension/media/screenshot-dbscreen.png)
+![Sidebar Panel](https://github.com/cubha/codesight/raw/master/packages/extension/media/screenshot-sidebar.png)
 
 ---
 

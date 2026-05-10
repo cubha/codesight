@@ -3,6 +3,7 @@ import * as path from 'node:path'
 import * as fs from 'node:fs'
 import type { IRGraph } from '@codebase-viz/types'
 import type { DiagramSet } from '@codebase-viz/renderer'
+import { dictForLocale, resolveLocale } from './i18n/dict.js'
 
 interface ViewerParams {
   projectName: string
@@ -23,6 +24,7 @@ export class CodeSightPanel {
   private static instance: CodeSightPanel | undefined
   private readonly panel: vscode.WebviewPanel
   private disposables: vscode.Disposable[] = []
+  private lastParams?: ViewerParams
   private reanalyzeCallback: (() => void) | undefined
 
   private constructor(
@@ -90,22 +92,31 @@ export class CodeSightPanel {
   }
 
   updateGraph(graph: IRGraph, diagrams: DiagramSet): void {
-    this.panel.webview.html = this.buildViewerHtmlImpl({
+    this.lastParams = {
       projectName: graph.projectName ?? path.basename(graph.repoRoot),
       routeCount: graph.nodes.filter(n => n.kind === 'route').length,
       tableCount: graph.nodes.filter(n => n.kind === 'table').length,
       diagrams,
-    })
+    }
+    this.panel.webview.html = this.buildViewerHtmlImpl(this.lastParams)
   }
 
   showCached(data: { projectName: string; routeCount: number; tableCount: number; diagrams: DiagramSet; savedAt: number }): void {
-    this.panel.webview.html = this.buildViewerHtmlImpl({
+    this.lastParams = {
       projectName: data.projectName,
       routeCount: data.routeCount,
       tableCount: data.tableCount,
       diagrams: data.diagrams,
       cachedAt: data.savedAt,
-    })
+    }
+    this.panel.webview.html = this.buildViewerHtmlImpl(this.lastParams)
+  }
+
+  refreshLocale(): void {
+    // language 설정 변경 시 캐시된 lastParams로 viewer를 새 locale로 다시 렌더.
+    if (this.lastParams !== undefined) {
+      this.panel.webview.html = this.buildViewerHtmlImpl(this.lastParams)
+    }
   }
 
   private async handleExport(msg: ExportMessage): Promise<void> {
@@ -153,12 +164,17 @@ export class CodeSightPanel {
 
     const { projectName, routeCount, tableCount, diagrams, cachedAt } = params
     const cspSource = webview.cspSource
+    const setting = vscode.workspace.getConfiguration('codesight').get<string>('language', 'auto')
+    const locale = resolveLocale(setting, vscode.env.language)
+    const dict = dictForLocale(locale)
 
     const injection = [
       `<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' 'unsafe-eval' ${cspSource}; style-src 'unsafe-inline'; font-src data:; img-src ${cspSource} data: blob:;">`,
       `<script>`,
       `window.__CODESIGHT_DIAGRAMS__ = ${JSON.stringify(diagrams)};`,
       `window.__CODESIGHT_META__ = ${JSON.stringify({ projectName, routeCount, tableCount, cachedAt })};`,
+      `window.__CODESIGHT_LOCALE__ = ${JSON.stringify(locale)};`,
+      `window.__CODESIGHT_I18N__ = ${JSON.stringify(dict)};`,
       `</script>`,
     ].join('\n')
 

@@ -1,5 +1,35 @@
 # Changelog
 
+## [1.1.5] — 2026-05-10
+
+### Added — i18n (4 languages)
+
+- Full internationalization: **한국어 / English / 日本語 / 中文 (简体)**
+- Sidebar Language selector — change language directly without editing settings.json
+- New setting `codesight.language`: `auto` (follow VS Code) / `ko` / `en` / `ja` / `zh-cn`
+- Locale changes apply instantly without window reload — sidebar + viewer re-render in real time
+
+### Added — Demo GIFs in marketplace listing
+
+- `demo-tab-switch.gif` — Tab1 → zoom-out → Tab2 flow
+- `demo-db-toggle.gif` — Tab3 four-view toggle (All / FK / Page Queries / Server Actions)
+
+### Fixed — Viewer interactions
+
+- Wheel zoom + drag pan now work correctly on all tabs (previously selected text instead of panning)
+- Row-mode (chunked diagrams) also supports wheel zoom + drag pan — same UX as single diagrams
+- Index routes inside group subgraphs no longer collapse to `/` (preserves natural label width)
+
+### Improved — Diagram density thresholds
+
+- `DEFAULT_NODE_THRESHOLD`: 100 → 300 (typical projects render as a single SVG instead of chunked rows)
+- `DEFAULT_CHUNK_THRESHOLD`: 1MB → 5MB (matches modern Mermaid render budget)
+- Group prefix stripped from route labels inside section subgraphs (e.g. `/dashboard/admin` → `admin` inside `📁 /dashboard`)
+
+### Removed
+
+- Static `screenshot-rendering.png`, `screenshot-dbscreen.png`, `screenshot-marketplace*.png` — replaced by dynamic GIFs
+
 ## [1.1.4] — 2026-05-09
 
 ### Improved — Stack Detection

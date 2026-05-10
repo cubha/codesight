@@ -73,10 +73,10 @@ describe('shouldChunk', () => {
     expect(shouldChunk('short', DEFAULT_CHUNK_THRESHOLD, 0, 100)).toBe(false)
   })
 
-  it('uses DEFAULT_NODE_THRESHOLD=100 when not specified (B2)', () => {
-    expect(DEFAULT_NODE_THRESHOLD).toBe(100)
-    expect(shouldChunk('short', DEFAULT_CHUNK_THRESHOLD, 101)).toBe(true)
-    expect(shouldChunk('short', DEFAULT_CHUNK_THRESHOLD, 100)).toBe(false)
+  it('uses DEFAULT_NODE_THRESHOLD=300 when not specified (B2)', () => {
+    expect(DEFAULT_NODE_THRESHOLD).toBe(300)
+    expect(shouldChunk('short', DEFAULT_CHUNK_THRESHOLD, 301)).toBe(true)
+    expect(shouldChunk('short', DEFAULT_CHUNK_THRESHOLD, 300)).toBe(false)
   })
 })
 

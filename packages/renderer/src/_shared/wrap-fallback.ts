@@ -10,8 +10,8 @@ import {
 } from '@codebase-viz/types'
 import { groupRoutesByUrl, type NestedGroup } from '../url-grouper.js'
 
-export const DEFAULT_CHUNK_THRESHOLD = 1_000_000
-export const DEFAULT_NODE_THRESHOLD = 100
+export const DEFAULT_CHUNK_THRESHOLD = 5_000_000
+export const DEFAULT_NODE_THRESHOLD = 300
 export const CHUNK_SEPARATOR = '%%--CHUNK--%%'
 
 export interface ChunkOptions {

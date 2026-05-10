@@ -1,4 +1,10 @@
 import * as vscode from 'vscode'
+import { t, resolveLocale, dictForLocale } from './i18n/dict.js'
+
+function getLocale() {
+  const setting = vscode.workspace.getConfiguration('codesight').get<string>('language', 'auto')
+  return resolveLocale(setting, vscode.env.language)
+}
 
 export interface StatusInfo {
   projectName?: string
@@ -64,6 +70,12 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
         case 'selectFolder':
           await vscode.commands.executeCommand('codesight.selectFolder', msg.value)
           break
+        case 'setLanguage':
+          await vscode.workspace
+            .getConfiguration('codesight')
+            .update('language', msg.value, vscode.ConfigurationTarget.Global)
+          // setting 변경은 onDidChangeConfiguration에서 sidebar/viewer 모두 refresh 처리.
+          break
       }
     })
     // status 전달은 webview의 'ready' 신호 수신 시 처리
@@ -74,11 +86,22 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
     this._pushStatus()
   }
 
+  public refreshLocale(): void {
+    // language 설정 변경 시 sidebar webview HTML을 새 locale로 다시 set.
+    if (this._view) {
+      this._view.webview.html = this._getHtml()
+      this._pushStatus()
+    }
+  }
+
   private _pushStatus(): void {
     this._view?.webview.postMessage({ type: 'status', ...this._status })
   }
 
   private _getHtml(): string {
+    const locale = getLocale()
+    const dict = dictForLocale(locale)
+    const langSetting = vscode.workspace.getConfiguration('codesight').get<string>('language', 'auto')
     return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -167,7 +190,7 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
 <body>
 
 <div class="section" id="folderSection" style="display:none">
-  <div class="label">Workspace Folder</div>
+  <div class="label">${t('sidebar.workspaceFolder', locale)}</div>
   <select id="folderSelect" onchange="selectFolder(this.value)"
     style="width:100%;padding:4px 6px;background:var(--vscode-dropdown-background);
     color:var(--vscode-dropdown-foreground);border:1px solid var(--vscode-dropdown-border);
@@ -175,13 +198,13 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
 </div>
 
 <div class="section">
-  <div class="label">Status</div>
+  <div class="label">${t('sidebar.status', locale)}</div>
   <div class="status-box">
-    <div id="projName" class="project-name no-cache">분석 결과 없음</div>
+    <div id="projName" class="project-name no-cache">${t('sidebar.noResult', locale)}</div>
     <div id="metaLine" class="meta"></div>
   </div>
   <div id="stackRow" class="stack-row" style="display:none">
-    <span class="stack-label">Stack:</span>
+    <span class="stack-label">${t('sidebar.stack', locale)}</span>
     <span id="stackValue" class="stack-value">—</span>
     <span id="levelBadge" class="level-badge">L?</span>
   </div>
@@ -191,36 +214,55 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
 </div>
 
 <div class="section">
-  <div class="label">Actions</div>
-  <button id="btnAnalyze" onclick="send('analyze')">▶ Analyze Project</button>
-  <button id="btnReanalyze" class="secondary" style="display:none" onclick="send('reanalyze')">↺ Re-analyze</button>
-  <button id="btnViewer" class="secondary" disabled onclick="send('openViewer')">⊞ Open Viewer</button>
+  <div class="label">${t('sidebar.actions', locale)}</div>
+  <button id="btnAnalyze" onclick="send('analyze')">${t('sidebar.btnAnalyze', locale)}</button>
+  <button id="btnReanalyze" class="secondary" style="display:none" onclick="send('reanalyze')">${t('sidebar.btnReanalyze', locale)}</button>
+  <button id="btnViewer" class="secondary" disabled onclick="send('openViewer')">${t('sidebar.btnViewer', locale)}</button>
 </div>
 
 <div class="section" id="exportSection" style="display:none">
-  <div class="label">Export</div>
+  <div class="label">${t('sidebar.export', locale)}</div>
   <div class="export-grid">
-    <button class="secondary" onclick="send('exportRequest','png')">🖼 PNG</button>
-    <button class="secondary" onclick="send('exportRequest','svg')">✦ SVG</button>
-    <button class="secondary" onclick="send('exportRequest','md')">↓ MD</button>
+    <button class="secondary" onclick="send('exportRequest','png')">${t('sidebar.btnPng', locale)}</button>
+    <button class="secondary" onclick="send('exportRequest','svg')">${t('sidebar.btnSvg', locale)}</button>
+    <button class="secondary" onclick="send('exportRequest','md')">${t('sidebar.btnMd', locale)}</button>
   </div>
 </div>
 
 <hr>
 
 <div class="section">
-  <div class="label">LLM Analysis</div>
+  <div class="label">${t('sidebar.llmAnalysis', locale)}</div>
   <div class="api-row">
     <div class="dot off" id="apiDot"></div>
-    <span id="apiLabel">API Key: Not set</span>
+    <span id="apiLabel">${t('sidebar.apiKeyNotSet', locale)}</span>
   </div>
-  <button class="secondary" onclick="send('setApiKey')">🔑 Set API Key</button>
-  <button class="secondary" onclick="send('clearApiKey')">✕ Clear API Key</button>
+  <button class="secondary" onclick="send('setApiKey')">${t('sidebar.btnSetApiKey', locale)}</button>
+  <button class="secondary" onclick="send('clearApiKey')">${t('sidebar.btnClearApiKey', locale)}</button>
   <div class="toggle-row">
-    <span>Enable LLM Analysis</span>
+    <span>${t('sidebar.enableLLM', locale)}</span>
     <div class="toggle" id="llmToggle" onclick="toggleLLM()"></div>
   </div>
 </div>
+
+<hr>
+
+<div class="section">
+  <div class="label">${t('sidebar.language', locale)}</div>
+  <select id="langSelect" onchange="send('setLanguage', this.value)"
+    style="width:100%;padding:4px 6px;background:var(--vscode-dropdown-background);
+    color:var(--vscode-dropdown-foreground);border:1px solid var(--vscode-dropdown-border);
+    border-radius:3px;font-size:11px;">
+    <option value="auto"${langSetting === 'auto' ? ' selected' : ''}>${t('sidebar.langAuto', locale)}</option>
+    <option value="ko"${langSetting === 'ko' ? ' selected' : ''}>한국어</option>
+    <option value="en"${langSetting === 'en' ? ' selected' : ''}>English</option>
+    <option value="ja"${langSetting === 'ja' ? ' selected' : ''}>日本語</option>
+    <option value="zh-cn"${langSetting === 'zh-cn' ? ' selected' : ''}>中文 (简体)</option>
+  </select>
+</div>
+
+<script>window.__SIDEBAR_I18N__ = ${JSON.stringify(dict)};
+function tr(key) { return (window.__SIDEBAR_I18N__[key]) || key; }</script>
 
 <script>
   const vscode = acquireVsCodeApi();
@@ -268,19 +310,19 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
 
     // Status box
     if (s.analyzing) {
-      document.getElementById('projName').textContent = 'Analyzing...';
+      document.getElementById('projName').textContent = tr('status.analyzing');
       document.getElementById('projName').className = 'project-name analyzing';
       document.getElementById('metaLine').textContent = '';
     } else if (hasCache && s.projectName) {
       document.getElementById('projName').textContent = s.projectName;
       document.getElementById('projName').className = 'project-name';
       const parts = [];
-      if (s.routeCount != null) parts.push(s.routeCount + ' routes');
-      if (s.tableCount != null) parts.push(s.tableCount + ' tables');
+      if (s.routeCount != null) parts.push(s.routeCount + tr('export.routes'));
+      if (s.tableCount != null) parts.push(s.tableCount + tr('export.tables'));
       if (s.cachedAt) parts.push('cached ' + fmtAgo(s.cachedAt));
       document.getElementById('metaLine').textContent = parts.join(' · ');
     } else {
-      document.getElementById('projName').textContent = '분석 결과 없음';
+      document.getElementById('projName').textContent = tr('sidebar.noResult');
       document.getElementById('projName').className = 'project-name no-cache';
       document.getElementById('metaLine').textContent = '';
     }
@@ -332,7 +374,7 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
     // API Key
     if (s.hasApiKey != null) {
       document.getElementById('apiDot').className = 'dot ' + (s.hasApiKey ? 'on' : 'off');
-      document.getElementById('apiLabel').textContent = s.hasApiKey ? 'API Key: Set ✓' : 'API Key: Not set';
+      document.getElementById('apiLabel').textContent = s.hasApiKey ? tr('sidebar.apiKeySet') : tr('sidebar.apiKeyNotSet');
     }
 
     // LLM toggle

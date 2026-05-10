@@ -1,5 +1,7 @@
 .vscode/**
 src/**
+scripts/**
+.gif-tmp/**
 esbuild.mjs
 tsconfig.json
 dist/**/*.map

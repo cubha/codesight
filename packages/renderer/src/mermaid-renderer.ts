@@ -87,10 +87,22 @@ function buildSectionsFromRoutes(routes: RouteNode[]): Map<string, RouteNode[]> 
   return sections
 }
 
-function renderingRouteLabel(r: RouteNode, ind: string): string {
+// 그룹 subgraph 안에서는 path가 그룹 prefix와 중복되어 노드 라벨이 길어진다 (Y/X 축 폭발).
+// stripGroupPrefix로 prefix 제거 → 노드 width 감소 → mermaid가 한 row에 더 많은 노드 배치 가능.
+function stripGroupPrefix(path: string, groupKey: string | undefined): string {
+  if (groupKey === undefined || groupKey === '' || groupKey === '/') return path
+  // 인덱스 라우트(path === groupKey)는 단축 시 라벨이 '/' 한 글자가 되어 노드 폭이 거의 0이 된다.
+  // 원본 path 유지로 노드 폭 확보 (다른 라우트는 prefix 제거되므로 mixed visual은 의도).
+  if (path === groupKey) return path
+  if (path.startsWith(groupKey + '/')) return path.slice(groupKey.length + 1)
+  return path
+}
+
+function renderingRouteLabel(r: RouteNode, ind: string, stripPrefix?: string): string {
   const badge = r.renderingMode === 'unknown' ? '?' : r.renderingMode
   const methodPrefix = r.httpMethod !== undefined ? `${r.httpMethod} ` : ''
-  return `${ind}${sanitizeId(r.id)}["${methodPrefix}${r.path} · ${badge}"]:::${modeClass(r.renderingMode)}`
+  const displayPath = stripGroupPrefix(r.path, stripPrefix)
+  return `${ind}${sanitizeId(r.id)}["${methodPrefix}${displayPath} · ${badge}"]:::${modeClass(r.renderingMode)}`
 }
 
 // Emit nested Mermaid subgraphs from NestedGroup[]. Used by buildRenderingDiagram and buildCombinedDiagram.
@@ -106,7 +118,8 @@ function buildNestedSubgraphLines(groups: NestedGroup[], indent: string): string
       const sgId = sanitizeId(leafSeg.toUpperCase()) + '_G'
       const label = sectionLabel(leafSeg)
       lines.push(`${indent}subgraph ${sgId}["${label}"]`)
-      for (const r of group.routes) lines.push(renderingRouteLabel(r, i2))
+      lines.push(...emitInnerRowSubgraphs(i2, sgId, group.routes.length,
+        (i, ind) => renderingRouteLabel(group.routes[i]!, ind, group.groupKey)))
       if (group.children.length > 0) lines.push(...buildNestedSubgraphLines(group.children, i2))
       lines.push(`${indent}end`)
     }
@@ -168,11 +181,15 @@ function buildRouteSectionLines(sections: Map<string, RouteNode[]>, indent: stri
         lines.push(`${indent}${sanitizeId(r.id)}["${methodPrefix}${r.path} · ${badge}"]:::${modeClass(r.renderingMode)}`)
       }
     } else {
-      lines.push(`${indent}subgraph ${sanitizeId(secKey.toUpperCase())}_G["${sectionLabel(secKey)}"]`)
-      for (const r of nodes) {
+      const sgId = sanitizeId(secKey.toUpperCase()) + '_G'
+      lines.push(`${indent}subgraph ${sgId}["${sectionLabel(secKey)}"]`)
+      const groupPrefix = '/' + secKey
+      lines.push(...emitInnerRowSubgraphs(i2, sgId, nodes.length, (i, ind) => {
+        const r = nodes[i]!
         const badge = r.renderingMode === 'unknown' ? '?' : r.renderingMode
-        lines.push(`${i2}${sanitizeId(r.id)}["${r.path} · ${badge}"]:::${modeClass(r.renderingMode)}`)
-      }
+        const displayPath = stripGroupPrefix(r.path, groupPrefix)
+        return `${ind}${sanitizeId(r.id)}["${displayPath} · ${badge}"]:::${modeClass(r.renderingMode)}`
+      }))
       lines.push(`${indent}end`)
     }
   }
@@ -183,6 +200,36 @@ const GROUPS_PER_ROW = 5
 // Tab2는 section당 8+ 컴포넌트를 가질 수 있어, 동일 row 내 section 수를 제한한다.
 // nested comp subgraph 방식에서 section 1개 ≈ 580px, 2개 ≈ 1200px → 2개가 안전 상한.
 const TAB2_GROUPS_PER_ROW = 2
+// Y축 폭발 방지: subgraph 안 노드 수가 임계값을 넘으면 N개씩 invisible inner subgraph로 묶어
+// 행 줄넘김을 강제한다 (X축 GROUPS_PER_ROW와 대칭 정책).
+const NODES_PER_INNER_ROW = 5
+
+function emitInnerRowSubgraphs(
+  indent: string,
+  outerId: string,
+  itemCount: number,
+  emitItem: (i: number, ind: string) => string,
+): string[] {
+  if (itemCount <= NODES_PER_INNER_ROW) {
+    const out: string[] = []
+    for (let i = 0; i < itemCount; i++) out.push(emitItem(i, indent))
+    return out
+  }
+  const lines: string[] = []
+  const i2 = indent + '  '
+  let row = 0
+  for (let i = 0; i < itemCount; i += NODES_PER_INNER_ROW) {
+    const rowId = `${outerId}_R${row}`
+    lines.push(`${indent}subgraph ${rowId} [" "]`)
+    lines.push(`${i2}direction LR`)
+    const end = Math.min(i + NODES_PER_INNER_ROW, itemCount)
+    for (let j = i; j < end; j++) lines.push(emitItem(j, i2))
+    lines.push(`${indent}end`)
+    lines.push(`${indent}style ${rowId} fill:none,stroke:none`)
+    row++
+  }
+  return lines
+}
 
 // Descend past single-child transit nodes (e.g. /api → /api/v1) to the first real branching level.
 // Stops if the single node has its own routes (to avoid silently dropping them).
@@ -210,8 +257,10 @@ function buildRouteRowDiagram(groups: NestedGroup[]): string {
     if (leafSeg === undefined) {
       for (const r of allRoutes) lines.push(renderingRouteLabel(r, '  '))
     } else {
-      lines.push(`  subgraph ${sanitizeId(leafSeg.toUpperCase())}_G["${sectionLabel(leafSeg)}"]`)
-      for (const r of allRoutes) lines.push(renderingRouteLabel(r, '    '))
+      const sgId = sanitizeId(leafSeg.toUpperCase()) + '_G'
+      lines.push(`  subgraph ${sgId}["${sectionLabel(leafSeg)}"]`)
+      lines.push(...emitInnerRowSubgraphs('    ', sgId, allRoutes.length,
+        (i, ind) => renderingRouteLabel(allRoutes[i]!, ind, group.groupKey)))
       lines.push('  end')
     }
   }
@@ -244,17 +293,20 @@ function renderScreenSection(
 
   for (const [secKey, nodes] of sections) {
     const routeSubId = `${sanitizeId(secKey.toUpperCase())}_S`
+    const groupPrefix = '/' + secKey
     lines.push(`  subgraph ${routeSubId}["${sectionLabel(secKey)}"]`)
-    for (const r of nodes) {
+    // 라우트도 inner-row 분할 (Y축 줄넘김)
+    lines.push(...emitInnerRowSubgraphs('    ', routeSubId, nodes.length, (i, ind) => {
+      const r = nodes[i]!
       const badge = r.renderingMode === 'unknown' ? '?' : r.renderingMode
-      lines.push(`    ${sanitizeId(r.id)}["${r.path} · ${badge}"]:::${modeClass(r.renderingMode)}`)
-    }
+      const displayPath = stripGroupPrefix(r.path, groupPrefix)
+      return `${ind}${sanitizeId(r.id)}["${displayPath} · ${badge}"]:::${modeClass(r.renderingMode)}`
+    }))
     lines.push('  end')
 
-    // Section 내부에 component subgraph를 중첩: graph TB에서 nested subgraph는
-    // 형제 section이 늘어도 세로 적층을 유지해 X폭발을 방지한다.
+    // Section 내부에 component subgraph를 중첩 + 컴포넌트도 inner-row 분할.
     // 공유 컴포넌트(first-claim): 먼저 등장한 section이 소유하고 이후 section은 에지만 추가한다.
-    const sectionCompLines: string[] = []
+    const compsInSection: string[] = []
     for (const r of nodes) {
       const comps = routeToComps.get(r.id) ?? []
       for (const compId of comps) {
@@ -267,16 +319,19 @@ function renderScreenSection(
         const comp = connectedComponents.find(c => c.id === compId)
         if (comp === undefined) continue
         const label = comp.runtime === 'client' ? `${comp.name} [CSR]` : comp.name
-        sectionCompLines.push(`      ${sanitizeId(comp.id)}["${label}"]`)
+        compsInSection.push(`${sanitizeId(comp.id)}["${label}"]`)
       }
     }
-    if (sectionCompLines.length > 0) {
+    if (compsInSection.length > 0) {
+      const compSgId = sanitizeId(secKey.toUpperCase()) + '_C'
       // route section의 end 앞에 comp subgraph를 삽입해야 하므로 마지막 'end'를 교체한다.
       const lastEnd = lines.lastIndexOf('  end')
       if (lastEnd !== -1) {
+        const compInnerLines = emitInnerRowSubgraphs('      ', compSgId, compsInSection.length,
+          (i, ind) => `${ind}${compsInSection[i]!}`)
         lines.splice(lastEnd, 1,
-          `    subgraph ${sanitizeId(secKey.toUpperCase())}_C`,
-          ...sectionCompLines,
+          `    subgraph ${compSgId}`,
+          ...compInnerLines,
           `    end`,
           `  end`,
         )

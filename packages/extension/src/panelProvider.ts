@@ -1,4 +1,10 @@
 import * as vscode from 'vscode'
+import { t, resolveLocale, dictForLocale } from './i18n/dict.js'
+
+function getLocale() {
+  const setting = vscode.workspace.getConfiguration('codesight').get<string>('language', 'auto')
+  return resolveLocale(setting, vscode.env.language)
+}
 
 export class PanelProvider implements vscode.WebviewViewProvider {
   public static readonly viewType = 'codesight.panelView'
@@ -27,12 +33,12 @@ export class PanelProvider implements vscode.WebviewViewProvider {
 
   public setAnalyzing(analyzing: boolean, projectName?: string): void {
     this._view?.webview.postMessage({ type: 'state', analyzing, projectName })
-    if (analyzing) this.log('분석 시작...')
+    if (analyzing) this.log(t('panel.analyzing', getLocale()))
   }
 
   public setResult(info: { projectName: string; routeCount: number; tableCount: number; cachedAt: number }): void {
     this._view?.webview.postMessage({ type: 'result', ...info })
-    this.log(`완료 — ${info.routeCount}개 라우트, ${info.tableCount}개 테이블`)
+    this.log(t('panel.complete', getLocale(), { routes: info.routeCount, tables: info.tableCount }))
   }
 
   private _flushLogs(): void {
@@ -42,6 +48,8 @@ export class PanelProvider implements vscode.WebviewViewProvider {
   }
 
   private _getHtml(): string {
+    const locale = getLocale()
+    const dict = dictForLocale(locale)
     return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -122,9 +130,10 @@ export class PanelProvider implements vscode.WebviewViewProvider {
   <div class="stat"><span class="stat-val" id="sTables">0</span><span class="stat-lbl">Tables</span></div>
   <div class="stat"><span class="stat-val" id="sProject" style="font-size:13px">—</span><span class="stat-lbl">Project</span></div>
 </div>
-<div id="log"><div class="empty">분석을 실행하면 로그가 표시됩니다.</div></div>
+<div id="log"><div class="empty">${t('panel.empty', locale)}</div></div>
 
 <script>
+  window.__PANEL_I18N__ = ${JSON.stringify(dict)};
   const logEl = document.getElementById('log');
   const stateEl = document.getElementById('state');
   const summary = document.getElementById('summary');
@@ -144,7 +153,7 @@ export class PanelProvider implements vscode.WebviewViewProvider {
   }
 
   function clearLog() {
-    logEl.innerHTML = '<div class="empty">분석을 실행하면 로그가 표시됩니다.</div>';
+    logEl.innerHTML = '<div class="empty">' + (window.__PANEL_I18N__ && window.__PANEL_I18N__['panel.empty']) + '</div>';
     hasLogs = false;
     summary.classList.remove('visible');
     stateEl.textContent = 'Ready';

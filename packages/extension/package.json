@@ -2,7 +2,7 @@
   "name": "codebase-arch-viz",
   "displayName": "Codebase Architecture Visualizer",
   "description": "Architecture diagrams for 13 frameworks — route hierarchy, component trees, DB schema, and FE↔BE cross-project analysis. Static analysis, no API key needed.",
-  "version": "1.1.4",
+  "version": "1.1.5",
   "publisher": "cubha",
   "license": "MIT",
   "icon": "media/icon.png",
@@ -106,6 +106,19 @@
     "configuration": {
       "title": "CodeSight",
       "properties": {
+        "codesight.language": {
+          "type": "string",
+          "enum": ["auto", "ko", "en", "ja", "zh-cn"],
+          "enumDescriptions": [
+            "Follow VS Code display language",
+            "한국어",
+            "English",
+            "日本語",
+            "中文 (简体)"
+          ],
+          "default": "auto",
+          "description": "Display language for CodeSight UI (sidebar, viewer, messages). 'auto' follows VS Code display language."
+        },
         "codesight.model": {
           "type": "string",
           "default": "claude-sonnet-4-6",
@@ -147,10 +160,13 @@
     "@codebase-viz/types": "workspace:*"
   },
   "devDependencies": {
+    "@mermaid-js/layout-elk": "^0.2.1",
     "@types/vscode": "^1.90.0",
     "@vscode/vsce": "^3.0.0",
     "esbuild": "^0.24.0",
+    "ffmpeg-static": "^5.3.0",
     "ovsx": "^0.9.0",
+    "playwright": "^1.59.1",
     "typescript": "*"
   }
 }

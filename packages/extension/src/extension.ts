@@ -8,6 +8,12 @@ import { runAnalysis } from './analyzer.js'
 import { resolveSelectedFolder } from './folder-utils.js'
 import { detectStack } from '@codebase-viz/llm'
 import type { IRGraph } from '@codebase-viz/types'
+import { t, resolveLocale } from './i18n/dict.js'
+
+function getLocale() {
+  const setting = vscode.workspace.getConfiguration('codesight').get<string>('language', 'auto')
+  return resolveLocale(setting, vscode.env.language)
+}
 import { setWasmDir } from '@codebase-viz/core'
 import type { DiagramSet } from '@codebase-viz/renderer'
 
@@ -53,7 +59,7 @@ async function pickWorkspaceFolder(): Promise<vscode.WorkspaceFolder | undefined
   if (folders.length === 1) return folders[0]
   const items = folders.map(f => ({ label: f.name, description: f.uri.fsPath, folder: f }))
   const picked = await vscode.window.showQuickPick(items, {
-    placeHolder: 'Select workspace folder to analyze',
+    placeHolder: t('pick.selectWorkspace', getLocale()),
   })
   return picked?.folder
 }
@@ -80,7 +86,7 @@ async function pickPairFolder(mainFsPath: string): Promise<string | undefined> {
   ]
 
   const picked = await vscode.window.showQuickPick(items, {
-    placeHolder: 'Select paired BE project (optional) — Esc or Skip to analyze single project',
+    placeHolder: t('pick.selectPair', getLocale()),
   })
   if (picked === undefined || picked.label === SKIP_LABEL) return undefined
   return picked.fsPath
@@ -133,11 +139,12 @@ async function doAnalyze(
   if (enableLLM) {
     apiKey = await context.secrets.get('codesight.anthropicKey')
     if (apiKey === undefined || apiKey === '') {
+      const setKeyLabel = t('msg.btnSetApiKey', getLocale())
       const action = await vscode.window.showWarningMessage(
-        'CodeSight: LLM analysis enabled but no API key found. Set one first.',
-        'Set API Key',
+        t('msg.llmNoApiKey', getLocale()),
+        setKeyLabel,
       )
-      if (action === 'Set API Key') {
+      if (action === setKeyLabel) {
         await vscode.commands.executeCommand('codesight.setApiKey')
       }
       return
@@ -195,11 +202,12 @@ async function doAnalyze(
     panelProvider?.setResult(result)
 
     if (!enableLLM) {
+      const setKeyLabel = t('msg.btnSetApiKey', getLocale())
       void vscode.window.showInformationMessage(
-        'CodeSight: Static analysis complete. Enable LLM analysis for richer results.',
-        'Set API Key',
+        t('msg.staticComplete', getLocale()),
+        setKeyLabel,
       ).then(action => {
-        if (action === 'Set API Key') {
+        if (action === setKeyLabel) {
           void vscode.commands.executeCommand('codesight.setApiKey')
         }
       })
@@ -208,8 +216,8 @@ async function doAnalyze(
     const message = err instanceof Error ? err.message : String(err)
     sidebarProvider?.updateStatus({ analyzing: false })
     panelProvider?.setAnalyzing(false)
-    panelProvider?.log(`오류: ${message}`)
-    void vscode.window.showErrorMessage(`CodeSight: Analysis failed — ${message}`)
+    panelProvider?.log(t('panel.error', getLocale(), { message }))
+    void vscode.window.showErrorMessage(t('msg.analysisFailed', getLocale(), { message }))
     panel.showError(message)
   }
 }
@@ -264,6 +272,11 @@ export function activate(context: vscode.ExtensionContext): void {
         const llmEnabled = vscode.workspace.getConfiguration('codesight').get<boolean>('enableLLM', false)
         sidebarProvider?.updateStatus({ llmEnabled })
       }
+      // language 변경 시 모든 webview를 새 locale로 즉시 다시 렌더 (reload 불필요).
+      if (e.affectsConfiguration('codesight.language')) {
+        sidebarProvider?.refreshLocale()
+        CodeSightPanel.getInstance()?.refreshLocale()
+      }
     }),
   )
 
@@ -272,7 +285,7 @@ export function activate(context: vscode.ExtensionContext): void {
     vscode.commands.registerCommand('codesight.analyze', async () => {
       const workspaceRoot = getWorkspaceRoot(context)
       if (workspaceRoot === undefined) {
-        void vscode.window.showErrorMessage('CodeSight: No workspace folder open.')
+        void vscode.window.showErrorMessage(t('msg.noWorkspace', getLocale()))
         return
       }
       const pairRepoRoot = await pickPairFolder(workspaceRoot)
@@ -283,7 +296,7 @@ export function activate(context: vscode.ExtensionContext): void {
     vscode.commands.registerCommand('codesight.reanalyze', async () => {
       const workspaceRoot = getWorkspaceRoot(context)
       if (workspaceRoot === undefined) {
-        void vscode.window.showErrorMessage('CodeSight: No workspace folder open.')
+        void vscode.window.showErrorMessage(t('msg.noWorkspace', getLocale()))
         return
       }
       const pairRepoRoot = await pickPairFolder(workspaceRoot)
@@ -296,7 +309,7 @@ export function activate(context: vscode.ExtensionContext): void {
       if (workspaceRoot === undefined) return
       const cached = readCache(workspaceRoot)
       if (cached === undefined) {
-        void vscode.window.showInformationMessage('CodeSight: No analysis cache. Run Analyze first.')
+        void vscode.window.showInformationMessage(t('msg.noCacheRunFirst', getLocale()))
         return
       }
       const panel = CodeSightPanel.createOrShow(context.extensionUri)
@@ -351,14 +364,14 @@ export function activate(context: vscode.ExtensionContext): void {
       if (key !== undefined && key !== '') {
         await context.secrets.store('codesight.anthropicKey', key)
         sidebarProvider?.updateStatus({ hasApiKey: true })
-        void vscode.window.showInformationMessage('CodeSight: API key saved securely.')
+        void vscode.window.showInformationMessage(t('msg.apiKeySaved', getLocale()))
       }
     }),
 
     vscode.commands.registerCommand('codesight.clearApiKey', async () => {
       await context.secrets.delete('codesight.anthropicKey')
       sidebarProvider?.updateStatus({ hasApiKey: false })
-      void vscode.window.showInformationMessage('CodeSight: API key cleared.')
+      void vscode.window.showInformationMessage(t('msg.apiKeyCleared', getLocale()))
     }),
   )
 }

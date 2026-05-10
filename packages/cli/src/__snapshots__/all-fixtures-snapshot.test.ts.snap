@@ -41,11 +41,11 @@ graph TD
   route_src_app_app_config_ts__["/ · CSR"]:::csr
   route_src_app_user_detail_user_detail_module_ts__["/ · CSR"]:::csr
   subgraph ABOUT_G["👤 /about"]
-    route_src_app_app_config_ts__about["/about · CSR"]:::csr
+    route_src_app_app_config_ts__about["/ · CSR"]:::csr
   end
   subgraph USERS_G["📄 /users"]
-    route_src_app_app_config_ts__users["/users · CSR"]:::csr
-    route_src_app_app_config_ts__users__id["/users/:id · CSR"]:::csr
+    route_src_app_app_config_ts__users["/ · CSR"]:::csr
+    route_src_app_app_config_ts__users__id[":id · CSR"]:::csr
   end"
 `;
 
@@ -61,7 +61,7 @@ graph TB
   classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
   subgraph ABOUT_S["👤 /about"]
     route_src_app_user_detail_user_detail_module_ts__["/ · CSR"]:::csr
-    route_src_app_app_config_ts__about["/about · CSR"]:::csr
+    route_src_app_app_config_ts__about["/ · CSR"]:::csr
   end
 %%--CHUNK--%%
 %% chunk:2/2
@@ -74,8 +74,8 @@ graph TB
   classDef ppr fill:#0d1a2d,stroke:#2563eb,color:#93c5fd
   classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
   subgraph USERS_S["📄 /users"]
-    route_src_app_app_config_ts__users["/users · CSR"]:::csr
-    route_src_app_app_config_ts__users__id["/users/:id · CSR"]:::csr
+    route_src_app_app_config_ts__users["/ · CSR"]:::csr
+    route_src_app_app_config_ts__users__id[":id · CSR"]:::csr
   end"
 `;
 
@@ -120,12 +120,12 @@ graph TD
   classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
   subgraph API_G["⚡ /api"]
     subgraph USERS_G["📄 /users"]
-      route_api_urls_py__api_users_include["/api/users · SSR"]:::ssr
-      route_api_urls_py__api_users__pk_include["/api/users/:pk · SSR"]:::ssr
+      route_api_urls_py__api_users_include["/ · SSR"]:::ssr
+      route_api_urls_py__api_users__pk_include[":pk · SSR"]:::ssr
     end
     subgraph POSTS_G["📄 /posts"]
-      route_api_urls_py__api_posts_include["/api/posts · SSR"]:::ssr
-      route_api_urls_py__api_posts__slug_include["/api/posts/:slug · SSR"]:::ssr
+      route_api_urls_py__api_posts_include["/ · SSR"]:::ssr
+      route_api_urls_py__api_posts__slug_include[":slug · SSR"]:::ssr
     end
   end
   subgraph DATALAYER["🔌 API LAYER"]
@@ -145,10 +145,10 @@ graph TB
   classDef ppr fill:#0d1a2d,stroke:#2563eb,color:#93c5fd
   classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
   subgraph API_S["⚡ /api"]
-    route_api_urls_py__api_users_include["/api/users · SSR"]:::ssr
-    route_api_urls_py__api_users__pk_include["/api/users/:pk · SSR"]:::ssr
-    route_api_urls_py__api_posts_include["/api/posts · SSR"]:::ssr
-    route_api_urls_py__api_posts__slug_include["/api/posts/:slug · SSR"]:::ssr
+    route_api_urls_py__api_users_include["users · SSR"]:::ssr
+    route_api_urls_py__api_users__pk_include["users/:pk · SSR"]:::ssr
+    route_api_urls_py__api_posts_include["posts · SSR"]:::ssr
+    route_api_urls_py__api_posts__slug_include["posts/:slug · SSR"]:::ssr
   end"
 `;
 
@@ -219,18 +219,18 @@ graph TD
   classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
   subgraph API_G["⚡ /api"]
     subgraph USERS_G["📄 /users"]
-      route_routers_users_py__api_users_GET["GET /api/users · SSR"]:::ssr
-      route_routers_users_py__api_users__user_id_GET["GET /api/users/:user_id · SSR"]:::ssr
-      route_routers_users_py__api_users_POST["POST /api/users · SSR"]:::ssr
+      route_routers_users_py__api_users_GET["GET / · SSR"]:::ssr
+      route_routers_users_py__api_users__user_id_GET["GET :user_id · SSR"]:::ssr
+      route_routers_users_py__api_users_POST["POST / · SSR"]:::ssr
     end
     subgraph POSTS_G["📄 /posts"]
-      route_routers_posts_py__api_posts_GET["GET /api/posts · SSR"]:::ssr
-      route_routers_posts_py__api_posts__post_id_GET["GET /api/posts/:post_id · SSR"]:::ssr
+      route_routers_posts_py__api_posts_GET["GET / · SSR"]:::ssr
+      route_routers_posts_py__api_posts__post_id_GET["GET :post_id · SSR"]:::ssr
     end
   end
   route_main_py___get["GET / · SSR"]:::ssr
   subgraph HEALTH_G["📄 /health"]
-    route_main_py__health_get["GET /health · SSR"]:::ssr
+    route_main_py__health_get["GET / · SSR"]:::ssr
   end
   subgraph DATALAYER["🔌 API LAYER"]
     subgraph API_G["⚡ REST API · Backend"]
@@ -250,10 +250,10 @@ graph TB
   classDef ppr fill:#0d1a2d,stroke:#2563eb,color:#93c5fd
   classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
   subgraph API_S["⚡ /api"]
-    route_routers_users_py__api_users_GET["/api/users · SSR"]:::ssr
-    route_routers_users_py__api_users__user_id_GET["/api/users/:user_id · SSR"]:::ssr
-    route_routers_posts_py__api_posts_GET["/api/posts · SSR"]:::ssr
-    route_routers_posts_py__api_posts__post_id_GET["/api/posts/:post_id · SSR"]:::ssr
+    route_routers_users_py__api_users_GET["users · SSR"]:::ssr
+    route_routers_users_py__api_users__user_id_GET["users/:user_id · SSR"]:::ssr
+    route_routers_posts_py__api_posts_GET["posts · SSR"]:::ssr
+    route_routers_posts_py__api_posts__post_id_GET["posts/:post_id · SSR"]:::ssr
     route_main_py___get["/ · SSR"]:::ssr
   end
 %%--CHUNK--%%
@@ -267,7 +267,7 @@ graph TB
   classDef ppr fill:#0d1a2d,stroke:#2563eb,color:#93c5fd
   classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
   subgraph HEALTH_S["📄 /health"]
-    route_main_py__health_get["/health · SSR"]:::ssr
+    route_main_py__health_get["/ · SSR"]:::ssr
   end"
 `;
 
@@ -319,17 +319,17 @@ graph TD
   classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
   route_app_py__["/ · SSR"]:::ssr
   subgraph HEALTH_G["📄 /health"]
-    route_app_py__health["/health · SSR"]:::ssr
+    route_app_py__health["/ · SSR"]:::ssr
   end
   subgraph API_G["⚡ /api"]
     subgraph POSTS_G["📄 /posts"]
-      route_blueprints_posts_py__api_posts["/api/posts · SSR"]:::ssr
-      route_blueprints_posts_py__api_posts__post_id["/api/posts/:post_id · SSR"]:::ssr
+      route_blueprints_posts_py__api_posts["/ · SSR"]:::ssr
+      route_blueprints_posts_py__api_posts__post_id[":post_id · SSR"]:::ssr
     end
     subgraph USERS_G["📄 /users"]
-      route_blueprints_users_py__api_users["/api/users · SSR"]:::ssr
-      route_blueprints_users_py__api_users__user_id["/api/users/:user_id · SSR"]:::ssr
-      route_blueprints_users_py__api_users["POST /api/users · SSR"]:::ssr
+      route_blueprints_users_py__api_users["/ · SSR"]:::ssr
+      route_blueprints_users_py__api_users__user_id[":user_id · SSR"]:::ssr
+      route_blueprints_users_py__api_users["POST / · SSR"]:::ssr
     end
   end"
 `;
@@ -346,7 +346,7 @@ graph TB
   classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
   subgraph HEALTH_S["📄 /health"]
     route_app_py__["/ · SSR"]:::ssr
-    route_app_py__health["/health · SSR"]:::ssr
+    route_app_py__health["/ · SSR"]:::ssr
   end
 %%--CHUNK--%%
 %% chunk:2/2
@@ -359,10 +359,10 @@ graph TB
   classDef ppr fill:#0d1a2d,stroke:#2563eb,color:#93c5fd
   classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
   subgraph API_S["⚡ /api"]
-    route_blueprints_posts_py__api_posts["/api/posts · SSR"]:::ssr
-    route_blueprints_posts_py__api_posts__post_id["/api/posts/:post_id · SSR"]:::ssr
-    route_blueprints_users_py__api_users["/api/users · SSR"]:::ssr
-    route_blueprints_users_py__api_users__user_id["/api/users/:user_id · SSR"]:::ssr
+    route_blueprints_posts_py__api_posts["posts · SSR"]:::ssr
+    route_blueprints_posts_py__api_posts__post_id["posts/:post_id · SSR"]:::ssr
+    route_blueprints_users_py__api_users["users · SSR"]:::ssr
+    route_blueprints_users_py__api_users__user_id["users/:user_id · SSR"]:::ssr
   end"
 `;
 
@@ -418,11 +418,11 @@ graph TD
   classDef ppr fill:#0d1a2d,stroke:#2563eb,color:#93c5fd
   classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
   subgraph USERS_G["📄 /users"]
-    route_src_users_users_controller_ts_UsersController_findAll["GET /users · SSR"]:::ssr
-    route_src_users_users_controller_ts_UsersController_create["POST /users · SSR"]:::ssr
+    route_src_users_users_controller_ts_UsersController_findAll["GET / · SSR"]:::ssr
+    route_src_users_users_controller_ts_UsersController_create["POST / · SSR"]:::ssr
     subgraph _ID_G["📄 /:id"]
-      route_src_users_users_controller_ts_UsersController_findOne["GET /users/:id · SSR"]:::ssr
-      route_src_users_users_controller_ts_UsersController_remove["DELETE /users/:id · SSR"]:::ssr
+      route_src_users_users_controller_ts_UsersController_findOne["GET / · SSR"]:::ssr
+      route_src_users_users_controller_ts_UsersController_remove["DELETE / · SSR"]:::ssr
     end
   end
   subgraph DATALAYER["🔌 API LAYER"]
@@ -442,8 +442,8 @@ graph TB
   classDef ppr fill:#0d1a2d,stroke:#2563eb,color:#93c5fd
   classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
   subgraph USERS_S["📄 /users"]
-    route_src_users_users_controller_ts_UsersController_create["/users · SSR"]:::ssr
-    route_src_users_users_controller_ts_UsersController_remove["/users/:id · SSR"]:::ssr
+    route_src_users_users_controller_ts_UsersController_create["/ · SSR"]:::ssr
+    route_src_users_users_controller_ts_UsersController_remove[":id · SSR"]:::ssr
   end"
 `;
 
@@ -535,10 +535,10 @@ graph TD
         subgraph REACT["⚛ React · SSR Engine"]
           SSR_FETCH["(SSR data fetch)"]:::unk
           subgraph ABOUT_G["👤 /about"]
-            route_app__marketing__about_page["/about · SSR"]:::ssr
+            route_app__marketing__about_page["/ · SSR"]:::ssr
           end
           subgraph BLOG_G["📝 /blog"]
-            route_app_blog__slug__page["/blog/:slug · SSR"]:::ssr
+            route_app_blog__slug__page[":slug · SSR"]:::ssr
           end
           route_app_page["/ · SSR"]:::ssr
         end
@@ -565,13 +565,13 @@ graph TB
   classDef ppr fill:#0d1a2d,stroke:#2563eb,color:#93c5fd
   classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
   subgraph ABOUT_S["👤 /about"]
-    route_app__marketing__about_page["/about · SSR"]:::ssr
+    route_app__marketing__about_page["/ · SSR"]:::ssr
     subgraph ABOUT_C
       component_app__marketing__about_page_tsx_page["page"]
     end
   end
   subgraph BLOG_S["📝 /blog"]
-    route_app_blog__slug__page["/blog/:slug · SSR"]:::ssr
+    route_app_blog__slug__page[":slug · SSR"]:::ssr
     subgraph BLOG_C
       component_app_blog__slug__page_tsx_page["page"]
     end
@@ -666,15 +666,15 @@ graph TD
       subgraph FRAMEWORK["▲ Next.js · App Router"]
         subgraph REACT["⚛ React · SSR Engine"]
           subgraph _COMPONENTS_G["📄 /_components"]
-            route_pages__components_UserBadge_tsx_page["/_components/UserBadge · SSR"]:::ssr
-            route_pages__components_UserCard_tsx_page["/_components/UserCard · SSR"]:::ssr
+            route_pages__components_UserBadge_tsx_page["UserBadge · SSR"]:::ssr
+            route_pages__components_UserCard_tsx_page["UserCard · SSR"]:::ssr
           end
           subgraph ABOUT_G["👤 /about"]
-            route_pages_about_tsx_page["/about · SSR"]:::ssr
+            route_pages_about_tsx_page["/ · SSR"]:::ssr
           end
           route_pages_index_tsx_page["/ · SSR"]:::ssr
           subgraph USERS_G["📄 /users"]
-            route_pages_users__id__tsx_page["/users/:id · SSR"]:::ssr
+            route_pages_users__id__tsx_page[":id · SSR"]:::ssr
           end
         end
       end
@@ -693,11 +693,11 @@ graph TB
   classDef ppr fill:#0d1a2d,stroke:#2563eb,color:#93c5fd
   classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
   subgraph _COMPONENTS_S["📄 /_components"]
-    route_pages__components_UserBadge_tsx_page["/_components/UserBadge · SSR"]:::ssr
-    route_pages__components_UserCard_tsx_page["/_components/UserCard · SSR"]:::ssr
+    route_pages__components_UserBadge_tsx_page["UserBadge · SSR"]:::ssr
+    route_pages__components_UserCard_tsx_page["UserCard · SSR"]:::ssr
   end
   subgraph ABOUT_S["👤 /about"]
-    route_pages_about_tsx_page["/about · SSR"]:::ssr
+    route_pages_about_tsx_page["/ · SSR"]:::ssr
   end
 %%--CHUNK--%%
 %% chunk:2/2
@@ -711,7 +711,7 @@ graph TB
   classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
   subgraph USERS__ID_S["📄 /users/:id"]
     route_pages_index_tsx_page["/ · SSR"]:::ssr
-    route_pages_users__id__tsx_page["/users/:id · SSR"]:::ssr
+    route_pages_users__id__tsx_page["/ · SSR"]:::ssr
   end"
 `;
 
@@ -756,14 +756,14 @@ graph TD
   classDef ppr fill:#0d1a2d,stroke:#2563eb,color:#93c5fd
   classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
   subgraph ABOUT_G["👤 /about"]
-    route_pages_about_vue["/about · SSR"]:::ssr
+    route_pages_about_vue["/ · SSR"]:::ssr
   end
   subgraph CLIENT_ONLY_G["📄 /client-only"]
-    route_pages_client_only_vue["/client-only · CSR"]:::csr
+    route_pages_client_only_vue["/ · CSR"]:::csr
   end
   route_pages_index_vue["/ · SSR"]:::ssr
   subgraph USERS_G["📄 /users"]
-    route_pages_users__id__vue["/users/:id · SSR"]:::ssr
+    route_pages_users__id__vue[":id · SSR"]:::ssr
   end"
 `;
 
@@ -778,10 +778,10 @@ graph TB
   classDef ppr fill:#0d1a2d,stroke:#2563eb,color:#93c5fd
   classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
   subgraph ABOUT_S["👤 /about"]
-    route_pages_about_vue["/about · SSR"]:::ssr
+    route_pages_about_vue["/ · SSR"]:::ssr
   end
   subgraph CLIENT_ONLY_S["📄 /client-only"]
-    route_pages_client_only_vue["/client-only · CSR"]:::csr
+    route_pages_client_only_vue["/ · CSR"]:::csr
   end
 %%--CHUNK--%%
 %% chunk:2/2
@@ -795,7 +795,7 @@ graph TB
   classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
   subgraph USERS__ID_S["📄 /users/:id"]
     route_pages_index_vue["/ · SSR"]:::ssr
-    route_pages_users__id__vue["/users/:id · SSR"]:::ssr
+    route_pages_users__id__vue["/ · SSR"]:::ssr
   end"
 `;
 
@@ -845,11 +845,11 @@ graph TD
   classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
   route_src_router_tsx__["/ · CSR"]:::csr
   subgraph ABOUT_G["👤 /about"]
-    route_src_router_tsx__about["/about · CSR"]:::csr
+    route_src_router_tsx__about["/ · CSR"]:::csr
   end
   subgraph USERS_G["📄 /users"]
-    route_src_router_tsx__users["/users · CSR"]:::csr
-    route_src_router_tsx__users__id["/users/:id · CSR"]:::csr
+    route_src_router_tsx__users["/ · CSR"]:::csr
+    route_src_router_tsx__users__id[":id · CSR"]:::csr
   end"
 `;
 
@@ -865,7 +865,7 @@ graph TB
   classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
   subgraph ABOUT_S["👤 /about"]
     route_src_router_tsx__["/ · CSR"]:::csr
-    route_src_router_tsx__about["/about · CSR"]:::csr
+    route_src_router_tsx__about["/ · CSR"]:::csr
     subgraph ABOUT_C
       component_src_pages_HomePage_tsx_HomePage["HomePage [CSR]"]
       component_src_pages_AboutPage_tsx_AboutPage["AboutPage [CSR]"]
@@ -884,8 +884,8 @@ graph TB
   classDef ppr fill:#0d1a2d,stroke:#2563eb,color:#93c5fd
   classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
   subgraph USERS_S["📄 /users"]
-    route_src_router_tsx__users["/users · CSR"]:::csr
-    route_src_router_tsx__users__id["/users/:id · CSR"]:::csr
+    route_src_router_tsx__users["/ · CSR"]:::csr
+    route_src_router_tsx__users__id[":id · CSR"]:::csr
     subgraph USERS_C
       component_src_pages_UserListPage_tsx_UserListPage["UserListPage [CSR]"]
       component_src_pages_UserDetailPage_tsx_UserDetailPage["UserDetailPage [CSR]"]
@@ -934,10 +934,10 @@ graph TD
   classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
   route_app_routes__index_tsx_page["/ · SSR"]:::ssr
   subgraph ABOUT_G["👤 /about"]
-    route_app_routes_about_tsx_page["/about · SSR"]:::ssr
+    route_app_routes_about_tsx_page["/ · SSR"]:::ssr
   end
   subgraph USERS_G["📄 /users"]
-    route_app_routes_users__id_tsx_page["/users/:id · SSR"]:::ssr
+    route_app_routes_users__id_tsx_page[":id · SSR"]:::ssr
   end"
 `;
 
@@ -953,7 +953,7 @@ graph TB
   classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
   subgraph ABOUT_S["👤 /about"]
     route_app_routes__index_tsx_page["/ · SSR"]:::ssr
-    route_app_routes_about_tsx_page["/about · SSR"]:::ssr
+    route_app_routes_about_tsx_page["/ · SSR"]:::ssr
   end
 %%--CHUNK--%%
 %% chunk:2/2
@@ -966,7 +966,7 @@ graph TB
   classDef ppr fill:#0d1a2d,stroke:#2563eb,color:#93c5fd
   classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
   subgraph USERS__ID_S["📄 /users/:id"]
-    route_app_routes_users__id_tsx_page["/users/:id · SSR"]:::ssr
+    route_app_routes_users__id_tsx_page["/ · SSR"]:::ssr
   end"
 `;
 
@@ -1014,23 +1014,23 @@ graph TD
   classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
   subgraph API_G["⚡ /api"]
     subgraph POSTS_G["📄 /posts"]
-      route_src_main_java_com_example_controller_PostController_java__api_posts_GetMapping["GET /api/posts · SSR"]:::ssr
+      route_src_main_java_com_example_controller_PostController_java__api_posts_GetMapping["GET / · SSR"]:::ssr
       subgraph _POSTID_G["📄 /:postId"]
-        route_src_main_java_com_example_controller_PostController_java__api_posts__postId_GetMapping["GET /api/posts/:postId · SSR"]:::ssr
+        route_src_main_java_com_example_controller_PostController_java__api_posts__postId_GetMapping["GET / · SSR"]:::ssr
       end
       subgraph FEATURED_G["📄 /featured"]
-        route_src_main_java_com_example_controller_PostController_java__api_posts_featured_GetMapping["GET /api/posts/featured · SSR"]:::ssr
+        route_src_main_java_com_example_controller_PostController_java__api_posts_featured_GetMapping["GET / · SSR"]:::ssr
       end
       subgraph PINNED_G["📄 /pinned"]
-        route_src_main_java_com_example_controller_PostController_java__api_posts_pinned_GetMapping["GET /api/posts/pinned · SSR"]:::ssr
+        route_src_main_java_com_example_controller_PostController_java__api_posts_pinned_GetMapping["GET / · SSR"]:::ssr
       end
     end
     subgraph USERS_G["📄 /users"]
-      route_src_main_java_com_example_controller_UserController_java__api_users_GetMapping["GET /api/users · SSR"]:::ssr
-      route_src_main_java_com_example_controller_UserController_java__api_users_PostMapping["POST /api/users · SSR"]:::ssr
+      route_src_main_java_com_example_controller_UserController_java__api_users_GetMapping["GET / · SSR"]:::ssr
+      route_src_main_java_com_example_controller_UserController_java__api_users_PostMapping["POST / · SSR"]:::ssr
       subgraph _USERID_G["📄 /:userId"]
-        route_src_main_java_com_example_controller_UserController_java__api_users__userId_GetMapping["GET /api/users/:userId · SSR"]:::ssr
-        route_src_main_java_com_example_controller_UserController_java__api_users__userId_DeleteMapping["DELETE /api/users/:userId · SSR"]:::ssr
+        route_src_main_java_com_example_controller_UserController_java__api_users__userId_GetMapping["GET / · SSR"]:::ssr
+        route_src_main_java_com_example_controller_UserController_java__api_users__userId_DeleteMapping["DELETE / · SSR"]:::ssr
       end
     end
   end
@@ -1051,12 +1051,20 @@ graph TB
   classDef ppr fill:#0d1a2d,stroke:#2563eb,color:#93c5fd
   classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
   subgraph API_S["⚡ /api"]
-    route_src_main_java_com_example_controller_PostController_java__api_posts_GetMapping["/api/posts · SSR"]:::ssr
-    route_src_main_java_com_example_controller_PostController_java__api_posts__postId_GetMapping["/api/posts/:postId · SSR"]:::ssr
-    route_src_main_java_com_example_controller_PostController_java__api_posts_featured_GetMapping["/api/posts/featured · SSR"]:::ssr
-    route_src_main_java_com_example_controller_PostController_java__api_posts_pinned_GetMapping["/api/posts/pinned · SSR"]:::ssr
-    route_src_main_java_com_example_controller_UserController_java__api_users_PostMapping["/api/users · SSR"]:::ssr
-    route_src_main_java_com_example_controller_UserController_java__api_users__userId_DeleteMapping["/api/users/:userId · SSR"]:::ssr
+    subgraph API_S_R0 [" "]
+      direction LR
+      route_src_main_java_com_example_controller_PostController_java__api_posts_GetMapping["posts · SSR"]:::ssr
+      route_src_main_java_com_example_controller_PostController_java__api_posts__postId_GetMapping["posts/:postId · SSR"]:::ssr
+      route_src_main_java_com_example_controller_PostController_java__api_posts_featured_GetMapping["posts/featured · SSR"]:::ssr
+      route_src_main_java_com_example_controller_PostController_java__api_posts_pinned_GetMapping["posts/pinned · SSR"]:::ssr
+      route_src_main_java_com_example_controller_UserController_java__api_users_PostMapping["users · SSR"]:::ssr
+    end
+    style API_S_R0 fill:none,stroke:none
+    subgraph API_S_R1 [" "]
+      direction LR
+      route_src_main_java_com_example_controller_UserController_java__api_users__userId_DeleteMapping["users/:userId · SSR"]:::ssr
+    end
+    style API_S_R1 fill:none,stroke:none
   end"
 `;
 
@@ -1119,10 +1127,10 @@ graph TD
   classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
   route_src_routes_page["/ · SSR"]:::ssr
   subgraph ABOUT_G["👤 /about"]
-    route_src_routes_about_page["/about · SSR"]:::ssr
+    route_src_routes_about_page["/ · SSR"]:::ssr
   end
   subgraph BLOG_G["📝 /blog"]
-    route_src_routes_blog__slug__page["/blog/:slug · SSR"]:::ssr
+    route_src_routes_blog__slug__page[":slug · SSR"]:::ssr
   end"
 `;
 
@@ -1138,7 +1146,7 @@ graph TB
   classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
   subgraph ABOUT_S["👤 /about"]
     route_src_routes_page["/ · SSR"]:::ssr
-    route_src_routes_about_page["/about · SSR"]:::ssr
+    route_src_routes_about_page["/ · SSR"]:::ssr
   end
 %%--CHUNK--%%
 %% chunk:2/2
@@ -1151,7 +1159,7 @@ graph TB
   classDef ppr fill:#0d1a2d,stroke:#2563eb,color:#93c5fd
   classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
   subgraph BLOG__SLUG_S["📄 /blog/:slug"]
-    route_src_routes_blog__slug__page["/blog/:slug · SSR"]:::ssr
+    route_src_routes_blog__slug__page["/ · SSR"]:::ssr
   end"
 `;
 
@@ -1200,11 +1208,11 @@ graph TD
   classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
   route_src_router_index_ts__["/ · CSR"]:::csr
   subgraph ABOUT_G["👤 /about"]
-    route_src_router_index_ts__about["/about · CSR"]:::csr
+    route_src_router_index_ts__about["/ · CSR"]:::csr
   end
   subgraph USERS_G["📄 /users"]
-    route_src_router_index_ts__users["/users · CSR"]:::csr
-    route_src_router_index_ts__users__id["/users/:id · CSR"]:::csr
+    route_src_router_index_ts__users["/ · CSR"]:::csr
+    route_src_router_index_ts__users__id[":id · CSR"]:::csr
   end"
 `;
 
@@ -1220,7 +1228,7 @@ graph TB
   classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
   subgraph ABOUT_S["👤 /about"]
     route_src_router_index_ts__["/ · CSR"]:::csr
-    route_src_router_index_ts__about["/about · CSR"]:::csr
+    route_src_router_index_ts__about["/ · CSR"]:::csr
   end
 %%--CHUNK--%%
 %% chunk:2/2
@@ -1233,8 +1241,8 @@ graph TB
   classDef ppr fill:#0d1a2d,stroke:#2563eb,color:#93c5fd
   classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
   subgraph USERS_S["📄 /users"]
-    route_src_router_index_ts__users["/users · CSR"]:::csr
-    route_src_router_index_ts__users__id["/users/:id · CSR"]:::csr
+    route_src_router_index_ts__users["/ · CSR"]:::csr
+    route_src_router_index_ts__users__id[":id · CSR"]:::csr
   end"
 `;
 

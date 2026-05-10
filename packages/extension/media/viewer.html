@@ -46,8 +46,10 @@
     .panels { position: relative; z-index: 5; height: calc(100vh - 52px - 44px); }
     .panel { position: absolute; inset: 0; opacity: 0; pointer-events: none; transition: opacity .22s; }
     .panel.active { opacity: 1; pointer-events: auto; }
-    .canvas-wrap { width: 100%; height: 100%; overflow: hidden; cursor: grab; position: relative; }
+    .canvas-wrap { width: 100%; height: 100%; overflow: hidden; cursor: grab; position: relative;
+      user-select: none; -webkit-user-select: none; }
     .canvas-wrap.dragging { cursor: grabbing; }
+    .canvas-wrap.row-mode { user-select: text; -webkit-user-select: text; }
     .canvas-inner { position: absolute; top: 50%; left: 50%; transform-origin: center center; will-change: transform; }
     .diagram-svg svg { filter: drop-shadow(0 2px 32px rgba(0,0,0,.5)); }
     .zoom-ctrl { position: absolute; bottom: 20px; right: 20px;
@@ -125,8 +127,10 @@
       padding: 3px 12px; border-radius: 4px;
       background: rgba(6,8,16,.88); border: 1px solid var(--border); backdrop-filter: blur(10px); }
     .cn-label { font-size: 10px; color: var(--text-muted); }
-    .canvas-wrap.row-mode { overflow-y: auto; overflow-x: hidden; cursor: default; }
+    .canvas-wrap.row-mode { overflow: hidden; cursor: grab; }
+    .canvas-wrap.row-mode.dragging { cursor: grabbing; }
     .row-diagram { width: 100%; }
+    .row-mode .canvas-inner { user-select: none; -webkit-user-select: none; }
     /* erDiagram th/td 분리 스타일 (Mermaid 11 기준)
        Mermaid 11은 row-rect-even/odd g 안의 path에 SVG fill 속성으로 색상 지정.
        SVG presentation attribute < CSS 우선순위이므로 CSS override가 유효하다.
@@ -149,27 +153,27 @@
   <div class="badge" id="h-badge">—</div>
   <div class="header-right">
     <div class="status-dot"></div>
-    <div class="header-meta" id="h-meta">analyzing...</div>
+    <div class="header-meta" id="h-meta" data-i18n="status.analyzing">analyzing...</div>
   </div>
 </header>
 
 <div class="tabs">
-  <div class="tab active" data-t="r" onclick="switchTab('r')"><span class="tab-pip"></span>Rendering Architecture</div>
-  <div class="tab" data-t="s" onclick="switchTab('s')"><span class="tab-pip"></span>Screen–Component</div>
-  <div class="tab" data-t="d" onclick="switchTab('d')"><span class="tab-pip"></span>DB–Screen</div>
+  <div class="tab active" data-t="r" onclick="switchTab('r')"><span class="tab-pip"></span><span data-i18n="tab.rendering">Rendering Architecture</span></div>
+  <div class="tab" data-t="s" onclick="switchTab('s')"><span class="tab-pip"></span><span data-i18n="tab.screenComponent">Screen–Component</span></div>
+  <div class="tab" data-t="d" onclick="switchTab('d')"><span class="tab-pip"></span><span data-i18n="tab.dbScreen">DB–Screen</span></div>
 </div>
 
 <div class="panels">
   <div id="p-r" class="panel active">
     <div class="legend">
-      <div class="legend-row"><div class="l-dot" style="background:#16a34a"></div>SSR · 서버 렌더링</div>
-      <div class="legend-row"><div class="l-dot" style="background:#c2410c"></div>CSR · 클라이언트 렌더링</div>
-      <div class="legend-row"><div class="l-dot" style="background:#ca8a04"></div>ISR · 증분 재생성</div>
-      <div class="legend-row"><div class="l-dot" style="background:#7c3aed"></div>SSG · 정적 생성</div>
-      <div class="legend-row"><div class="l-dot" style="background:#6b7280;border:1px dashed #7dd3fc;border-radius:2px"></div>inferred (LLM)</div>
-      <div class="legend-row"><div class="l-dot" style="background:transparent;border:1px dashed #7dd3fc;border-radius:2px"></div>FE→BE 연결 (dashed)</div>
+      <div class="legend-row"><div class="l-dot" style="background:#16a34a"></div><span data-i18n="legend.ssr">SSR · 서버 렌더링</span></div>
+      <div class="legend-row"><div class="l-dot" style="background:#c2410c"></div><span data-i18n="legend.csr">CSR · 클라이언트 렌더링</span></div>
+      <div class="legend-row"><div class="l-dot" style="background:#ca8a04"></div><span data-i18n="legend.isr">ISR · 증분 재생성</span></div>
+      <div class="legend-row"><div class="l-dot" style="background:#7c3aed"></div><span data-i18n="legend.ssg">SSG · 정적 생성</span></div>
+      <div class="legend-row"><div class="l-dot" style="background:#6b7280;border:1px dashed #7dd3fc;border-radius:2px"></div><span data-i18n="legend.inferred">inferred (LLM)</span></div>
+      <div class="legend-row"><div class="l-dot" style="background:transparent;border:1px dashed #7dd3fc;border-radius:2px"></div><span data-i18n="legend.feBe">FE→BE 연결 (dashed)</span></div>
     </div>
-    <div class="canvas-wrap" id="w-r"><div class="canvas-inner" id="i-r"><div class="loading-msg">렌더링 중...</div></div></div>
+    <div class="canvas-wrap" id="w-r"><div class="canvas-inner" id="i-r"><div class="loading-msg" data-i18n="status.rendering">렌더링 중...</div></div></div>
     <div id="cnav-r" class="chunk-nav" style="display:none"><span class="cn-label"></span></div>
     <div class="zoom-ctrl">
       <button class="z-btn" onclick="zm('r',1.2)">+</button>
@@ -179,13 +183,13 @@
   </div>
   <div id="p-s" class="panel">
     <div class="legend">
-      <div class="legend-row"><div class="l-dot" style="background:#16a34a"></div>SSR · 서버 렌더링</div>
-      <div class="legend-row"><div class="l-dot" style="background:#c2410c"></div>CSR · 클라이언트 렌더링</div>
-      <div class="legend-row"><div class="l-dot" style="background:#ca8a04"></div>ISR · 증분 재생성</div>
-      <div class="legend-row"><div class="l-dot" style="background:#7c3aed"></div>SSG · 정적 생성</div>
-      <div class="legend-row"><div class="l-dot" style="background:#6b7280;border:1px dashed #7dd3fc;border-radius:2px"></div>inferred (LLM)</div>
+      <div class="legend-row"><div class="l-dot" style="background:#16a34a"></div><span data-i18n="legend.ssr">SSR · 서버 렌더링</span></div>
+      <div class="legend-row"><div class="l-dot" style="background:#c2410c"></div><span data-i18n="legend.csr">CSR · 클라이언트 렌더링</span></div>
+      <div class="legend-row"><div class="l-dot" style="background:#ca8a04"></div><span data-i18n="legend.isr">ISR · 증분 재생성</span></div>
+      <div class="legend-row"><div class="l-dot" style="background:#7c3aed"></div><span data-i18n="legend.ssg">SSG · 정적 생성</span></div>
+      <div class="legend-row"><div class="l-dot" style="background:#6b7280;border:1px dashed #7dd3fc;border-radius:2px"></div><span data-i18n="legend.inferred">inferred (LLM)</span></div>
     </div>
-    <div class="canvas-wrap" id="w-s"><div class="canvas-inner" id="i-s"><div class="loading-msg">렌더링 중...</div></div></div>
+    <div class="canvas-wrap" id="w-s"><div class="canvas-inner" id="i-s"><div class="loading-msg" data-i18n="status.rendering">렌더링 중...</div></div></div>
     <div id="cnav-s" class="chunk-nav" style="display:none"><span class="cn-label"></span></div>
     <div class="zoom-ctrl">
       <button class="z-btn" onclick="zm('s',1.2)">+</button>
@@ -197,23 +201,23 @@
     <div class="db-wrap">
       <div class="db-canvas-area">
         <div class="db-toggle-bar">
-          <span class="db-toggle-label">View</span>
+          <span class="db-toggle-label" data-i18n="db.view.label">View</span>
           <button class="tb-btn active" data-v="all" onclick="setDbView('all')">
-            <span class="tb-pip" style="background:linear-gradient(135deg,#38bdf8 33%,#4ade80 66%,#f59e0b 100%)"></span>전체
+            <span class="tb-pip" style="background:linear-gradient(135deg,#38bdf8 33%,#4ade80 66%,#f59e0b 100%)"></span><span data-i18n="db.view.all">전체</span>
           </button>
           <div class="tb-sep"></div>
           <button class="tb-btn" data-v="fk" onclick="setDbView('fk')">
-            <span class="tb-pip" style="background:#38bdf8"></span>FK 관계
+            <span class="tb-pip" style="background:#38bdf8"></span><span data-i18n="db.view.fk">FK 관계</span>
           </button>
           <button class="tb-btn" data-v="routes" onclick="setDbView('routes')">
-            <span class="tb-pip" style="background:#4ade80"></span>페이지 쿼리
+            <span class="tb-pip" style="background:#4ade80"></span><span data-i18n="db.view.routes">페이지 쿼리</span>
           </button>
           <button class="tb-btn" data-v="actions" onclick="setDbView('actions')">
-            <span class="tb-pip" style="background:#f59e0b"></span>서버 액션
+            <span class="tb-pip" style="background:#f59e0b"></span><span data-i18n="db.view.actions">서버 액션</span>
           </button>
         </div>
         <div class="db-canvas-wrap">
-          <div class="canvas-wrap" id="w-d"><div class="canvas-inner" id="i-d"><div class="loading-msg">렌더링 중...</div></div></div>
+          <div class="canvas-wrap" id="w-d"><div class="canvas-inner" id="i-d"><div class="loading-msg" data-i18n="status.rendering">렌더링 중...</div></div></div>
           <div id="cnav-d" class="chunk-nav" style="display:none"><span class="cn-label"></span></div>
           <div class="zoom-ctrl">
             <button class="z-btn" onclick="zm('d',1.2)">+</button>
@@ -223,8 +227,8 @@
         </div>
       </div>
       <div class="db-sidebar">
-        <div class="sidebar-label">Tables</div>
-        <div id="sidebar-tables"><div class="loading-msg">로딩 중...</div></div>
+        <div class="sidebar-label" data-i18n="db.sidebar.tables">Tables</div>
+        <div id="sidebar-tables"><div class="loading-msg" data-i18n="status.loading">로딩 중...</div></div>
       </div>
     </div>
   </div>
@@ -234,6 +238,14 @@
 // ── Data injection from extension ────────────────────────────────────────────
 const meta = window.__CODESIGHT_META__ || {};
 const injected = window.__CODESIGHT_DIAGRAMS__ || {};
+const I18N = window.__CODESIGHT_I18N__ || {};
+function tr(key, params) {
+  let s = I18N[key] || key;
+  if (params) for (const k in params) s = s.replace(new RegExp('\\{' + k + '\\}', 'g'), String(params[k]));
+  return s;
+}
+// data-i18n attribute로 마크된 모든 element textContent 일괄 치환 (페이지 로드 시 1회)
+document.querySelectorAll('[data-i18n]').forEach(function(el) { el.textContent = tr(el.dataset.i18n); });
 
 if (meta.projectName) {
   document.getElementById('h-badge').textContent = meta.projectName;
@@ -252,7 +264,14 @@ const DIAGRAMS = {
 };
 
 // ── Runtime ──────────────────────────────────────────────────────────────────
-mermaid.initialize({startOnLoad: false, securityLevel: 'loose', maxTextSize: 1000000, maxEdges: 2000});
+mermaid.initialize({
+  startOnLoad: false, securityLevel: 'loose', maxTextSize: 1000000, maxEdges: 2000,
+  // ELK 폐기 사유: graph LR에서 라우트/테이블 column 분리로 Tab3 가독성 저하.
+  // 인덱스 라우트 등 짧은 라벨 노드가 매우 작아져 Tab2 비율 깨짐.
+  // dagre 복귀 + htmlLabels=false (SVG vector text → zoom 시 픽셀화 방지).
+  flowchart: { useMaxWidth: false, htmlLabels: false, nodeSpacing: 30, rankSpacing: 50, padding: 8 },
+  er: { useMaxWidth: false }
+});
 
 // Chunk fallback: renderer/_shared/wrap-fallback.ts emits %%--CHUNK--%% separator
 // between sub-diagrams when output exceeds chunkThreshold (default 1M).
@@ -304,13 +323,16 @@ function setSvgDimensions(inner) {
 function activateRowMode(t, inner) {
   const wrap = document.getElementById('w-'+t);
   wrap.classList.add('row-mode');
-  inner.style.cssText = 'position:relative;top:0;left:0;transform:none;display:flex;flex-direction:column;padding:16px;gap:16px;width:100%';
+  // transform 기반 zoom/pan을 위해 절대 위치 + transform-origin top center 유지.
+  // canvas-inner 기본 CSS(top:50%, left:50%, transform-origin:center)는 row-mode에서
+  // top center로 정렬되도록 override.
+  inner.style.cssText = 'position:absolute;top:0;left:50%;transform-origin:top center;display:flex;flex-direction:column;padding:16px;gap:16px;will-change:transform';
   scaleRowSvgs(wrap, inner);
   const rows = inner.querySelectorAll('.row-diagram');
   const bar = document.getElementById('cnav-'+t);
   if (bar && rows.length > 1) {
     bar.style.display = 'flex';
-    bar.querySelector('.cn-label').textContent = rows.length + ' rows';
+    bar.querySelector('.cn-label').textContent = rows.length + ' rows · ' + tr('chunk.suffix');
   }
 }
 
@@ -353,7 +375,7 @@ async function renderTab(t) {
   rendered[t] = true;
   if (t === 'd') { await renderDbView(dbCurrentView); buildSidebar(DIAGRAMS.d); return; }
   const inner = document.getElementById('i-'+t);
-  if (!DIAGRAMS[t]) { inner.innerHTML = '<div class="loading-msg">No data</div>'; return; }
+  if (!DIAGRAMS[t]) { inner.innerHTML = '<div class="loading-msg">' + tr('status.noData') + '</div>'; return; }
   try {
     const html = await renderChunked('msvg_'+t, DIAGRAMS[t]);
     inner.innerHTML = html;
@@ -364,7 +386,7 @@ async function renderTab(t) {
       fitToView(t);
     }
   } catch(e) {
-    inner.innerHTML = '<pre style="color:#fb923c;padding:20px;font-size:11px">Render error: '+e.message+'</pre>';
+    inner.innerHTML = '<pre style="color:#fb923c;padding:20px;font-size:11px">' + tr('alert.renderError') + ': '+e.message+'</pre>';
   }
 }
 
@@ -478,6 +500,27 @@ function buildDbGraph(data, showFk, showRoutes, showActions) {
   return buildSingleDbGraph(groupEntries, sgPrefix, fkEdges, routeEdges, actionEdges, showFk, showRoutes, showActions);
 }
 
+// Y축 줄넘김: subgraph 안 노드 5+ 면 invisible inner subgraph로 N개씩 분할 (X축 GROUPS_PER_ROW=5와 대칭)
+const NODES_PER_INNER_ROW = 5;
+function emitInnerRowsViewer(indent, outerId, items, renderItem) {
+  const lines = [];
+  if (items.length <= NODES_PER_INNER_ROW) {
+    for (const it of items) lines.push(indent + renderItem(it));
+    return lines;
+  }
+  const i2 = indent + '  ';
+  for (let i = 0, row = 0; i < items.length; i += NODES_PER_INNER_ROW, row++) {
+    const rowId = outerId + '_R' + row;
+    lines.push(indent + 'subgraph ' + rowId + ' [" "]');
+    lines.push(i2 + 'direction LR');
+    const slice = items.slice(i, i + NODES_PER_INNER_ROW);
+    for (const it of slice) lines.push(i2 + renderItem(it));
+    lines.push(indent + 'end');
+    lines.push(indent + 'style ' + rowId + ' fill:none,stroke:none');
+  }
+  return lines;
+}
+
 function buildSingleDbGraph(groupEntries, sgPrefix, fkEdges, routeEdges, actionEdges, showFk, showRoutes, showActions) {
   const rowSet = new Set(groupEntries.flatMap(([,names]) => names));
   const lines = [FLOW_INIT, 'graph LR'];
@@ -488,21 +531,21 @@ function buildSingleDbGraph(groupEntries, sgPrefix, fkEdges, routeEdges, actionE
   for (const [label, names] of groupEntries) {
     const id = sgPrefix === 'DG' ? 'DG'+dgIdx++ : sgPrefix+sanitizeSgId(label);
     lines.push('  subgraph '+id+'["'+label+'"]');
-    for (const n of names) lines.push('    '+n+'["'+n+'"]:::tbl');
+    lines.push(...emitInnerRowsViewer('    ', id, names, n => n+'["'+n+'"]:::tbl'));
     lines.push('  end');
   }
   const routeSrcs = [], actionSrcs = [];
   if (showRoutes) for (const e of routeEdges) { if (rowSet.has(e.to) && !routeSrcs.includes(e.from)) routeSrcs.push(e.from); }
   if (showActions) for (const e of actionEdges) { if (rowSet.has(e.to) && !actionSrcs.includes(e.from)) actionSrcs.push(e.from); }
-  // graph LR에서 free 소스 노드는 Y축으로 쌓여 폭발하므로 Pages/Actions subgraph로 묶는다.
+  // graph LR에서 free 소스 노드는 Y축으로 쌓여 폭발하므로 Pages/Actions subgraph + inner-row 분할.
   if (routeSrcs.length > 0) {
     lines.push('  subgraph PAGES_SRC["⬡ Pages"]');
-    for (const name of routeSrcs) lines.push('    '+name+'["⬡ '+name+'"]:::route');
+    lines.push(...emitInnerRowsViewer('    ', 'PAGES_SRC', routeSrcs, n => n+'["⬡ '+n+'"]:::route'));
     lines.push('  end');
   }
   if (actionSrcs.length > 0) {
     lines.push('  subgraph ACTIONS_SRC["⚡ Actions"]');
-    for (const name of actionSrcs) lines.push('    '+name+'["⚡ '+name+'"]:::action');
+    lines.push(...emitInnerRowsViewer('    ', 'ACTIONS_SRC', actionSrcs, n => n+'["⚡ '+n+'"]:::action'));
     lines.push('  end');
   }
   const edgeColors = [];
@@ -522,8 +565,8 @@ function buildSingleDbGraph(groupEntries, sgPrefix, fkEdges, routeEdges, actionE
 
 async function renderDbView(view) {
   const inner = document.getElementById('i-d');
-  inner.innerHTML = '<div class="loading-msg">렌더링 중...</div>';
-  if (!DIAGRAMS.d) { inner.innerHTML = '<div class="loading-msg">No DB data</div>'; return; }
+  inner.innerHTML = '<div class="loading-msg">' + tr('status.rendering') + '</div>';
+  if (!DIAGRAMS.d) { inner.innerHTML = '<div class="loading-msg">' + tr('status.noDbData') + '</div>'; return; }
   try {
     if (!dbGraphs) {
       const data = parseDbData(DIAGRAMS.d);
@@ -564,6 +607,13 @@ function setDbView(view) {
 function fitToView(t) {
   const wrap = document.getElementById('w-'+t);
   const inner = document.getElementById('i-'+t);
+  if (!wrap || !inner) return;
+  if (wrap.classList.contains('row-mode')) {
+    // row-mode: scaleRowSvgs가 이미 가로를 wrap에 맞췄으므로 scale 1.0 + 위치 reset.
+    ST[t] = {s: 1, x: 0, y: 0};
+    applyTransform(t);
+    return;
+  }
   const svg = inner.querySelector('svg');
   if (!svg) return;
   const wW = wrap.clientWidth, wH = wrap.clientHeight;
@@ -576,34 +626,28 @@ function fitToView(t) {
 }
 
 function applyTransform(t) {
+  const wrap = document.getElementById('w-'+t);
+  const inner = document.getElementById('i-'+t);
+  if (!wrap || !inner) return;
   const {s,x,y} = ST[t];
-  document.getElementById('i-'+t).style.transform =
-    'translate(calc(-50% + '+x+'px), calc(-50% + '+y+'px)) scale('+s+')';
+  if (wrap.classList.contains('row-mode')) {
+    // row-mode inner: position absolute, top:0, left:50%, transform-origin: top center
+    inner.style.transform = 'translate(calc(-50% + '+x+'px), '+y+'px) scale('+s+')';
+  } else {
+    inner.style.transform = 'translate(calc(-50% + '+x+'px), calc(-50% + '+y+'px)) scale('+s+')';
+  }
 }
 
 function zm(t, f) {
-  const wrap = document.getElementById('w-'+t);
-  if (wrap && wrap.classList.contains('row-mode')) {
-    const inner = document.getElementById('i-'+t);
-    inner.querySelectorAll('.row-diagram svg').forEach(svg => {
-      svg.setAttribute('width', (parseFloat(svg.getAttribute('width'))||800)*f);
-      svg.setAttribute('height', (parseFloat(svg.getAttribute('height'))||600)*f);
-    });
-    return;
-  }
-  ST[t].s = Math.max(0.1, Math.min(ST[t].s*f, 5)); applyTransform(t);
+  ST[t].s = Math.max(0.1, Math.min(ST[t].s*f, 5));
+  applyTransform(t);
 }
-function rz(t) {
-  const wrap = document.getElementById('w-'+t);
-  if (wrap && wrap.classList.contains('row-mode')) {
-    scaleRowSvgs(wrap, document.getElementById('i-'+t)); return;
-  }
-  fitToView(t);
-}
+function rz(t) { fitToView(t); }
 
 document.addEventListener('mousedown', e => {
   const wrap = e.target.closest('.canvas-wrap');
-  if (!wrap || wrap.classList.contains('row-mode')) return;
+  if (!wrap) return;
+  e.preventDefault();
   const t = wrap.id.slice(2);
   drag.t=t; drag.sx=e.clientX; drag.sy=e.clientY; drag.ox=ST[t].x; drag.oy=ST[t].y;
   wrap.classList.add('dragging');
@@ -620,7 +664,6 @@ document.addEventListener('mouseup', () => {
 });
 document.querySelectorAll('.canvas-wrap').forEach(w => {
   w.addEventListener('wheel', e => {
-    if (w.classList.contains('row-mode')) return;
     e.preventDefault();
     zm(w.id.slice(2), e.deltaY<0?1.1:0.9);
   }, {passive:false});
@@ -662,7 +705,7 @@ function buildSidebar(erDiagram) {
   }
   const container = document.getElementById('sidebar-tables');
   const names = Object.keys(tables);
-  if (!names.length) { container.innerHTML = '<div style="color:var(--text-muted);font-size:11px;padding:8px">테이블 없음</div>'; return; }
+  if (!names.length) { container.innerHTML = '<div style="color:var(--text-muted);font-size:11px;padding:8px">' + tr('status.noTables') + '</div>'; return; }
   container.innerHTML = names.map(name => {
     const t = tables[name];
     const cols = t.columns.map(c => {
@@ -670,10 +713,10 @@ function buildSidebar(erDiagram) {
       return '<div class="col-row"><span class="col-name">'+c.name+'</span>'+b+'<span class="col-type">'+c.type+'</span></div>';
     }).join('');
     const fkHtml = t.fkOut.length
-      ? '<div class="table-refs" style="background:rgba(245,158,11,.04);border-top:1px solid var(--border-sub)"><div class="refs-label" style="color:#b45309">FK</div>'+
+      ? '<div class="table-refs" style="background:rgba(245,158,11,.04);border-top:1px solid var(--border-sub)"><div class="refs-label" style="color:#b45309">' + tr('card.fk') + '</div>'+
         t.fkOut.map(f=>'<div class="ref-row"><span class="ref-action" style="font-size:9px">'+f.col+'</span><span class="fk-arrow"> → </span><span class="ref-route" style="font-size:9px">'+f.toTable+'</span></div>').join('')+'</div>' : '';
     const usedHtml = t.usedBy.length
-      ? '<div class="table-refs"><div class="refs-label">Used by</div>'+
+      ? '<div class="table-refs"><div class="refs-label">' + tr('card.usedBy') + '</div>'+
         t.usedBy.map(u => {
           const cls = u.kind==='route'?'ref-route':u.kind==='action'?'ref-action':'ref-comp';
           const pre = u.kind==='route'?'⬡ ':u.kind==='action'?'⚡ ':'';
@@ -762,16 +805,16 @@ async function exportSvg(t) {
   var tab = t || activeTab;
   try {
     var str = await getSvgString(tab);
-    if (!str) { alert('다이어그램 데이터가 없습니다.'); return; }
+    if (!str) { alert(tr('alert.noDiagram')); return; }
     postMsg({type:'export', format:'svg', data:str, filename:(meta.projectName||'codesight')+'-'+tab+'.svg'});
-  } catch(e) { alert('SVG 생성 실패: '+e.message); }
+  } catch(e) { alert(tr('alert.svgFailed') + ': ' + e.message); }
 }
 
 async function exportPng(t) {
   var tab = t || activeTab;
   try {
     var str = await getSvgString(tab);
-    if (!str) { alert('다이어그램 데이터가 없습니다.'); return; }
+    if (!str) { alert(tr('alert.noDiagram')); return; }
     var scale = 2;
     var svgBlob = new Blob([str], {type:'image/svg+xml'});
     var url = URL.createObjectURL(svgBlob);
@@ -796,14 +839,14 @@ async function exportPng(t) {
           exportSvg(tab).then(resolve).catch(reject);
         }
       };
-      img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('이미지 로드 실패')); };
+      img.onerror = () => { URL.revokeObjectURL(url); reject(new Error(tr('alert.imageLoadFailed'))); };
       img.src = url;
     });
-  } catch(e) { alert('PNG 생성 실패: '+e.message); }
+  } catch(e) { alert(tr('alert.pngFailed') + ': ' + e.message); }
 }
 
 function exportMd() {
-  var labels = {r:'Rendering Architecture', s:'Screen–Component', d:'DB–Screen (전체)'};
+  var labels = {r: tr('tab.rendering'), s: tr('tab.screenComponent'), d: tr('export.dbScreenAll')};
   // DB-Screen: always use "all" view (shows FK + page queries + server actions)
   var dbDiagram = '';
   if (DIAGRAMS.d) {
@@ -825,7 +868,7 @@ function exportMd() {
     .map(([k,v]) => '## '+labels[k]+'\n\n```mermaid\n'+v+'\n```')
     .join('\n\n');
   var hdr = '# CodeSight — '+(meta.projectName||'Project')+'\n\n'+
-    '> '+(meta.routeCount??'?')+'개 라우트 · '+(meta.tableCount??'?')+'개 테이블\n';
+    '> '+(meta.routeCount??'?')+tr('export.routes')+' · '+(meta.tableCount??'?')+tr('export.tables')+'\n';
   postMsg({type:'export', format:'md', data:hdr+'\n'+sections+'\n',
     filename:(meta.projectName||'codesight')+'.md'});
 }
