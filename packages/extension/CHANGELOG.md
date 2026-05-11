@@ -1,5 +1,23 @@
 # Changelog
 
+## [1.1.51] — 2026-05-11
+
+### Fixed — Large monorepo rendering (937+ routes)
+
+- **Critical regression in v1.1.5 chunked diagrams**: the nested grouping result was discarded for large projects, causing all routes to be flattened under one subgraph (e.g. `/api` containing 100+ flat siblings). Mermaid layout failed → vertical compression.
+- **Fix**: `buildRouteRowDiagram` (Tab1) and `renderScreenSection` (Tab2) now preserve the `NestedGroup` tree end-to-end. Depth (e.g. `/api` → `/v1` → `/admin` → `/users`) is retained in chunked output, so each leaf subgraph contains a small number of siblings (typically 4–10) and Mermaid can lay it out correctly.
+- **Chunk boundary redesign**: chunks are now formed as **1 top-level branch = 1 chunk** (instead of grouping 5 branches per chunk). Semantic units (e.g. `/api`, `/admin`, `/auth`) become independent diagrams.
+- **Subgraph ID collision fix**: subgraph IDs now derive from the full `groupKey` (`API_V1_ADMIN_USERS_G`) instead of just the leaf segment. Previously, `/admin/users` and `/order/users` collided into a single `USERS_G` subgraph.
+
+### Added — Stress test fixture
+
+- New `mermaid-renderer.stress.test.ts` synthesizes a 200-route NestJS-like pattern (`/api/v1/{module}/{resource}/{action}`) to exercise the chunked path. The mini-next-app fixture never triggered chunking, which is why v1.1.5 shipped this regression.
+
+### Verified
+
+- 619 tests PASS (612 existing + 7 new stress regression tests)
+- 26 fixture snapshots updated to reflect new nested output structure
+
 ## [1.1.5] — 2026-05-10
 
 ### Added — i18n (4 languages)

@@ -41,16 +41,27 @@ graph TD
   route_src_app_app_config_ts__["/ · CSR"]:::csr
   route_src_app_user_detail_user_detail_module_ts__["/ · CSR"]:::csr
   subgraph ABOUT_G["👤 /about"]
-    route_src_app_app_config_ts__about["/ · CSR"]:::csr
+    route_src_app_app_config_ts__about["/about · CSR"]:::csr
   end
   subgraph USERS_G["📄 /users"]
-    route_src_app_app_config_ts__users["/ · CSR"]:::csr
+    route_src_app_app_config_ts__users["/users · CSR"]:::csr
     route_src_app_app_config_ts__users__id[":id · CSR"]:::csr
   end"
 `;
 
 exports[`Phase XI — fixture baseline snapshots (P1) > mini-angular-app > Tab2 screen-component diagram 1`] = `
-"%% chunk:1/2
+"%% chunk:1/3
+%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0c1a30','primaryTextColor':'#7dd3fc','primaryBorderColor':'#0e3a6e','edgeLabelBackground':'#0c1a30','lineColor':'#334155','secondaryColor':'#0f172a','clusterBkg':'#060c18','clusterBorder':'#1e3a5f','fontFamily':'JetBrains Mono'}}}%%
+graph TB
+  classDef ssr fill:#0d1a0d,stroke:#16a34a,color:#86efac
+  classDef csr fill:#2d1200,stroke:#c2410c,color:#fb923c
+  classDef ssg fill:#1a0d1a,stroke:#7c3aed,color:#c4b5fd
+  classDef isr fill:#1a1a0d,stroke:#ca8a04,color:#fde047
+  classDef ppr fill:#0d1a2d,stroke:#2563eb,color:#93c5fd
+  classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
+  route_src_app_user_detail_user_detail_module_ts__["/ · CSR"]:::csr
+%%--CHUNK--%%
+%% chunk:2/3
 %%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0c1a30','primaryTextColor':'#7dd3fc','primaryBorderColor':'#0e3a6e','edgeLabelBackground':'#0c1a30','lineColor':'#334155','secondaryColor':'#0f172a','clusterBkg':'#060c18','clusterBorder':'#1e3a5f','fontFamily':'JetBrains Mono'}}}%%
 graph TB
   classDef ssr fill:#0d1a0d,stroke:#16a34a,color:#86efac
@@ -60,11 +71,10 @@ graph TB
   classDef ppr fill:#0d1a2d,stroke:#2563eb,color:#93c5fd
   classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
   subgraph ABOUT_S["👤 /about"]
-    route_src_app_user_detail_user_detail_module_ts__["/ · CSR"]:::csr
-    route_src_app_app_config_ts__about["/ · CSR"]:::csr
+    route_src_app_app_config_ts__about["/about · CSR"]:::csr
   end
 %%--CHUNK--%%
-%% chunk:2/2
+%% chunk:3/3
 %%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0c1a30','primaryTextColor':'#7dd3fc','primaryBorderColor':'#0e3a6e','edgeLabelBackground':'#0c1a30','lineColor':'#334155','secondaryColor':'#0f172a','clusterBkg':'#060c18','clusterBorder':'#1e3a5f','fontFamily':'JetBrains Mono'}}}%%
 graph TB
   classDef ssr fill:#0d1a0d,stroke:#16a34a,color:#86efac
@@ -74,7 +84,7 @@ graph TB
   classDef ppr fill:#0d1a2d,stroke:#2563eb,color:#93c5fd
   classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
   subgraph USERS_S["📄 /users"]
-    route_src_app_app_config_ts__users["/ · CSR"]:::csr
+    route_src_app_app_config_ts__users["/users · CSR"]:::csr
     route_src_app_app_config_ts__users__id[":id · CSR"]:::csr
   end"
 `;
@@ -119,12 +129,12 @@ graph TD
   classDef ppr fill:#0d1a2d,stroke:#2563eb,color:#93c5fd
   classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
   subgraph API_G["⚡ /api"]
-    subgraph USERS_G["📄 /users"]
-      route_api_urls_py__api_users_include["/ · SSR"]:::ssr
+    subgraph API_USERS_G["📄 /users"]
+      route_api_urls_py__api_users_include["/api/users · SSR"]:::ssr
       route_api_urls_py__api_users__pk_include[":pk · SSR"]:::ssr
     end
-    subgraph POSTS_G["📄 /posts"]
-      route_api_urls_py__api_posts_include["/ · SSR"]:::ssr
+    subgraph API_POSTS_G["📄 /posts"]
+      route_api_urls_py__api_posts_include["/api/posts · SSR"]:::ssr
       route_api_urls_py__api_posts__slug_include[":slug · SSR"]:::ssr
     end
   end
@@ -144,11 +154,13 @@ graph TB
   classDef isr fill:#1a1a0d,stroke:#ca8a04,color:#fde047
   classDef ppr fill:#0d1a2d,stroke:#2563eb,color:#93c5fd
   classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
-  subgraph API_S["⚡ /api"]
-    route_api_urls_py__api_users_include["users · SSR"]:::ssr
-    route_api_urls_py__api_users__pk_include["users/:pk · SSR"]:::ssr
-    route_api_urls_py__api_posts_include["posts · SSR"]:::ssr
-    route_api_urls_py__api_posts__slug_include["posts/:slug · SSR"]:::ssr
+  subgraph API_USERS_S["📄 /users"]
+    route_api_urls_py__api_users_include["/api/users · SSR"]:::ssr
+    route_api_urls_py__api_users__pk_include[":pk · SSR"]:::ssr
+  end
+  subgraph API_POSTS_S["📄 /posts"]
+    route_api_urls_py__api_posts_include["/api/posts · SSR"]:::ssr
+    route_api_urls_py__api_posts__slug_include[":slug · SSR"]:::ssr
   end"
 `;
 
@@ -218,19 +230,19 @@ graph TD
   classDef ppr fill:#0d1a2d,stroke:#2563eb,color:#93c5fd
   classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
   subgraph API_G["⚡ /api"]
-    subgraph USERS_G["📄 /users"]
-      route_routers_users_py__api_users_GET["GET / · SSR"]:::ssr
+    subgraph API_USERS_G["📄 /users"]
+      route_routers_users_py__api_users_GET["GET /api/users · SSR"]:::ssr
       route_routers_users_py__api_users__user_id_GET["GET :user_id · SSR"]:::ssr
-      route_routers_users_py__api_users_POST["POST / · SSR"]:::ssr
+      route_routers_users_py__api_users_POST["POST /api/users · SSR"]:::ssr
     end
-    subgraph POSTS_G["📄 /posts"]
-      route_routers_posts_py__api_posts_GET["GET / · SSR"]:::ssr
+    subgraph API_POSTS_G["📄 /posts"]
+      route_routers_posts_py__api_posts_GET["GET /api/posts · SSR"]:::ssr
       route_routers_posts_py__api_posts__post_id_GET["GET :post_id · SSR"]:::ssr
     end
   end
   route_main_py___get["GET / · SSR"]:::ssr
   subgraph HEALTH_G["📄 /health"]
-    route_main_py__health_get["GET / · SSR"]:::ssr
+    route_main_py__health_get["GET /health · SSR"]:::ssr
   end
   subgraph DATALAYER["🔌 API LAYER"]
     subgraph API_G["⚡ REST API · Backend"]
@@ -240,7 +252,7 @@ graph TD
 `;
 
 exports[`Phase XI — fixture baseline snapshots (P1) > mini-fastapi-app > Tab2 screen-component diagram 1`] = `
-"%% chunk:1/2
+"%% chunk:1/3
 %%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0c1a30','primaryTextColor':'#7dd3fc','primaryBorderColor':'#0e3a6e','edgeLabelBackground':'#0c1a30','lineColor':'#334155','secondaryColor':'#0f172a','clusterBkg':'#060c18','clusterBorder':'#1e3a5f','fontFamily':'JetBrains Mono'}}}%%
 graph TB
   classDef ssr fill:#0d1a0d,stroke:#16a34a,color:#86efac
@@ -250,14 +262,28 @@ graph TB
   classDef ppr fill:#0d1a2d,stroke:#2563eb,color:#93c5fd
   classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
   subgraph API_S["⚡ /api"]
-    route_routers_users_py__api_users_GET["users · SSR"]:::ssr
-    route_routers_users_py__api_users__user_id_GET["users/:user_id · SSR"]:::ssr
-    route_routers_posts_py__api_posts_GET["posts · SSR"]:::ssr
-    route_routers_posts_py__api_posts__post_id_GET["posts/:post_id · SSR"]:::ssr
-    route_main_py___get["/ · SSR"]:::ssr
+    subgraph API_USERS_S["📄 /users"]
+      route_routers_users_py__api_users_GET["/api/users · SSR"]:::ssr
+      route_routers_users_py__api_users__user_id_GET[":user_id · SSR"]:::ssr
+    end
+    subgraph API_POSTS_S["📄 /posts"]
+      route_routers_posts_py__api_posts_GET["/api/posts · SSR"]:::ssr
+      route_routers_posts_py__api_posts__post_id_GET[":post_id · SSR"]:::ssr
+    end
   end
 %%--CHUNK--%%
-%% chunk:2/2
+%% chunk:2/3
+%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0c1a30','primaryTextColor':'#7dd3fc','primaryBorderColor':'#0e3a6e','edgeLabelBackground':'#0c1a30','lineColor':'#334155','secondaryColor':'#0f172a','clusterBkg':'#060c18','clusterBorder':'#1e3a5f','fontFamily':'JetBrains Mono'}}}%%
+graph TB
+  classDef ssr fill:#0d1a0d,stroke:#16a34a,color:#86efac
+  classDef csr fill:#2d1200,stroke:#c2410c,color:#fb923c
+  classDef ssg fill:#1a0d1a,stroke:#7c3aed,color:#c4b5fd
+  classDef isr fill:#1a1a0d,stroke:#ca8a04,color:#fde047
+  classDef ppr fill:#0d1a2d,stroke:#2563eb,color:#93c5fd
+  classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
+  route_main_py___get["/ · SSR"]:::ssr
+%%--CHUNK--%%
+%% chunk:3/3
 %%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0c1a30','primaryTextColor':'#7dd3fc','primaryBorderColor':'#0e3a6e','edgeLabelBackground':'#0c1a30','lineColor':'#334155','secondaryColor':'#0f172a','clusterBkg':'#060c18','clusterBorder':'#1e3a5f','fontFamily':'JetBrains Mono'}}}%%
 graph TB
   classDef ssr fill:#0d1a0d,stroke:#16a34a,color:#86efac
@@ -267,7 +293,7 @@ graph TB
   classDef ppr fill:#0d1a2d,stroke:#2563eb,color:#93c5fd
   classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
   subgraph HEALTH_S["📄 /health"]
-    route_main_py__health_get["/ · SSR"]:::ssr
+    route_main_py__health_get["/health · SSR"]:::ssr
   end"
 `;
 
@@ -319,23 +345,34 @@ graph TD
   classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
   route_app_py__["/ · SSR"]:::ssr
   subgraph HEALTH_G["📄 /health"]
-    route_app_py__health["/ · SSR"]:::ssr
+    route_app_py__health["/health · SSR"]:::ssr
   end
   subgraph API_G["⚡ /api"]
-    subgraph POSTS_G["📄 /posts"]
-      route_blueprints_posts_py__api_posts["/ · SSR"]:::ssr
+    subgraph API_POSTS_G["📄 /posts"]
+      route_blueprints_posts_py__api_posts["/api/posts · SSR"]:::ssr
       route_blueprints_posts_py__api_posts__post_id[":post_id · SSR"]:::ssr
     end
-    subgraph USERS_G["📄 /users"]
-      route_blueprints_users_py__api_users["/ · SSR"]:::ssr
+    subgraph API_USERS_G["📄 /users"]
+      route_blueprints_users_py__api_users["/api/users · SSR"]:::ssr
       route_blueprints_users_py__api_users__user_id[":user_id · SSR"]:::ssr
-      route_blueprints_users_py__api_users["POST / · SSR"]:::ssr
+      route_blueprints_users_py__api_users["POST /api/users · SSR"]:::ssr
     end
   end"
 `;
 
 exports[`Phase XI — fixture baseline snapshots (P1) > mini-flask-app > Tab2 screen-component diagram 1`] = `
-"%% chunk:1/2
+"%% chunk:1/3
+%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0c1a30','primaryTextColor':'#7dd3fc','primaryBorderColor':'#0e3a6e','edgeLabelBackground':'#0c1a30','lineColor':'#334155','secondaryColor':'#0f172a','clusterBkg':'#060c18','clusterBorder':'#1e3a5f','fontFamily':'JetBrains Mono'}}}%%
+graph TB
+  classDef ssr fill:#0d1a0d,stroke:#16a34a,color:#86efac
+  classDef csr fill:#2d1200,stroke:#c2410c,color:#fb923c
+  classDef ssg fill:#1a0d1a,stroke:#7c3aed,color:#c4b5fd
+  classDef isr fill:#1a1a0d,stroke:#ca8a04,color:#fde047
+  classDef ppr fill:#0d1a2d,stroke:#2563eb,color:#93c5fd
+  classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
+  route_app_py__["/ · SSR"]:::ssr
+%%--CHUNK--%%
+%% chunk:2/3
 %%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0c1a30','primaryTextColor':'#7dd3fc','primaryBorderColor':'#0e3a6e','edgeLabelBackground':'#0c1a30','lineColor':'#334155','secondaryColor':'#0f172a','clusterBkg':'#060c18','clusterBorder':'#1e3a5f','fontFamily':'JetBrains Mono'}}}%%
 graph TB
   classDef ssr fill:#0d1a0d,stroke:#16a34a,color:#86efac
@@ -345,11 +382,10 @@ graph TB
   classDef ppr fill:#0d1a2d,stroke:#2563eb,color:#93c5fd
   classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
   subgraph HEALTH_S["📄 /health"]
-    route_app_py__["/ · SSR"]:::ssr
-    route_app_py__health["/ · SSR"]:::ssr
+    route_app_py__health["/health · SSR"]:::ssr
   end
 %%--CHUNK--%%
-%% chunk:2/2
+%% chunk:3/3
 %%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0c1a30','primaryTextColor':'#7dd3fc','primaryBorderColor':'#0e3a6e','edgeLabelBackground':'#0c1a30','lineColor':'#334155','secondaryColor':'#0f172a','clusterBkg':'#060c18','clusterBorder':'#1e3a5f','fontFamily':'JetBrains Mono'}}}%%
 graph TB
   classDef ssr fill:#0d1a0d,stroke:#16a34a,color:#86efac
@@ -359,10 +395,14 @@ graph TB
   classDef ppr fill:#0d1a2d,stroke:#2563eb,color:#93c5fd
   classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
   subgraph API_S["⚡ /api"]
-    route_blueprints_posts_py__api_posts["posts · SSR"]:::ssr
-    route_blueprints_posts_py__api_posts__post_id["posts/:post_id · SSR"]:::ssr
-    route_blueprints_users_py__api_users["users · SSR"]:::ssr
-    route_blueprints_users_py__api_users__user_id["users/:user_id · SSR"]:::ssr
+    subgraph API_POSTS_S["📄 /posts"]
+      route_blueprints_posts_py__api_posts["/api/posts · SSR"]:::ssr
+      route_blueprints_posts_py__api_posts__post_id[":post_id · SSR"]:::ssr
+    end
+    subgraph API_USERS_S["📄 /users"]
+      route_blueprints_users_py__api_users["/api/users · SSR"]:::ssr
+      route_blueprints_users_py__api_users__user_id[":user_id · SSR"]:::ssr
+    end
   end"
 `;
 
@@ -418,11 +458,11 @@ graph TD
   classDef ppr fill:#0d1a2d,stroke:#2563eb,color:#93c5fd
   classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
   subgraph USERS_G["📄 /users"]
-    route_src_users_users_controller_ts_UsersController_findAll["GET / · SSR"]:::ssr
-    route_src_users_users_controller_ts_UsersController_create["POST / · SSR"]:::ssr
-    subgraph _ID_G["📄 /:id"]
-      route_src_users_users_controller_ts_UsersController_findOne["GET / · SSR"]:::ssr
-      route_src_users_users_controller_ts_UsersController_remove["DELETE / · SSR"]:::ssr
+    route_src_users_users_controller_ts_UsersController_findAll["GET /users · SSR"]:::ssr
+    route_src_users_users_controller_ts_UsersController_create["POST /users · SSR"]:::ssr
+    subgraph USERS__ID_G["📄 /:id"]
+      route_src_users_users_controller_ts_UsersController_findOne["GET /users/:id · SSR"]:::ssr
+      route_src_users_users_controller_ts_UsersController_remove["DELETE /users/:id · SSR"]:::ssr
     end
   end
   subgraph DATALAYER["🔌 API LAYER"]
@@ -442,7 +482,7 @@ graph TB
   classDef ppr fill:#0d1a2d,stroke:#2563eb,color:#93c5fd
   classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
   subgraph USERS_S["📄 /users"]
-    route_src_users_users_controller_ts_UsersController_create["/ · SSR"]:::ssr
+    route_src_users_users_controller_ts_UsersController_create["/users · SSR"]:::ssr
     route_src_users_users_controller_ts_UsersController_remove[":id · SSR"]:::ssr
   end"
 `;
@@ -535,7 +575,7 @@ graph TD
         subgraph REACT["⚛ React · SSR Engine"]
           SSR_FETCH["(SSR data fetch)"]:::unk
           subgraph ABOUT_G["👤 /about"]
-            route_app__marketing__about_page["/ · SSR"]:::ssr
+            route_app__marketing__about_page["/about · SSR"]:::ssr
           end
           subgraph BLOG_G["📝 /blog"]
             route_app_blog__slug__page[":slug · SSR"]:::ssr
@@ -555,7 +595,7 @@ graph TD
 `;
 
 exports[`Phase XI — fixture baseline snapshots (P1) > mini-next-app > Tab2 screen-component diagram 1`] = `
-"%% chunk:1/2
+"%% chunk:1/3
 %%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0c1a30','primaryTextColor':'#7dd3fc','primaryBorderColor':'#0e3a6e','edgeLabelBackground':'#0c1a30','lineColor':'#334155','secondaryColor':'#0f172a','clusterBkg':'#060c18','clusterBorder':'#1e3a5f','fontFamily':'JetBrains Mono'}}}%%
 graph TB
   classDef ssr fill:#0d1a0d,stroke:#16a34a,color:#86efac
@@ -565,21 +605,14 @@ graph TB
   classDef ppr fill:#0d1a2d,stroke:#2563eb,color:#93c5fd
   classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
   subgraph ABOUT_S["👤 /about"]
-    route_app__marketing__about_page["/ · SSR"]:::ssr
-    subgraph ABOUT_C
+    route_app__marketing__about_page["/about · SSR"]:::ssr
+    subgraph ABOUT_S_C
       component_app__marketing__about_page_tsx_page["page"]
     end
   end
-  subgraph BLOG_S["📝 /blog"]
-    route_app_blog__slug__page[":slug · SSR"]:::ssr
-    subgraph BLOG_C
-      component_app_blog__slug__page_tsx_page["page"]
-    end
-  end
   route_app__marketing__about_page --> component_app__marketing__about_page_tsx_page
-  route_app_blog__slug__page --> component_app_blog__slug__page_tsx_page
 %%--CHUNK--%%
-%% chunk:2/2
+%% chunk:2/3
 %%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0c1a30','primaryTextColor':'#7dd3fc','primaryBorderColor':'#0e3a6e','edgeLabelBackground':'#0c1a30','lineColor':'#334155','secondaryColor':'#0f172a','clusterBkg':'#060c18','clusterBorder':'#1e3a5f','fontFamily':'JetBrains Mono'}}}%%
 graph TB
   classDef ssr fill:#0d1a0d,stroke:#16a34a,color:#86efac
@@ -588,15 +621,24 @@ graph TB
   classDef isr fill:#1a1a0d,stroke:#ca8a04,color:#fde047
   classDef ppr fill:#0d1a2d,stroke:#2563eb,color:#93c5fd
   classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
-  subgraph ROOT_S["🏠 /root"]
-    route_app_page["/ · SSR"]:::ssr
-    subgraph ROOT_C
-      component_app_page_tsx_page["page"]
-      component_components_Header_tsx_Header["Header"]
+  subgraph BLOG_S["📝 /blog"]
+    route_app_blog__slug__page[":slug · SSR"]:::ssr
+    subgraph BLOG_S_C
+      component_app_blog__slug__page_tsx_page["page"]
     end
   end
-  route_app_page --> component_app_page_tsx_page
-  route_app_page -.-> component_components_Header_tsx_Header
+  route_app_blog__slug__page --> component_app_blog__slug__page_tsx_page
+%%--CHUNK--%%
+%% chunk:3/3
+%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0c1a30','primaryTextColor':'#7dd3fc','primaryBorderColor':'#0e3a6e','edgeLabelBackground':'#0c1a30','lineColor':'#334155','secondaryColor':'#0f172a','clusterBkg':'#060c18','clusterBorder':'#1e3a5f','fontFamily':'JetBrains Mono'}}}%%
+graph TB
+  classDef ssr fill:#0d1a0d,stroke:#16a34a,color:#86efac
+  classDef csr fill:#2d1200,stroke:#c2410c,color:#fb923c
+  classDef ssg fill:#1a0d1a,stroke:#7c3aed,color:#c4b5fd
+  classDef isr fill:#1a1a0d,stroke:#ca8a04,color:#fde047
+  classDef ppr fill:#0d1a2d,stroke:#2563eb,color:#93c5fd
+  classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
+  route_app_page["/ · SSR"]:::ssr
   component_app_page_tsx_page --> component_components_Header_tsx_Header"
 `;
 
@@ -670,7 +712,7 @@ graph TD
             route_pages__components_UserCard_tsx_page["UserCard · SSR"]:::ssr
           end
           subgraph ABOUT_G["👤 /about"]
-            route_pages_about_tsx_page["/ · SSR"]:::ssr
+            route_pages_about_tsx_page["/about · SSR"]:::ssr
           end
           route_pages_index_tsx_page["/ · SSR"]:::ssr
           subgraph USERS_G["📄 /users"]
@@ -683,7 +725,7 @@ graph TD
 `;
 
 exports[`Phase XI — fixture baseline snapshots (P1) > mini-nextpages-app > Tab2 screen-component diagram 1`] = `
-"%% chunk:1/2
+"%% chunk:1/4
 %%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0c1a30','primaryTextColor':'#7dd3fc','primaryBorderColor':'#0e3a6e','edgeLabelBackground':'#0c1a30','lineColor':'#334155','secondaryColor':'#0f172a','clusterBkg':'#060c18','clusterBorder':'#1e3a5f','fontFamily':'JetBrains Mono'}}}%%
 graph TB
   classDef ssr fill:#0d1a0d,stroke:#16a34a,color:#86efac
@@ -696,11 +738,8 @@ graph TB
     route_pages__components_UserBadge_tsx_page["UserBadge · SSR"]:::ssr
     route_pages__components_UserCard_tsx_page["UserCard · SSR"]:::ssr
   end
-  subgraph ABOUT_S["👤 /about"]
-    route_pages_about_tsx_page["/ · SSR"]:::ssr
-  end
 %%--CHUNK--%%
-%% chunk:2/2
+%% chunk:2/4
 %%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0c1a30','primaryTextColor':'#7dd3fc','primaryBorderColor':'#0e3a6e','edgeLabelBackground':'#0c1a30','lineColor':'#334155','secondaryColor':'#0f172a','clusterBkg':'#060c18','clusterBorder':'#1e3a5f','fontFamily':'JetBrains Mono'}}}%%
 graph TB
   classDef ssr fill:#0d1a0d,stroke:#16a34a,color:#86efac
@@ -709,9 +748,32 @@ graph TB
   classDef isr fill:#1a1a0d,stroke:#ca8a04,color:#fde047
   classDef ppr fill:#0d1a2d,stroke:#2563eb,color:#93c5fd
   classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
-  subgraph USERS__ID_S["📄 /users/:id"]
-    route_pages_index_tsx_page["/ · SSR"]:::ssr
-    route_pages_users__id__tsx_page["/ · SSR"]:::ssr
+  subgraph ABOUT_S["👤 /about"]
+    route_pages_about_tsx_page["/about · SSR"]:::ssr
+  end
+%%--CHUNK--%%
+%% chunk:3/4
+%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0c1a30','primaryTextColor':'#7dd3fc','primaryBorderColor':'#0e3a6e','edgeLabelBackground':'#0c1a30','lineColor':'#334155','secondaryColor':'#0f172a','clusterBkg':'#060c18','clusterBorder':'#1e3a5f','fontFamily':'JetBrains Mono'}}}%%
+graph TB
+  classDef ssr fill:#0d1a0d,stroke:#16a34a,color:#86efac
+  classDef csr fill:#2d1200,stroke:#c2410c,color:#fb923c
+  classDef ssg fill:#1a0d1a,stroke:#7c3aed,color:#c4b5fd
+  classDef isr fill:#1a1a0d,stroke:#ca8a04,color:#fde047
+  classDef ppr fill:#0d1a2d,stroke:#2563eb,color:#93c5fd
+  classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
+  route_pages_index_tsx_page["/ · SSR"]:::ssr
+%%--CHUNK--%%
+%% chunk:4/4
+%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0c1a30','primaryTextColor':'#7dd3fc','primaryBorderColor':'#0e3a6e','edgeLabelBackground':'#0c1a30','lineColor':'#334155','secondaryColor':'#0f172a','clusterBkg':'#060c18','clusterBorder':'#1e3a5f','fontFamily':'JetBrains Mono'}}}%%
+graph TB
+  classDef ssr fill:#0d1a0d,stroke:#16a34a,color:#86efac
+  classDef csr fill:#2d1200,stroke:#c2410c,color:#fb923c
+  classDef ssg fill:#1a0d1a,stroke:#7c3aed,color:#c4b5fd
+  classDef isr fill:#1a1a0d,stroke:#ca8a04,color:#fde047
+  classDef ppr fill:#0d1a2d,stroke:#2563eb,color:#93c5fd
+  classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
+  subgraph USERS_S["📄 /users"]
+    route_pages_users__id__tsx_page[":id · SSR"]:::ssr
   end"
 `;
 
@@ -756,10 +818,10 @@ graph TD
   classDef ppr fill:#0d1a2d,stroke:#2563eb,color:#93c5fd
   classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
   subgraph ABOUT_G["👤 /about"]
-    route_pages_about_vue["/ · SSR"]:::ssr
+    route_pages_about_vue["/about · SSR"]:::ssr
   end
   subgraph CLIENT_ONLY_G["📄 /client-only"]
-    route_pages_client_only_vue["/ · CSR"]:::csr
+    route_pages_client_only_vue["/client-only · CSR"]:::csr
   end
   route_pages_index_vue["/ · SSR"]:::ssr
   subgraph USERS_G["📄 /users"]
@@ -768,7 +830,7 @@ graph TD
 `;
 
 exports[`Phase XI — fixture baseline snapshots (P1) > mini-nuxt-app > Tab2 screen-component diagram 1`] = `
-"%% chunk:1/2
+"%% chunk:1/4
 %%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0c1a30','primaryTextColor':'#7dd3fc','primaryBorderColor':'#0e3a6e','edgeLabelBackground':'#0c1a30','lineColor':'#334155','secondaryColor':'#0f172a','clusterBkg':'#060c18','clusterBorder':'#1e3a5f','fontFamily':'JetBrains Mono'}}}%%
 graph TB
   classDef ssr fill:#0d1a0d,stroke:#16a34a,color:#86efac
@@ -778,13 +840,10 @@ graph TB
   classDef ppr fill:#0d1a2d,stroke:#2563eb,color:#93c5fd
   classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
   subgraph ABOUT_S["👤 /about"]
-    route_pages_about_vue["/ · SSR"]:::ssr
-  end
-  subgraph CLIENT_ONLY_S["📄 /client-only"]
-    route_pages_client_only_vue["/ · CSR"]:::csr
+    route_pages_about_vue["/about · SSR"]:::ssr
   end
 %%--CHUNK--%%
-%% chunk:2/2
+%% chunk:2/4
 %%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0c1a30','primaryTextColor':'#7dd3fc','primaryBorderColor':'#0e3a6e','edgeLabelBackground':'#0c1a30','lineColor':'#334155','secondaryColor':'#0f172a','clusterBkg':'#060c18','clusterBorder':'#1e3a5f','fontFamily':'JetBrains Mono'}}}%%
 graph TB
   classDef ssr fill:#0d1a0d,stroke:#16a34a,color:#86efac
@@ -793,9 +852,32 @@ graph TB
   classDef isr fill:#1a1a0d,stroke:#ca8a04,color:#fde047
   classDef ppr fill:#0d1a2d,stroke:#2563eb,color:#93c5fd
   classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
-  subgraph USERS__ID_S["📄 /users/:id"]
-    route_pages_index_vue["/ · SSR"]:::ssr
-    route_pages_users__id__vue["/ · SSR"]:::ssr
+  subgraph CLIENT_ONLY_S["📄 /client-only"]
+    route_pages_client_only_vue["/client-only · CSR"]:::csr
+  end
+%%--CHUNK--%%
+%% chunk:3/4
+%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0c1a30','primaryTextColor':'#7dd3fc','primaryBorderColor':'#0e3a6e','edgeLabelBackground':'#0c1a30','lineColor':'#334155','secondaryColor':'#0f172a','clusterBkg':'#060c18','clusterBorder':'#1e3a5f','fontFamily':'JetBrains Mono'}}}%%
+graph TB
+  classDef ssr fill:#0d1a0d,stroke:#16a34a,color:#86efac
+  classDef csr fill:#2d1200,stroke:#c2410c,color:#fb923c
+  classDef ssg fill:#1a0d1a,stroke:#7c3aed,color:#c4b5fd
+  classDef isr fill:#1a1a0d,stroke:#ca8a04,color:#fde047
+  classDef ppr fill:#0d1a2d,stroke:#2563eb,color:#93c5fd
+  classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
+  route_pages_index_vue["/ · SSR"]:::ssr
+%%--CHUNK--%%
+%% chunk:4/4
+%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0c1a30','primaryTextColor':'#7dd3fc','primaryBorderColor':'#0e3a6e','edgeLabelBackground':'#0c1a30','lineColor':'#334155','secondaryColor':'#0f172a','clusterBkg':'#060c18','clusterBorder':'#1e3a5f','fontFamily':'JetBrains Mono'}}}%%
+graph TB
+  classDef ssr fill:#0d1a0d,stroke:#16a34a,color:#86efac
+  classDef csr fill:#2d1200,stroke:#c2410c,color:#fb923c
+  classDef ssg fill:#1a0d1a,stroke:#7c3aed,color:#c4b5fd
+  classDef isr fill:#1a1a0d,stroke:#ca8a04,color:#fde047
+  classDef ppr fill:#0d1a2d,stroke:#2563eb,color:#93c5fd
+  classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
+  subgraph USERS_S["📄 /users"]
+    route_pages_users__id__vue[":id · SSR"]:::ssr
   end"
 `;
 
@@ -845,16 +927,27 @@ graph TD
   classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
   route_src_router_tsx__["/ · CSR"]:::csr
   subgraph ABOUT_G["👤 /about"]
-    route_src_router_tsx__about["/ · CSR"]:::csr
+    route_src_router_tsx__about["/about · CSR"]:::csr
   end
   subgraph USERS_G["📄 /users"]
-    route_src_router_tsx__users["/ · CSR"]:::csr
+    route_src_router_tsx__users["/users · CSR"]:::csr
     route_src_router_tsx__users__id[":id · CSR"]:::csr
   end"
 `;
 
 exports[`Phase XI — fixture baseline snapshots (P1) > mini-react-router-app > Tab2 screen-component diagram 1`] = `
-"%% chunk:1/2
+"%% chunk:1/3
+%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0c1a30','primaryTextColor':'#7dd3fc','primaryBorderColor':'#0e3a6e','edgeLabelBackground':'#0c1a30','lineColor':'#334155','secondaryColor':'#0f172a','clusterBkg':'#060c18','clusterBorder':'#1e3a5f','fontFamily':'JetBrains Mono'}}}%%
+graph TB
+  classDef ssr fill:#0d1a0d,stroke:#16a34a,color:#86efac
+  classDef csr fill:#2d1200,stroke:#c2410c,color:#fb923c
+  classDef ssg fill:#1a0d1a,stroke:#7c3aed,color:#c4b5fd
+  classDef isr fill:#1a1a0d,stroke:#ca8a04,color:#fde047
+  classDef ppr fill:#0d1a2d,stroke:#2563eb,color:#93c5fd
+  classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
+  route_src_router_tsx__["/ · CSR"]:::csr
+%%--CHUNK--%%
+%% chunk:2/3
 %%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0c1a30','primaryTextColor':'#7dd3fc','primaryBorderColor':'#0e3a6e','edgeLabelBackground':'#0c1a30','lineColor':'#334155','secondaryColor':'#0f172a','clusterBkg':'#060c18','clusterBorder':'#1e3a5f','fontFamily':'JetBrains Mono'}}}%%
 graph TB
   classDef ssr fill:#0d1a0d,stroke:#16a34a,color:#86efac
@@ -864,17 +957,14 @@ graph TB
   classDef ppr fill:#0d1a2d,stroke:#2563eb,color:#93c5fd
   classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
   subgraph ABOUT_S["👤 /about"]
-    route_src_router_tsx__["/ · CSR"]:::csr
-    route_src_router_tsx__about["/ · CSR"]:::csr
-    subgraph ABOUT_C
-      component_src_pages_HomePage_tsx_HomePage["HomePage [CSR]"]
+    route_src_router_tsx__about["/about · CSR"]:::csr
+    subgraph ABOUT_S_C
       component_src_pages_AboutPage_tsx_AboutPage["AboutPage [CSR]"]
     end
   end
-  route_src_router_tsx__ --> component_src_pages_HomePage_tsx_HomePage
   route_src_router_tsx__about --> component_src_pages_AboutPage_tsx_AboutPage
 %%--CHUNK--%%
-%% chunk:2/2
+%% chunk:3/3
 %%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0c1a30','primaryTextColor':'#7dd3fc','primaryBorderColor':'#0e3a6e','edgeLabelBackground':'#0c1a30','lineColor':'#334155','secondaryColor':'#0f172a','clusterBkg':'#060c18','clusterBorder':'#1e3a5f','fontFamily':'JetBrains Mono'}}}%%
 graph TB
   classDef ssr fill:#0d1a0d,stroke:#16a34a,color:#86efac
@@ -884,9 +974,9 @@ graph TB
   classDef ppr fill:#0d1a2d,stroke:#2563eb,color:#93c5fd
   classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
   subgraph USERS_S["📄 /users"]
-    route_src_router_tsx__users["/ · CSR"]:::csr
+    route_src_router_tsx__users["/users · CSR"]:::csr
     route_src_router_tsx__users__id[":id · CSR"]:::csr
-    subgraph USERS_C
+    subgraph USERS_S_C
       component_src_pages_UserListPage_tsx_UserListPage["UserListPage [CSR]"]
       component_src_pages_UserDetailPage_tsx_UserDetailPage["UserDetailPage [CSR]"]
     end
@@ -934,7 +1024,7 @@ graph TD
   classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
   route_app_routes__index_tsx_page["/ · SSR"]:::ssr
   subgraph ABOUT_G["👤 /about"]
-    route_app_routes_about_tsx_page["/ · SSR"]:::ssr
+    route_app_routes_about_tsx_page["/about · SSR"]:::ssr
   end
   subgraph USERS_G["📄 /users"]
     route_app_routes_users__id_tsx_page[":id · SSR"]:::ssr
@@ -942,7 +1032,18 @@ graph TD
 `;
 
 exports[`Phase XI — fixture baseline snapshots (P1) > mini-remix-app > Tab2 screen-component diagram 1`] = `
-"%% chunk:1/2
+"%% chunk:1/3
+%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0c1a30','primaryTextColor':'#7dd3fc','primaryBorderColor':'#0e3a6e','edgeLabelBackground':'#0c1a30','lineColor':'#334155','secondaryColor':'#0f172a','clusterBkg':'#060c18','clusterBorder':'#1e3a5f','fontFamily':'JetBrains Mono'}}}%%
+graph TB
+  classDef ssr fill:#0d1a0d,stroke:#16a34a,color:#86efac
+  classDef csr fill:#2d1200,stroke:#c2410c,color:#fb923c
+  classDef ssg fill:#1a0d1a,stroke:#7c3aed,color:#c4b5fd
+  classDef isr fill:#1a1a0d,stroke:#ca8a04,color:#fde047
+  classDef ppr fill:#0d1a2d,stroke:#2563eb,color:#93c5fd
+  classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
+  route_app_routes__index_tsx_page["/ · SSR"]:::ssr
+%%--CHUNK--%%
+%% chunk:2/3
 %%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0c1a30','primaryTextColor':'#7dd3fc','primaryBorderColor':'#0e3a6e','edgeLabelBackground':'#0c1a30','lineColor':'#334155','secondaryColor':'#0f172a','clusterBkg':'#060c18','clusterBorder':'#1e3a5f','fontFamily':'JetBrains Mono'}}}%%
 graph TB
   classDef ssr fill:#0d1a0d,stroke:#16a34a,color:#86efac
@@ -952,11 +1053,10 @@ graph TB
   classDef ppr fill:#0d1a2d,stroke:#2563eb,color:#93c5fd
   classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
   subgraph ABOUT_S["👤 /about"]
-    route_app_routes__index_tsx_page["/ · SSR"]:::ssr
-    route_app_routes_about_tsx_page["/ · SSR"]:::ssr
+    route_app_routes_about_tsx_page["/about · SSR"]:::ssr
   end
 %%--CHUNK--%%
-%% chunk:2/2
+%% chunk:3/3
 %%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0c1a30','primaryTextColor':'#7dd3fc','primaryBorderColor':'#0e3a6e','edgeLabelBackground':'#0c1a30','lineColor':'#334155','secondaryColor':'#0f172a','clusterBkg':'#060c18','clusterBorder':'#1e3a5f','fontFamily':'JetBrains Mono'}}}%%
 graph TB
   classDef ssr fill:#0d1a0d,stroke:#16a34a,color:#86efac
@@ -965,8 +1065,8 @@ graph TB
   classDef isr fill:#1a1a0d,stroke:#ca8a04,color:#fde047
   classDef ppr fill:#0d1a2d,stroke:#2563eb,color:#93c5fd
   classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
-  subgraph USERS__ID_S["📄 /users/:id"]
-    route_app_routes_users__id_tsx_page["/ · SSR"]:::ssr
+  subgraph USERS_S["📄 /users"]
+    route_app_routes_users__id_tsx_page[":id · SSR"]:::ssr
   end"
 `;
 
@@ -1013,24 +1113,24 @@ graph TD
   classDef ppr fill:#0d1a2d,stroke:#2563eb,color:#93c5fd
   classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
   subgraph API_G["⚡ /api"]
-    subgraph POSTS_G["📄 /posts"]
-      route_src_main_java_com_example_controller_PostController_java__api_posts_GetMapping["GET / · SSR"]:::ssr
-      subgraph _POSTID_G["📄 /:postId"]
-        route_src_main_java_com_example_controller_PostController_java__api_posts__postId_GetMapping["GET / · SSR"]:::ssr
+    subgraph API_POSTS_G["📄 /posts"]
+      route_src_main_java_com_example_controller_PostController_java__api_posts_GetMapping["GET /api/posts · SSR"]:::ssr
+      subgraph API_POSTS__POSTID_G["📄 /:postId"]
+        route_src_main_java_com_example_controller_PostController_java__api_posts__postId_GetMapping["GET /api/posts/:postId · SSR"]:::ssr
       end
-      subgraph FEATURED_G["📄 /featured"]
-        route_src_main_java_com_example_controller_PostController_java__api_posts_featured_GetMapping["GET / · SSR"]:::ssr
+      subgraph API_POSTS_FEATURED_G["📄 /featured"]
+        route_src_main_java_com_example_controller_PostController_java__api_posts_featured_GetMapping["GET /api/posts/featured · SSR"]:::ssr
       end
-      subgraph PINNED_G["📄 /pinned"]
-        route_src_main_java_com_example_controller_PostController_java__api_posts_pinned_GetMapping["GET / · SSR"]:::ssr
+      subgraph API_POSTS_PINNED_G["📄 /pinned"]
+        route_src_main_java_com_example_controller_PostController_java__api_posts_pinned_GetMapping["GET /api/posts/pinned · SSR"]:::ssr
       end
     end
-    subgraph USERS_G["📄 /users"]
-      route_src_main_java_com_example_controller_UserController_java__api_users_GetMapping["GET / · SSR"]:::ssr
-      route_src_main_java_com_example_controller_UserController_java__api_users_PostMapping["POST / · SSR"]:::ssr
-      subgraph _USERID_G["📄 /:userId"]
-        route_src_main_java_com_example_controller_UserController_java__api_users__userId_GetMapping["GET / · SSR"]:::ssr
-        route_src_main_java_com_example_controller_UserController_java__api_users__userId_DeleteMapping["DELETE / · SSR"]:::ssr
+    subgraph API_USERS_G["📄 /users"]
+      route_src_main_java_com_example_controller_UserController_java__api_users_GetMapping["GET /api/users · SSR"]:::ssr
+      route_src_main_java_com_example_controller_UserController_java__api_users_PostMapping["POST /api/users · SSR"]:::ssr
+      subgraph API_USERS__USERID_G["📄 /:userId"]
+        route_src_main_java_com_example_controller_UserController_java__api_users__userId_GetMapping["GET /api/users/:userId · SSR"]:::ssr
+        route_src_main_java_com_example_controller_UserController_java__api_users__userId_DeleteMapping["DELETE /api/users/:userId · SSR"]:::ssr
       end
     end
   end
@@ -1050,21 +1150,21 @@ graph TB
   classDef isr fill:#1a1a0d,stroke:#ca8a04,color:#fde047
   classDef ppr fill:#0d1a2d,stroke:#2563eb,color:#93c5fd
   classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
-  subgraph API_S["⚡ /api"]
-    subgraph API_S_R0 [" "]
-      direction LR
-      route_src_main_java_com_example_controller_PostController_java__api_posts_GetMapping["posts · SSR"]:::ssr
-      route_src_main_java_com_example_controller_PostController_java__api_posts__postId_GetMapping["posts/:postId · SSR"]:::ssr
-      route_src_main_java_com_example_controller_PostController_java__api_posts_featured_GetMapping["posts/featured · SSR"]:::ssr
-      route_src_main_java_com_example_controller_PostController_java__api_posts_pinned_GetMapping["posts/pinned · SSR"]:::ssr
-      route_src_main_java_com_example_controller_UserController_java__api_users_PostMapping["users · SSR"]:::ssr
+  subgraph API_POSTS_S["📄 /posts"]
+    route_src_main_java_com_example_controller_PostController_java__api_posts_GetMapping["/api/posts · SSR"]:::ssr
+    subgraph API_POSTS__POSTID_S["📄 /:postId"]
+      route_src_main_java_com_example_controller_PostController_java__api_posts__postId_GetMapping["/api/posts/:postId · SSR"]:::ssr
     end
-    style API_S_R0 fill:none,stroke:none
-    subgraph API_S_R1 [" "]
-      direction LR
-      route_src_main_java_com_example_controller_UserController_java__api_users__userId_DeleteMapping["users/:userId · SSR"]:::ssr
+    subgraph API_POSTS_FEATURED_S["📄 /featured"]
+      route_src_main_java_com_example_controller_PostController_java__api_posts_featured_GetMapping["/api/posts/featured · SSR"]:::ssr
     end
-    style API_S_R1 fill:none,stroke:none
+    subgraph API_POSTS_PINNED_S["📄 /pinned"]
+      route_src_main_java_com_example_controller_PostController_java__api_posts_pinned_GetMapping["/api/posts/pinned · SSR"]:::ssr
+    end
+  end
+  subgraph API_USERS_S["📄 /users"]
+    route_src_main_java_com_example_controller_UserController_java__api_users_PostMapping["/api/users · SSR"]:::ssr
+    route_src_main_java_com_example_controller_UserController_java__api_users__userId_DeleteMapping[":userId · SSR"]:::ssr
   end"
 `;
 
@@ -1127,7 +1227,7 @@ graph TD
   classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
   route_src_routes_page["/ · SSR"]:::ssr
   subgraph ABOUT_G["👤 /about"]
-    route_src_routes_about_page["/ · SSR"]:::ssr
+    route_src_routes_about_page["/about · SSR"]:::ssr
   end
   subgraph BLOG_G["📝 /blog"]
     route_src_routes_blog__slug__page[":slug · SSR"]:::ssr
@@ -1135,7 +1235,18 @@ graph TD
 `;
 
 exports[`Phase XI — fixture baseline snapshots (P1) > mini-sveltekit-app > Tab2 screen-component diagram 1`] = `
-"%% chunk:1/2
+"%% chunk:1/3
+%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0c1a30','primaryTextColor':'#7dd3fc','primaryBorderColor':'#0e3a6e','edgeLabelBackground':'#0c1a30','lineColor':'#334155','secondaryColor':'#0f172a','clusterBkg':'#060c18','clusterBorder':'#1e3a5f','fontFamily':'JetBrains Mono'}}}%%
+graph TB
+  classDef ssr fill:#0d1a0d,stroke:#16a34a,color:#86efac
+  classDef csr fill:#2d1200,stroke:#c2410c,color:#fb923c
+  classDef ssg fill:#1a0d1a,stroke:#7c3aed,color:#c4b5fd
+  classDef isr fill:#1a1a0d,stroke:#ca8a04,color:#fde047
+  classDef ppr fill:#0d1a2d,stroke:#2563eb,color:#93c5fd
+  classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
+  route_src_routes_page["/ · SSR"]:::ssr
+%%--CHUNK--%%
+%% chunk:2/3
 %%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0c1a30','primaryTextColor':'#7dd3fc','primaryBorderColor':'#0e3a6e','edgeLabelBackground':'#0c1a30','lineColor':'#334155','secondaryColor':'#0f172a','clusterBkg':'#060c18','clusterBorder':'#1e3a5f','fontFamily':'JetBrains Mono'}}}%%
 graph TB
   classDef ssr fill:#0d1a0d,stroke:#16a34a,color:#86efac
@@ -1145,11 +1256,10 @@ graph TB
   classDef ppr fill:#0d1a2d,stroke:#2563eb,color:#93c5fd
   classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
   subgraph ABOUT_S["👤 /about"]
-    route_src_routes_page["/ · SSR"]:::ssr
-    route_src_routes_about_page["/ · SSR"]:::ssr
+    route_src_routes_about_page["/about · SSR"]:::ssr
   end
 %%--CHUNK--%%
-%% chunk:2/2
+%% chunk:3/3
 %%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0c1a30','primaryTextColor':'#7dd3fc','primaryBorderColor':'#0e3a6e','edgeLabelBackground':'#0c1a30','lineColor':'#334155','secondaryColor':'#0f172a','clusterBkg':'#060c18','clusterBorder':'#1e3a5f','fontFamily':'JetBrains Mono'}}}%%
 graph TB
   classDef ssr fill:#0d1a0d,stroke:#16a34a,color:#86efac
@@ -1158,8 +1268,8 @@ graph TB
   classDef isr fill:#1a1a0d,stroke:#ca8a04,color:#fde047
   classDef ppr fill:#0d1a2d,stroke:#2563eb,color:#93c5fd
   classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
-  subgraph BLOG__SLUG_S["📄 /blog/:slug"]
-    route_src_routes_blog__slug__page["/ · SSR"]:::ssr
+  subgraph BLOG_S["📝 /blog"]
+    route_src_routes_blog__slug__page[":slug · SSR"]:::ssr
   end"
 `;
 
@@ -1208,16 +1318,27 @@ graph TD
   classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
   route_src_router_index_ts__["/ · CSR"]:::csr
   subgraph ABOUT_G["👤 /about"]
-    route_src_router_index_ts__about["/ · CSR"]:::csr
+    route_src_router_index_ts__about["/about · CSR"]:::csr
   end
   subgraph USERS_G["📄 /users"]
-    route_src_router_index_ts__users["/ · CSR"]:::csr
+    route_src_router_index_ts__users["/users · CSR"]:::csr
     route_src_router_index_ts__users__id[":id · CSR"]:::csr
   end"
 `;
 
 exports[`Phase XI — fixture baseline snapshots (P1) > mini-vue-spa-app > Tab2 screen-component diagram 1`] = `
-"%% chunk:1/2
+"%% chunk:1/3
+%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0c1a30','primaryTextColor':'#7dd3fc','primaryBorderColor':'#0e3a6e','edgeLabelBackground':'#0c1a30','lineColor':'#334155','secondaryColor':'#0f172a','clusterBkg':'#060c18','clusterBorder':'#1e3a5f','fontFamily':'JetBrains Mono'}}}%%
+graph TB
+  classDef ssr fill:#0d1a0d,stroke:#16a34a,color:#86efac
+  classDef csr fill:#2d1200,stroke:#c2410c,color:#fb923c
+  classDef ssg fill:#1a0d1a,stroke:#7c3aed,color:#c4b5fd
+  classDef isr fill:#1a1a0d,stroke:#ca8a04,color:#fde047
+  classDef ppr fill:#0d1a2d,stroke:#2563eb,color:#93c5fd
+  classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
+  route_src_router_index_ts__["/ · CSR"]:::csr
+%%--CHUNK--%%
+%% chunk:2/3
 %%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0c1a30','primaryTextColor':'#7dd3fc','primaryBorderColor':'#0e3a6e','edgeLabelBackground':'#0c1a30','lineColor':'#334155','secondaryColor':'#0f172a','clusterBkg':'#060c18','clusterBorder':'#1e3a5f','fontFamily':'JetBrains Mono'}}}%%
 graph TB
   classDef ssr fill:#0d1a0d,stroke:#16a34a,color:#86efac
@@ -1227,11 +1348,10 @@ graph TB
   classDef ppr fill:#0d1a2d,stroke:#2563eb,color:#93c5fd
   classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
   subgraph ABOUT_S["👤 /about"]
-    route_src_router_index_ts__["/ · CSR"]:::csr
-    route_src_router_index_ts__about["/ · CSR"]:::csr
+    route_src_router_index_ts__about["/about · CSR"]:::csr
   end
 %%--CHUNK--%%
-%% chunk:2/2
+%% chunk:3/3
 %%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0c1a30','primaryTextColor':'#7dd3fc','primaryBorderColor':'#0e3a6e','edgeLabelBackground':'#0c1a30','lineColor':'#334155','secondaryColor':'#0f172a','clusterBkg':'#060c18','clusterBorder':'#1e3a5f','fontFamily':'JetBrains Mono'}}}%%
 graph TB
   classDef ssr fill:#0d1a0d,stroke:#16a34a,color:#86efac
@@ -1241,7 +1361,7 @@ graph TB
   classDef ppr fill:#0d1a2d,stroke:#2563eb,color:#93c5fd
   classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
   subgraph USERS_S["📄 /users"]
-    route_src_router_index_ts__users["/ · CSR"]:::csr
+    route_src_router_index_ts__users["/users · CSR"]:::csr
     route_src_router_index_ts__users__id[":id · CSR"]:::csr
   end"
 `;

@@ -15,10 +15,10 @@ graph TD
         subgraph REACT["⚛ React · SSR Engine"]
           SSR_FETCH["(SSR data fetch)"]:::unk
           subgraph ABOUT_G["👤 /about"]
-            route_app__marketing__about_page["/about · SSR"]:::ssr
+            route_app__marketing__about_page["/ · SSR"]:::ssr
           end
           subgraph BLOG_G["📝 /blog"]
-            route_app_blog__slug__page["/blog/:slug · SSR"]:::ssr
+            route_app_blog__slug__page[":slug · SSR"]:::ssr
           end
           route_app_page["/ · SSR"]:::ssr
         end

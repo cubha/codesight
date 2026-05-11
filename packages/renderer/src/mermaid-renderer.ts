@@ -105,6 +105,14 @@ function renderingRouteLabel(r: RouteNode, ind: string, stripPrefix?: string): s
   return `${ind}${sanitizeId(r.id)}["${methodPrefix}${displayPath} · ${badge}"]:::${modeClass(r.renderingMode)}`
 }
 
+// Subgraph ID는 group.groupKey 전체에서 파생 → 다른 module의 동일 leaf segment(예: /admin/users vs /order/users)
+// 가 같은 USERS_G로 충돌해 mermaid가 단일 subgraph로 합치는 사고 방지.
+function groupSubgraphId(groupKey: string): string {
+  const segs = groupKey.split('/').filter(Boolean)
+  if (segs.length === 0) return 'ROOT_G'
+  return sanitizeId(segs.join('_').toUpperCase()) + '_G'
+}
+
 // Emit nested Mermaid subgraphs from NestedGroup[]. Used by buildRenderingDiagram and buildCombinedDiagram.
 function buildNestedSubgraphLines(groups: NestedGroup[], indent: string): string[] {
   const lines: string[] = []
@@ -115,7 +123,7 @@ function buildNestedSubgraphLines(groups: NestedGroup[], indent: string): string
       for (const r of group.routes) lines.push(renderingRouteLabel(r, indent))
       if (group.children.length > 0) lines.push(...buildNestedSubgraphLines(group.children, indent))
     } else {
-      const sgId = sanitizeId(leafSeg.toUpperCase()) + '_G'
+      const sgId = groupSubgraphId(group.groupKey)
       const label = sectionLabel(leafSeg)
       lines.push(`${indent}subgraph ${sgId}["${label}"]`)
       lines.push(...emitInnerRowSubgraphs(i2, sgId, group.routes.length,
@@ -246,33 +254,89 @@ function chunkGroups<T>(items: T[], size: number): T[][] {
   return result
 }
 
-// Row 다이어그램은 flat 렌더링: 각 group의 모든 routes를 1줄씩 나열 (에지 없음).
-// Mermaid graph TD에서 에지 없는 노드를 줄 단위로 나열하면 세로 배치가 보장된다.
-// buildNestedSubgraphLines(재귀 중첩)는 여러 형제 subgraph를 가로 배치해 X폭발을 일으키므로 사용하지 않는다.
+// Row 다이어그램(chunked 경로): NestedGroup tree를 그대로 보존하여 nested subgraph emit.
+// v1.1.5 이전: collectNestedRoutes로 평면화 → 재귀 그룹핑 결과 폐기 → /api 안에 100+ 형제 평면 배치 → mermaid 세로 압축
+// v1.1.6: buildNestedSubgraphLines 재사용 → /api → /v1 → /admin → /users 식 depth 보존 → leaf subgraph 노드 수 자연 감소
 function buildRouteRowDiagram(groups: NestedGroup[]): string {
   const lines = [RENDERING_INIT, 'graph TD', CLASS_DEFS]
-  for (const group of groups) {
-    const allRoutes = collectNestedRoutes([group])
-    const leafSeg = group.groupKey.split('/').filter(Boolean).pop()
-    if (leafSeg === undefined) {
-      for (const r of allRoutes) lines.push(renderingRouteLabel(r, '  '))
-    } else {
-      const sgId = sanitizeId(leafSeg.toUpperCase()) + '_G'
-      lines.push(`  subgraph ${sgId}["${sectionLabel(leafSeg)}"]`)
-      lines.push(...emitInnerRowSubgraphs('    ', sgId, allRoutes.length,
-        (i, ind) => renderingRouteLabel(allRoutes[i]!, ind, group.groupKey)))
-      lines.push('  end')
-    }
-  }
+  lines.push(...buildNestedSubgraphLines(groups, '  '))
   return lines.join('\n')
 }
 
+// Tab2 nested subgraph emit. v1.1.6: NestedGroup tree 보존하여 chunked 경로에서도 재귀 그룹핑 유지.
+// 각 group의 routes를 그 group subgraph 안에 배치 + 그 group의 routes에 연결된 comp들을 nested comp subgraph로 추가.
+// comp first-claim: 같은 comp가 여러 group route에 연결되면 첫 group이 owner, 나머지는 edge만.
+function buildScreenSubgraphLines(
+  groups: NestedGroup[],
+  indent: string,
+  routeToComps: Map<string, string[]>,
+  rendersEdges: IREdge[],
+  connectedComponents: ComponentNode[],
+  compNodeRendered: Set<string>,
+  allEdges: string[],
+): string[] {
+  const lines: string[] = []
+  const i2 = indent + '  '
+  for (const group of groups) {
+    const leafSeg = group.groupKey.split('/').filter(Boolean).pop()
+    if (leafSeg === undefined) {
+      for (const r of group.routes) {
+        const badge = r.renderingMode === 'unknown' ? '?' : r.renderingMode
+        lines.push(`${indent}${sanitizeId(r.id)}["${r.path} · ${badge}"]:::${modeClass(r.renderingMode)}`)
+      }
+      if (group.children.length > 0) {
+        lines.push(...buildScreenSubgraphLines(group.children, indent, routeToComps, rendersEdges, connectedComponents, compNodeRendered, allEdges))
+      }
+      continue
+    }
+    const sgId = groupSubgraphId(group.groupKey).replace(/_G$/, '_S')
+    lines.push(`${indent}subgraph ${sgId}["${sectionLabel(leafSeg)}"]`)
+    lines.push(...emitInnerRowSubgraphs(i2, sgId, group.routes.length, (i, ind) => {
+      const r = group.routes[i]!
+      const badge = r.renderingMode === 'unknown' ? '?' : r.renderingMode
+      const displayPath = stripGroupPrefix(r.path, group.groupKey)
+      return `${ind}${sanitizeId(r.id)}["${displayPath} · ${badge}"]:::${modeClass(r.renderingMode)}`
+    }))
+
+    const compsInGroup: string[] = []
+    for (const r of group.routes) {
+      const comps = routeToComps.get(r.id) ?? []
+      for (const compId of comps) {
+        const edge = rendersEdges.find(e => e.from === r.id && e.to === compId)
+        if (edge !== undefined) {
+          allEdges.push(`  ${sanitizeId(r.id)} ${edgeArrow(edge)} ${sanitizeId(compId)}`)
+        }
+        if (compNodeRendered.has(compId)) continue
+        compNodeRendered.add(compId)
+        const comp = connectedComponents.find(c => c.id === compId)
+        if (comp === undefined) continue
+        const label = comp.runtime === 'client' ? `${comp.name} [CSR]` : comp.name
+        compsInGroup.push(`${sanitizeId(comp.id)}["${label}"]`)
+      }
+    }
+    if (compsInGroup.length > 0) {
+      const compSgId = sgId + '_C'
+      lines.push(`${i2}subgraph ${compSgId}`)
+      lines.push(...emitInnerRowSubgraphs(i2 + '  ', compSgId, compsInGroup.length,
+        (i, ind) => `${ind}${compsInGroup[i]!}`))
+      lines.push(`${i2}end`)
+    }
+
+    if (group.children.length > 0) {
+      lines.push(...buildScreenSubgraphLines(group.children, i2, routeToComps, rendersEdges, connectedComponents, compNodeRendered, allEdges))
+    }
+    lines.push(`${indent}end`)
+  }
+  return lines
+}
+
 function renderScreenSection(
-  pageRoutes: RouteNode[],
+  routeGroups: NestedGroup[],
   allRendersEdges: IREdge[],
   importsEdges: IREdge[],
   allComponentNodes: ComponentNode[],
 ): string {
+  const pageRoutes = collectNestedRoutes(routeGroups)
   const pageRouteIds = new Set(pageRoutes.map(r => r.id))
   const rowRendersEdges = allRendersEdges.filter(e => pageRouteIds.has(e.from))
   const connectedCompIds = new Set(rowRendersEdges.map(e => e.to))
@@ -287,57 +351,10 @@ function renderScreenSection(
   }
 
   const lines: string[] = [RENDERING_INIT, 'graph TB', CLASS_DEFS]
-  const sections = buildSectionsFromRoutes(pageRoutes)
   const compNodeRendered = new Set<string>()
   const allEdges: string[] = []
 
-  for (const [secKey, nodes] of sections) {
-    const routeSubId = `${sanitizeId(secKey.toUpperCase())}_S`
-    const groupPrefix = '/' + secKey
-    lines.push(`  subgraph ${routeSubId}["${sectionLabel(secKey)}"]`)
-    // 라우트도 inner-row 분할 (Y축 줄넘김)
-    lines.push(...emitInnerRowSubgraphs('    ', routeSubId, nodes.length, (i, ind) => {
-      const r = nodes[i]!
-      const badge = r.renderingMode === 'unknown' ? '?' : r.renderingMode
-      const displayPath = stripGroupPrefix(r.path, groupPrefix)
-      return `${ind}${sanitizeId(r.id)}["${displayPath} · ${badge}"]:::${modeClass(r.renderingMode)}`
-    }))
-    lines.push('  end')
-
-    // Section 내부에 component subgraph를 중첩 + 컴포넌트도 inner-row 분할.
-    // 공유 컴포넌트(first-claim): 먼저 등장한 section이 소유하고 이후 section은 에지만 추가한다.
-    const compsInSection: string[] = []
-    for (const r of nodes) {
-      const comps = routeToComps.get(r.id) ?? []
-      for (const compId of comps) {
-        const edge = rowRendersEdges.find(e => e.from === r.id && e.to === compId)
-        if (edge !== undefined) {
-          allEdges.push(`  ${sanitizeId(r.id)} ${edgeArrow(edge)} ${sanitizeId(compId)}`)
-        }
-        if (compNodeRendered.has(compId)) continue
-        compNodeRendered.add(compId)
-        const comp = connectedComponents.find(c => c.id === compId)
-        if (comp === undefined) continue
-        const label = comp.runtime === 'client' ? `${comp.name} [CSR]` : comp.name
-        compsInSection.push(`${sanitizeId(comp.id)}["${label}"]`)
-      }
-    }
-    if (compsInSection.length > 0) {
-      const compSgId = sanitizeId(secKey.toUpperCase()) + '_C'
-      // route section의 end 앞에 comp subgraph를 삽입해야 하므로 마지막 'end'를 교체한다.
-      const lastEnd = lines.lastIndexOf('  end')
-      if (lastEnd !== -1) {
-        const compInnerLines = emitInnerRowSubgraphs('      ', compSgId, compsInSection.length,
-          (i, ind) => `${ind}${compsInSection[i]!}`)
-        lines.splice(lastEnd, 1,
-          `    subgraph ${compSgId}`,
-          ...compInnerLines,
-          `    end`,
-          `  end`,
-        )
-      }
-    }
-  }
+  lines.push(...buildScreenSubgraphLines(routeGroups, '  ', routeToComps, rowRendersEdges, connectedComponents, compNodeRendered, allEdges))
 
   for (const e of allEdges) lines.push(e)
 
@@ -364,7 +381,10 @@ function buildRenderingDiagram(graph: IRGraph): string {
   const routeGroups = groupRoutesByUrl(routeNodes)
   const branchingGroups = findBranchingGroups(routeGroups)
   if (branchingGroups.length > GROUPS_PER_ROW) {
-    return joinChunks(chunkGroups(branchingGroups, GROUPS_PER_ROW).map(buildRouteRowDiagram))
+    // v1.1.6: 1 top-level branch = 1 chunk (의미 단위 청크).
+    // 이전: chunkGroups(N=5)로 묶어 한 chunk 안 5 branch × 평균 30 routes = 150 routes 평면 → 세로 폭발
+    // 변경: 각 branch tree를 독립 chunk로 (nested 보존). chunk 수는 branchingGroups.length 만큼.
+    return joinChunks(branchingGroups.map(g => buildRouteRowDiagram([g])))
   }
 
   const tableNodes = graph.nodes.filter(isTableNode)
@@ -532,14 +552,13 @@ function buildScreenComponentDiagram(graph: IRGraph): string {
   const branchingGroups = findBranchingGroups(routeGroups)
 
   if (branchingGroups.length > TAB2_GROUPS_PER_ROW) {
-    return joinChunks(chunkGroups(branchingGroups, TAB2_GROUPS_PER_ROW).map(rowGroups => {
-      const rowRouteIds = new Set(collectNestedRoutes(rowGroups).map(r => r.id))
-      const rowRoutes = pageRoutes.filter(r => rowRouteIds.has(r.id))
-      return renderScreenSection(rowRoutes, rendersEdges, importsEdges, componentNodes)
-    }))
+    // v1.1.6: 1 top-level branch = 1 chunk (Tab1과 동일 정책)
+    return joinChunks(branchingGroups.map(g =>
+      renderScreenSection([g], rendersEdges, importsEdges, componentNodes)
+    ))
   }
 
-  return renderScreenSection(pageRoutes, rendersEdges, importsEdges, componentNodes)
+  return renderScreenSection(branchingGroups, rendersEdges, importsEdges, componentNodes)
 }
 
 // th(테이블명 헤더): primaryColor 어두운 배경 + primaryTextColor 밝은 텍스트 유지
