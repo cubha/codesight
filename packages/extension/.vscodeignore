@@ -7,3 +7,7 @@ tsconfig.json
 dist/**/*.map
 node_modules/**
 !node_modules/@codebase-viz/**
+scratch.md
+scratch.md.*
+*.precompact-backup*
+tsconfig.tsbuildinfo
