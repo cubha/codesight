@@ -1,5 +1,27 @@
 # Changelog
 
+## [1.1.53] — 2026-05-14
+
+### Fixed — 작은 프로젝트 Y축 단조 나열 (adapter-wide)
+
+- **결함**: 28 routes / 7 top-level folder처럼 작은 프로젝트도 `GROUPS_PER_ROW = 5` (Tab1) / `TAB2_GROUPS_PER_ROW = 2` (Tab2) 임계값을 초과하면 chunked path가 발동되어, viewer의 row-mode가 7개 chunk를 `flex-direction:column`으로 vertical stack → 사용자 화면에 단조 Y축 나열로 표시되던 문제. mini-angular/fastapi/flask/next/nextpages/nuxt/react-router/remix/sveltekit/vue-spa fixture까지 모두 Tab2 chunked 상태였던 adapter-wide 결함.
+- **Fix**: `SINGLE_DIAGRAM_ROUTE_THRESHOLD = 100` 추가. Tab1·Tab2의 chunked path는 `branchingGroups.length > GROUPS_PER_ROW` **AND** `routeCount > 100`을 모두 만족할 때만 발동. 작은 프로젝트는 nested subgraph 단일 다이어그램으로 emit되어 mermaid의 자연 layout이 X축 펼침을 처리한다.
+- **회귀 보호**: v1.1.6의 200-route stress test는 그대로 PASS (200 > 100 게이트 통과 → chunked 유지). 새로 추가된 dev-log-portfolio 시뮬레이션(28 routes / 7 top-level) + root-only branch edge case 회귀 테스트 3개.
+
+### Verified
+
+- 630 tests PASS (619 + 11 신규 회귀 / 게이트 정책)
+- 10개 mini-fixture Tab2 snapshot이 chunked → single로 갱신
+
+## [1.1.52] — 2026-05-13
+
+### Fixed
+
+- chunk 과다 분할(collectLeafRouteArrays → collectGroupRoutes, 30 routes/chunk 정책)
+- Tab3 extractModule bin/main/sql/primary 경로 처리
+- viewer row-mode floating (`inner.style.left = "0px"`)
+- React Router sub-router 2-pass 감지
+
 ## [1.1.51] — 2026-05-11
 
 ### Fixed — Large monorepo rendering (937+ routes)

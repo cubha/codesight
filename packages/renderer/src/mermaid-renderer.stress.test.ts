@@ -71,6 +71,64 @@ function maxLeafSiblingCount(text: string): number {
   return max
 }
 
+// v1.1.53 회귀 fixture — 작은 프로젝트(28 routes / 7 top-level)도 GROUPS_PER_ROW=5 임계값
+// 초과로 chunked path로 떨어져 viewer가 Y축 단조 나열했던 결함. routeCount 게이트 추가로
+// 100 routes 미만은 single-diagram path 유지.
+describe('mermaid-renderer — 작은 프로젝트 chunk 게이트 (v1.1.53 회귀 fixture)', () => {
+  // dev-log-portfolio 시뮬레이션: 28 routes / 7 top-level groups (/, /about, /admin, /blog, /contact, /login, /projects)
+  function devLogPortfolioRoutes(): RouteNode[] {
+    return [
+      r('/'),
+      r('/about'),
+      r('/admin/dashboard'), r('/admin/profile'), r('/admin/projects'), r('/admin/skills'),
+      r('/blog'), r('/blog/new'), r('/blog/:slug'), r('/blog/edit/:id'),
+      r('/contact'),
+      r('/login'),
+      r('/projects'), r('/projects/:slug'),
+    ]
+  }
+
+  it('28 routes / 7 top-level groups → Tab1 single chunk (no chunked path)', () => {
+    const routes = devLogPortfolioRoutes()
+    const graph = createIRGraph({
+      analyzerVersion: 'codebase-viz@0.1.0',
+      repoRoot: '/tmp/test',
+      nodes: routes,
+      edges: [],
+    })
+    const { rendering } = buildDiagrams(graph)
+    expect(chunkCountOf(rendering)).toBe(1)
+  })
+
+  it('28 routes / 7 top-level groups → Tab2 single chunk (no chunked path)', () => {
+    const routes = devLogPortfolioRoutes()
+    const graph = createIRGraph({
+      analyzerVersion: 'codebase-viz@0.1.0',
+      repoRoot: '/tmp/test',
+      nodes: routes,
+      edges: [],
+    })
+    const { screenComponent } = buildDiagrams(graph)
+    expect(chunkCountOf(screenComponent)).toBe(1)
+  })
+
+  it('root-only branch (`/`) edge case — chunk path 미발동, single diagram에 emit', () => {
+    // advisor가 지적한 degenerate case: chunk 6/7에서 root `/` 단독으로 emit됐던 문제
+    const routes = [r('/'), r('/about'), r('/blog')]
+    const graph = createIRGraph({
+      analyzerVersion: 'codebase-viz@0.1.0',
+      repoRoot: '/tmp/test',
+      nodes: routes,
+      edges: [],
+    })
+    const { rendering, screenComponent } = buildDiagrams(graph)
+    expect(chunkCountOf(rendering)).toBe(1)
+    expect(chunkCountOf(screenComponent)).toBe(1)
+    // root path가 single diagram 안에 등장
+    expect(rendering).toContain('"/ · SSR"')
+  })
+})
+
 describe('mermaid-renderer stress — NestJS 200 routes (v1.1.6 회귀 fixture)', () => {
   const routes = nestjsRoutes()
   const graph = createIRGraph({

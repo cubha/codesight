@@ -4,7 +4,7 @@
 
 Routes, components, and DB relationships — extracted statically from **13 frameworks**, optionally enriched by LLM, rendered as three live diagram tabs inside VS Code.
 
-> Marketplace: [`cubha.codebase-arch-viz`](https://marketplace.visualstudio.com/items?itemName=cubha.codebase-arch-viz) · Current release: **v1.1.52**
+> Marketplace: [`cubha.codebase-arch-viz`](https://marketplace.visualstudio.com/items?itemName=cubha.codebase-arch-viz) · Current release: **v1.1.53**
 
 ---
 
@@ -235,6 +235,7 @@ npx vsce publish --no-dependencies -p <PAT>
 | v1.1.5 | **i18n 4개 언어** (한국어·영어·일본어·중국어 간체) · 언어 전환 즉시 적용 · **데모 GIF** 2종 (Tab 전환·DB 토글) · 뷰어 텍스트 선택 방지 + Row-mode 휠 줌/드래그 |
 | v1.1.51 | **chunked path nested grouping 수정** — 937+ routes 환경에서 `buildRouteRowDiagram` · `renderScreenSection` NestedGroup tree 보존 · 청크 경계 1 top-level branch = 1 chunk |
 | v1.1.52 | **Tab1/Tab2 chunk 과다 수정** (698→9 chunks, `collectGroupRoutes` 30 routes/chunk 기준) · **Tab3 extractModule 수정** (`bin/main/sql/primary/**` → 의미 디렉토리 추출) · **row-mode floating island 수정** (`left:50%→0`) · **React Router sub-router 2-pass 파싱** (9→130 routes, `element={<SubRouter/>}` 재귀 추적) |
+| v1.1.53 | **작은 프로젝트 Y축 단조 나열 수정** (adapter-wide) — `SINGLE_DIAGRAM_ROUTE_THRESHOLD = 100` 게이트 추가. 28 routes / 7 top-level folder 같은 작은 프로젝트가 `GROUPS_PER_ROW=5` / `TAB2_GROUPS_PER_ROW=2` 초과만으로 chunked → viewer row-mode Y축 stack되던 결함. 모든 어댑터(angular/fastapi/flask/next/nextpages/nuxt/react-router/remix/sveltekit/vue-spa)의 mini fixture까지 Tab2 chunked였던 adapter-wide 결함 해소. 200-route stress test 회귀 보호 유지. |
 
 ---
 
