@@ -239,10 +239,20 @@ describe('buildDiagrams chunk fallback integration', () => {
 
   it('row-batches flat routes when top-level groups exceed GROUPS_PER_ROW (B2)', async () => {
     const { buildDiagrams } = await import('../mermaid-renderer.js')
+    // v1.1.53: routeCount > 100 + GROUPS_PER_ROW(5) 초과 둘 다 만족해야 chunked.
+    // 110 flat routes → 110 top-level groups → 게이트 통과 → row batching kicks in.
+    const routes = Array.from({ length: 110 }, (_, i) => makeRoute(`/r${i}`))
+    const graph = makeGraphWith(routes)
+    const out = buildDiagrams(graph, { nodeThreshold: 80 })
+    expect(out.rendering).toContain(CHUNK_SEPARATOR)
+  })
+
+  it('v1.1.53 게이트: 50 flat routes (< 100) → single diagram (no chunked path)', async () => {
+    const { buildDiagrams } = await import('../mermaid-renderer.js')
     const routes = Array.from({ length: 50 }, (_, i) => makeRoute(`/r${i}`))
     const graph = makeGraphWith(routes)
     const out = buildDiagrams(graph, { nodeThreshold: 80 })
-    // 50 flat routes → 50 top-level groups → row batching kicks in (GROUPS_PER_ROW=5)
-    expect(out.rendering).toContain(CHUNK_SEPARATOR)
+    // 50 routes < SINGLE_DIAGRAM_ROUTE_THRESHOLD(100) → branchingGroups>5여도 single
+    expect(out.rendering).not.toContain(CHUNK_SEPARATOR)
   })
 })

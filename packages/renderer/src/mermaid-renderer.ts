@@ -208,6 +208,12 @@ const GROUPS_PER_ROW = 5
 // Tab2는 section당 8+ 컴포넌트를 가질 수 있어, 동일 row 내 section 수를 제한한다.
 // nested comp subgraph 방식에서 section 1개 ≈ 580px, 2개 ≈ 1200px → 2개가 안전 상한.
 const TAB2_GROUPS_PER_ROW = 2
+// v1.1.53: routes < N 이면 chunked path를 발동시키지 않음.
+// 작은 프로젝트(28 routes / 7 top-level)도 group 수가 GROUPS_PER_ROW(5)를 넘기면
+// chunked → viewer row-mode Y축 단조 나열되는 문제 회피. mermaid는 100+ nodes nested
+// subgraph도 단일 다이어그램으로 충분히 처리 가능. 200+ routes stress test(modules=10)는
+// routeCount > 100으로 게이트 통과 → chunked 유지하여 회귀 방지.
+const SINGLE_DIAGRAM_ROUTE_THRESHOLD = 100
 // Y축 폭발 방지: subgraph 안 노드 수가 임계값을 넘으면 N개씩 invisible inner subgraph로 묶어
 // 행 줄넘김을 강제한다 (X축 GROUPS_PER_ROW와 대칭 정책).
 const NODES_PER_INNER_ROW = 5
@@ -380,10 +386,12 @@ function buildRenderingDiagram(graph: IRGraph): string {
 
   const routeGroups = groupRoutesByUrl(routeNodes)
   const branchingGroups = findBranchingGroups(routeGroups)
-  if (branchingGroups.length > GROUPS_PER_ROW) {
+  if (
+    branchingGroups.length > GROUPS_PER_ROW &&
+    routeNodes.length > SINGLE_DIAGRAM_ROUTE_THRESHOLD
+  ) {
     // v1.1.6: 1 top-level branch = 1 chunk (의미 단위 청크).
-    // 이전: chunkGroups(N=5)로 묶어 한 chunk 안 5 branch × 평균 30 routes = 150 routes 평면 → 세로 폭발
-    // 변경: 각 branch tree를 독립 chunk로 (nested 보존). chunk 수는 branchingGroups.length 만큼.
+    // v1.1.53: routeCount 게이트 추가 — 작은 프로젝트는 single-diagram로 유지.
     return joinChunks(branchingGroups.map(g => buildRouteRowDiagram([g])))
   }
 
@@ -551,8 +559,12 @@ function buildScreenComponentDiagram(graph: IRGraph): string {
   const routeGroups = groupRoutesByUrl(pageRoutes)
   const branchingGroups = findBranchingGroups(routeGroups)
 
-  if (branchingGroups.length > TAB2_GROUPS_PER_ROW) {
+  if (
+    branchingGroups.length > TAB2_GROUPS_PER_ROW &&
+    pageRoutes.length > SINGLE_DIAGRAM_ROUTE_THRESHOLD
+  ) {
     // v1.1.6: 1 top-level branch = 1 chunk (Tab1과 동일 정책)
+    // v1.1.53: routeCount 게이트 추가 — 작은 프로젝트는 single-diagram로 유지.
     return joinChunks(branchingGroups.map(g =>
       renderScreenSection([g], rendersEdges, importsEdges, componentNodes)
     ))
