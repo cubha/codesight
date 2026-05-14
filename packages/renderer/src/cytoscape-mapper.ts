@@ -16,7 +16,10 @@ import {
 export interface CyNodeData {
   id: string
   label?: string
-  kind: 'route' | 'component' | 'table' | 'group'
+  // 'infra'   — 인프라 boundary compound (Vercel/Node.js/Next.js/React)
+  // 'backend' — 백엔드 서비스 노드 (LLM에서 추출된 IRGraphMetadata.backends)
+  // 'db'      — 데이터베이스 노드 (PostgreSQL/MySQL/Mongo)
+  kind: 'route' | 'component' | 'table' | 'group' | 'infra' | 'backend' | 'db'
   parent?: string
   file?: string
   line?: number
@@ -27,13 +30,17 @@ export interface CyNodeData {
   httpMethod?: string
   runtime?: string
   columnsCount?: number
+  // backend/db 보조 메타.
+  framework?: string
+  dbType?: string
 }
 
 export interface CyEdgeData {
   id: string
   source: string
   target: string
-  edgeKind: 'renders' | 'imports' | 'queries' | 'calls' | 'fe-be-call'
+  // 'fk' — Table.columns[].references에서 derive된 합성 FK edge.
+  edgeKind: 'renders' | 'imports' | 'queries' | 'calls' | 'fe-be-call' | 'fk'
   file?: string
   line?: number
   confidence?: 'verified' | 'inferred' | 'manual'
@@ -61,6 +68,11 @@ export interface MapperOptions {
   // 'none'         : group 없음 (flat)
   group?: 'route-prefix' | 'file-dir' | 'none'
   maxDepth?: number
+  // mermaid renderer가 IR에서 derive하는 정보(infra boundary / backends / FK edges)도 함께 emit.
+  // 기본 true — PoC v1.2.0-poc.2부터 default ON (mermaid 동등 정보량 목표).
+  includeMetadata?: boolean
+  // FK edges (TableNode.columns[].references → table-table edge) emit 여부. 기본 true.
+  includeFkEdges?: boolean
 }
 
 const DEFAULT_MAX_DEPTH = 8
@@ -229,6 +241,171 @@ function mapEdge(edge: IREdge): CyEdge {
   return { data }
 }
 
+// IRGraphMetadata 기반 infra boundary compound (Vercel→Node.js→Next.js→React 등).
+// mermaid renderer의 metadataToInfra() 분기와 동일 의미 — derived information 동등성 확보.
+// 반환값: innermost group id (Tab1에서 routes의 최외곽 parent로 사용). 없으면 undefined.
+function buildInfraCompound(graph: IRGraph, groupNodes: Map<string, CyNode>): string | undefined {
+  const meta = graph.metadata
+  if (meta === undefined) return undefined
+  const fw = meta.framework.toLowerCase()
+  const hasNextjs = fw === 'nextjs-app-router' || fw === 'nextjs-pages' || fw.startsWith('next')
+  const hasVite = fw === 'vite-react' || fw.includes('vite')
+  const hasExpo = fw === 'expo' || fw.includes('expo') || meta.deployTarget === 'mobile'
+
+  // 모든 route가 CSR인지 — mermaid renderer의 allCSR 분기에 맞추기 위해.
+  const routes = graph.nodes.filter(isRouteNode)
+  const allCSR = routes.length > 0 && routes.every(r => r.renderingMode === 'CSR')
+
+  let chain: Array<[string, string]> | undefined
+  if (hasNextjs && !allCSR) {
+    chain = [
+      ['INFRA', '☁ VERCEL · Edge Network'],
+      ['RUNTIME', '⚙ Node.js · Server Runtime'],
+      ['FRAMEWORK', '▲ Next.js · App Router'],
+      ['REACT', '⚛ React · SSR Engine'],
+    ]
+  } else if (hasNextjs && allCSR) {
+    chain = [
+      ['BROWSER', '🌐 Browser · Client-Side App'],
+      ['FRAMEWORK', '▲ Next.js · App Router'],
+      ['REACT', '⚛ React · CSR Engine'],
+    ]
+  } else if (hasVite) {
+    chain = [
+      ['BROWSER', '🌐 Browser · Client-Side App'],
+      ['BUNDLER', '⚡ Vite · Dev/Build'],
+      ['REACT', '⚛ React · CSR Engine'],
+    ]
+  } else if (hasExpo) {
+    chain = [
+      ['MOBILE', '📱 Mobile · iOS / Android'],
+      ['RN', '⚛ React Native · Expo'],
+    ]
+  } else {
+    // backend-only framework (Spring/Django/FastAPI/Flask) — infra boundary 없음.
+    return undefined
+  }
+
+  let prevId: string | undefined
+  for (const [id, label] of chain) {
+    const data: CyNodeData = { id, label, kind: 'infra' }
+    if (prevId !== undefined) data.parent = prevId
+    groupNodes.set(id, { data })
+    prevId = id
+  }
+  return prevId
+}
+
+// IRGraphMetadata.backends → backend service + db + REST edge.
+// LLM 분석으로 추출된 monorepo backend metadata 표현.
+function buildBackendServices(
+  graph: IRGraph,
+  groupNodes: Map<string, CyNode>,
+  nodes: CyNode[],
+  edges: CyEdge[],
+  aliveNodeIds: Set<string>,
+  frontendRef: string | undefined,
+): void {
+  const backends = graph.metadata?.backends ?? []
+  for (let i = 0; i < backends.length; i++) {
+    const be = backends[i]
+    if (be === undefined) continue
+    const beId = `BACKEND_${i}`
+    const dbId = `DB_${i}`
+    const dbLabel = be.dbType === 'postgresql' ? '🐘 PostgreSQL' :
+                    be.dbType === 'mysql' ? '🐬 MySQL' :
+                    be.dbType === 'mongodb' ? '🍃 MongoDB' : '🗄 Database'
+
+    const beData: CyNodeData = {
+      id: beId,
+      label: `⚙ ${be.name} · ${be.framework}`,
+      kind: 'backend',
+      framework: be.framework,
+    }
+    groupNodes.set(beId, { data: beData })
+
+    const visibleMods = (be.modules ?? []).slice(0, 8)
+    for (const mod of visibleMods) {
+      const modId = `${sanitizeId(mod)}_be${i}`
+      nodes.push({ data: { id: modId, label: mod, kind: 'component', parent: beId, runtime: 'server' } })
+      aliveNodeIds.add(modId)
+    }
+
+    const dbData: CyNodeData = { id: dbId, label: dbLabel, kind: 'db', parent: beId }
+    if (be.dbType !== undefined) dbData.dbType = be.dbType
+    nodes.push({ data: dbData })
+    aliveNodeIds.add(dbId)
+
+    // modules → db
+    for (const mod of visibleMods) {
+      const modId = `${sanitizeId(mod)}_be${i}`
+      edges.push({
+        data: {
+          id: `e_be${i}_${sanitizeId(mod)}_db`,
+          source: modId, target: dbId,
+          edgeKind: 'queries',
+          confidence: 'inferred',
+          inferenceChain: ['llm-backend-detection'],
+          file: 'metadata',
+          line: 0,
+        },
+      })
+    }
+
+    // frontend → backend (REST)
+    if (frontendRef !== undefined) {
+      edges.push({
+        data: {
+          id: `e_rest_${i}`,
+          source: frontendRef, target: beId,
+          edgeKind: 'fe-be-call',
+          confidence: 'inferred',
+          inferenceChain: ['llm-backend-detection'],
+          file: 'metadata',
+          line: 0,
+        },
+      })
+    }
+  }
+}
+
+// TableNode.columns[].references → table-table FK edges (합성).
+// mermaid renderer가 ERD에서 그리는 column-level relationship과 동등 정보량.
+function buildFkEdges(
+  graph: IRGraph,
+  edges: CyEdge[],
+  aliveNodeIds: Set<string>,
+): void {
+  // table name → cy id 맵 (name으로 찾기 위해)
+  const nameToCyId = new Map<string, string>()
+  for (const n of graph.nodes) {
+    if (isTableNode(n)) {
+      const cyId = nodeIdToCyId(n.id)
+      if (aliveNodeIds.has(cyId)) nameToCyId.set(n.name, cyId)
+    }
+  }
+  for (const t of graph.nodes) {
+    if (!isTableNode(t)) continue
+    const fromId = nodeIdToCyId(t.id)
+    if (!aliveNodeIds.has(fromId)) continue
+    for (const col of t.columns) {
+      if (col.references === undefined) continue
+      const toId = nameToCyId.get(col.references.table)
+      if (toId === undefined) continue
+      edges.push({
+        data: {
+          id: `e_fk_${fromId}_${sanitizeId(col.name)}_${toId}`,
+          source: fromId, target: toId,
+          edgeKind: 'fk',
+          confidence: 'verified',
+          file: t.provenance.file,
+          line: t.provenance.line,
+        },
+      })
+    }
+  }
+}
+
 export function buildCytoscapeElements(
   graph: IRGraph,
   opts: MapperOptions = {},
@@ -267,11 +444,28 @@ export function buildCytoscapeElements(
     aliveNodeIds.add(cyNode.data.id)
   }
 
-  // group 노드를 nodes 배열 앞에 prepend (cytoscape compound 요구 — parent가 children 보다 먼저).
-  const groupNodesArr = Array.from(groupNodes.values())
-  const allNodes = [...groupNodesArr, ...nodes]
+  // ── derived information (mermaid 동등성) ──────────────────────────────
+  // includeMetadata=true 시 infra compound + backends + REST edge를 함께 emit.
+  let innermostInfra: string | undefined
+  if (opts.includeMetadata === true) {
+    innermostInfra = buildInfraCompound(graph, groupNodes)
+    if (innermostInfra !== undefined) {
+      // route-prefix grouping의 최상위 group들을 innermost 안으로 nest.
+      // 또는 route 노드 자체가 parent 없으면 innermost가 parent.
+      for (const g of groupNodes.values()) {
+        if (g.data.kind === 'group' && g.data.parent === undefined) {
+          g.data.parent = innermostInfra
+        }
+      }
+      for (const n of nodes) {
+        if (n.data.kind === 'route' && n.data.parent === undefined) {
+          n.data.parent = innermostInfra
+        }
+      }
+    }
+  }
 
-  // edge는 양 끝 노드가 모두 살아있을 때만 emit (filter로 제외된 노드는 dangling edge 방지).
+  // edge: 양 끝 노드가 모두 살아있을 때만 emit (filter로 제외된 노드는 dangling edge 방지).
   const edges: CyEdge[] = []
   for (const e of graph.edges) {
     const cy = mapEdge(e)
@@ -280,14 +474,31 @@ export function buildCytoscapeElements(
     }
   }
 
+  // backends (LLM이 추출한 monorepo backend metadata) — frontend가 있으면 REST edge도.
+  if (opts.includeMetadata === true) {
+    buildBackendServices(graph, groupNodes, nodes, edges, aliveNodeIds, innermostInfra)
+  }
+
+  // FK column-level edges (Tab3 ERD).
+  if (opts.includeFkEdges === true) {
+    buildFkEdges(graph, edges, aliveNodeIds)
+  }
+
+  // group 노드를 nodes 배열 앞에 prepend (cytoscape compound 요구 — parent가 children 보다 먼저).
+  // groupNodes는 backend service node도 포함 (kind='backend'는 compound parent 역할).
+  const groupNodesArr = Array.from(groupNodes.values())
+  const allNodes = [...groupNodesArr, ...nodes]
+
   return { nodes: allNodes, edges }
 }
 
 // 편의 헬퍼 — Tab1 (route hierarchy) / Tab2 (component tree) / Tab3 (table ERD) 별 mapper.
+// 기본 default ON: includeMetadata (infra/backends) for Tab1, includeFkEdges for Tab3.
 export function buildTab1Elements(graph: IRGraph, maxDepth?: number): CytoscapeElements {
   const opts: MapperOptions = {
     filter: (n) => isRouteNode(n),
     group: 'route-prefix',
+    includeMetadata: true,
   }
   if (maxDepth !== undefined) opts.maxDepth = maxDepth
   return buildCytoscapeElements(graph, opts)
@@ -306,5 +517,6 @@ export function buildTab3Elements(graph: IRGraph): CytoscapeElements {
   return buildCytoscapeElements(graph, {
     filter: (n) => isTableNode(n),
     group: 'none',
+    includeFkEdges: true,
   })
 }

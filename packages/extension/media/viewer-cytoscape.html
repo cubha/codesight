@@ -99,9 +99,9 @@
     // 데이터 소스 — extension wiring(1-6)에서 window.__CODESIGHT_CY__ 주입.
     // Playwright/local 테스트 시에는 fixture 별도 주입 가능 (window.__CODESIGHT_CY_FIXTURE__).
     const fallback = {
-      tab1: { elements: { nodes: [], edges: [] }, layout: { name: 'preset' }, style: [], expandCollapse: {}, wheelSensitivity: 0.2, meta: { tab: 'tab1', nodeCount: 0, groupCount: 0, edgeCount: 0 } },
-      tab2: { elements: { nodes: [], edges: [] }, layout: { name: 'preset' }, style: [], expandCollapse: {}, wheelSensitivity: 0.2, meta: { tab: 'tab2', nodeCount: 0, groupCount: 0, edgeCount: 0 } },
-      tab3: { elements: { nodes: [], edges: [] }, layout: { name: 'preset' }, style: [], expandCollapse: {}, wheelSensitivity: 0.2, meta: { tab: 'tab3', nodeCount: 0, groupCount: 0, edgeCount: 0 } },
+      tab1: { elements: { nodes: [], edges: [] }, layout: { name: 'preset' }, style: [], expandCollapse: {}, wheelSensitivity: 1.0, meta: { tab: 'tab1', nodeCount: 0, groupCount: 0, edgeCount: 0 } },
+      tab2: { elements: { nodes: [], edges: [] }, layout: { name: 'preset' }, style: [], expandCollapse: {}, wheelSensitivity: 1.0, meta: { tab: 'tab2', nodeCount: 0, groupCount: 0, edgeCount: 0 } },
+      tab3: { elements: { nodes: [], edges: [] }, layout: { name: 'preset' }, style: [], expandCollapse: {}, wheelSensitivity: 1.0, meta: { tab: 'tab3', nodeCount: 0, groupCount: 0, edgeCount: 0 } },
       meta: { projectName: '—' }
     }
     const data = window.__CODESIGHT_CY__ || window.__CODESIGHT_CY_FIXTURE__ || fallback
@@ -130,7 +130,7 @@
       cy = window.cytoscape({
         container: document.getElementById('cy'),
         elements: [...opts.elements.nodes, ...opts.elements.edges],
-        wheelSensitivity: opts.wheelSensitivity || 0.2,
+        wheelSensitivity: opts.wheelSensitivity || 1.0,
         style: opts.style,
         layout: opts.layout,
       })

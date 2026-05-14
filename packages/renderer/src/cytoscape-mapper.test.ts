@@ -199,4 +199,94 @@ describe('cytoscape-mapper', () => {
       expect(parentIdx).toBeLessThan(i)
     }
   })
+
+  // ─── v1.2.0-poc.2 derived information 확장 ─────────────────────────────
+  it('Tab1: Next.js metadata가 있으면 Vercel→Node→Next→React infra compound 생성', () => {
+    const g = makeGraph()
+    g.metadata = {
+      framework: 'nextjs-app-router',
+      hasSupabase: false,
+      hasPrisma: false,
+      hasDexie: false,
+      hasFirebase: false,
+    }
+    const els = buildTab1Elements(g)
+    const infraIds = els.nodes.filter(n => n.data.kind === 'infra').map(n => n.data.id)
+    expect(infraIds).toEqual(expect.arrayContaining(['INFRA', 'RUNTIME', 'FRAMEWORK', 'REACT']))
+
+    // 최상위 route-prefix group의 parent가 innermost(REACT)인지.
+    const routePrefixGroups = els.nodes.filter(n => n.data.kind === 'group')
+    const rootRouteGroup = routePrefixGroups.find(n => n.data.label === '/api')
+    expect(rootRouteGroup?.data.parent).toBe('REACT')
+  })
+
+  it('Tab1: backend-only framework(Spring)는 infra compound 없음', () => {
+    const g = makeGraph()
+    g.metadata = {
+      framework: 'spring-boot',
+      hasSupabase: false,
+      hasPrisma: false,
+      hasDexie: false,
+      hasFirebase: false,
+    }
+    const els = buildTab1Elements(g)
+    const infraNodes = els.nodes.filter(n => n.data.kind === 'infra')
+    expect(infraNodes).toHaveLength(0)
+  })
+
+  it('Tab1: IRGraphMetadata.backends → backend compound + db + REST edge', () => {
+    const g = makeGraph()
+    g.metadata = {
+      framework: 'nextjs-app-router',
+      hasSupabase: false, hasPrisma: false, hasDexie: false, hasFirebase: false,
+      backends: [{
+        name: 'NestJS API',
+        framework: 'nestjs',
+        modules: ['Auth', 'Users', 'Orders'],
+        dbType: 'postgresql',
+      }],
+    }
+    const els = buildTab1Elements(g)
+    const backendNode = els.nodes.find(n => n.data.kind === 'backend')
+    expect(backendNode).toBeDefined()
+    expect(backendNode?.data.framework).toBe('nestjs')
+
+    const dbNode = els.nodes.find(n => n.data.kind === 'db')
+    expect(dbNode?.data.label).toBe('🐘 PostgreSQL')
+    expect(dbNode?.data.parent).toBe('BACKEND_0')
+
+    const restEdge = els.edges.find(e => e.data.edgeKind === 'fe-be-call')
+    expect(restEdge).toBeDefined()
+    expect(restEdge?.data.target).toBe('BACKEND_0')
+  })
+
+  it('Tab3: FK column-level edges 합성 (TableNode.columns[].references)', () => {
+    const t1 = createTableNode({
+      id: makeNodeId('table', 'sb', 'orders'),
+      name: 'orders',
+      columns: [
+        { name: 'id', type: 'uuid', nullable: false, isPrimaryKey: true },
+        { name: 'user_id', type: 'uuid', nullable: false, references: { table: 'users', column: 'id' } },
+      ],
+      confidence: 'verified',
+      provenance: { ...PROV, file: 'sb/schema.sql' },
+    })
+    const t2 = createTableNode({
+      id: makeNodeId('table', 'sb', 'users'),
+      name: 'users',
+      columns: [{ name: 'id', type: 'uuid', nullable: false, isPrimaryKey: true }],
+      confidence: 'verified',
+      provenance: { ...PROV, file: 'sb/schema.sql' },
+    })
+    const g = createIRGraph({
+      analyzerVersion: 'test@0.1',
+      repoRoot: '/x',
+      nodes: [t1, t2],
+      edges: [],
+    })
+    const els = buildTab3Elements(g)
+    const fkEdges = els.edges.filter(e => e.data.edgeKind === 'fk')
+    expect(fkEdges).toHaveLength(1)
+    expect(fkEdges[0]?.data.confidence).toBe('verified')
+  })
 })

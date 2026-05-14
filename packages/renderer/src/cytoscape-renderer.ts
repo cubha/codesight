@@ -67,6 +67,12 @@ const TAB1_STYLE = [
       'text-overflow-wrap': 'ellipsis',
     },
   },
+  // renderingMode 별 보조 색상 (mermaid classDef ssr/csr/ssg/isr/ppr/unk 동등).
+  { selector: 'node[renderingMode = "CSR"]', style: { 'background-color': '#c2410c', 'border-color': '#7c2d12' } },
+  { selector: 'node[renderingMode = "SSG"]', style: { 'background-color': '#7c3aed', 'border-color': '#5b21b6' } },
+  { selector: 'node[renderingMode = "ISR"]', style: { 'background-color': '#ca8a04', 'border-color': '#854d0e' } },
+  { selector: 'node[renderingMode = "PPR"]', style: { 'background-color': '#2563eb', 'border-color': '#1e3a8a' } },
+  { selector: 'node[renderingMode = "unknown"]', style: { 'background-color': '#374151', 'border-color': '#1f2937' } },
   {
     selector: 'node[kind = "group"]',
     style: {
@@ -85,6 +91,62 @@ const TAB1_STYLE = [
       'padding': '12px',
     },
   },
+  // infra compound (Vercel / Browser / Mobile + Runtime + Framework + Engine).
+  {
+    selector: 'node[kind = "infra"]',
+    style: {
+      'shape': 'round-rectangle',
+      'background-color': '#0b1424',
+      'background-opacity': 0.5,
+      'border-width': 1,
+      'border-color': '#1e3a8a',
+      'border-style': 'solid',
+      'label': 'data(label)',
+      'color': '#93c5fd',
+      'font-size': 12,
+      'font-weight': 'bold',
+      'text-valign': 'top',
+      'text-halign': 'center',
+      'padding': '20px',
+    },
+  },
+  // backend service compound (⚙ NestJS / Spring 등).
+  {
+    selector: 'node[kind = "backend"]',
+    style: {
+      'shape': 'round-rectangle',
+      'background-color': '#1a0d1a',
+      'background-opacity': 0.6,
+      'border-width': 1,
+      'border-color': '#7c3aed',
+      'border-style': 'solid',
+      'label': 'data(label)',
+      'color': '#c4b5fd',
+      'font-size': 12,
+      'font-weight': 'bold',
+      'text-valign': 'top',
+      'text-halign': 'center',
+      'padding': '18px',
+    },
+  },
+  // db node (PostgreSQL / MySQL / Mongo).
+  {
+    selector: 'node[kind = "db"]',
+    style: {
+      'shape': 'cylinder',
+      'background-color': '#0d1a0d',
+      'border-width': 2,
+      'border-color': '#16a34a',
+      'label': 'data(label)',
+      'color': '#86efac',
+      'font-size': 11,
+      'font-weight': 'bold',
+      'text-valign': 'center',
+      'text-halign': 'center',
+      'width': 90,
+      'height': 60,
+    },
+  },
   {
     selector: 'edge',
     style: {
@@ -98,18 +160,38 @@ const TAB1_STYLE = [
   // inferred edge는 점선.
   {
     selector: 'edge[confidence = "inferred"]',
+    style: { 'line-style': 'dashed', 'line-color': '#94a3b8' },
+  },
+  // FE↔BE REST edge — 굵은 점선 + 보라.
+  {
+    selector: 'edge[edgeKind = "fe-be-call"]',
     style: {
       'line-style': 'dashed',
-      'line-color': '#94a3b8',
+      'line-color': '#c4b5fd',
+      'target-arrow-color': '#c4b5fd',
+      'width': 2,
+      'label': 'REST',
+      'color': '#c4b5fd',
+      'font-size': 9,
+      'text-background-color': '#0c1a30',
+      'text-background-opacity': 0.8,
+      'text-background-padding': 2,
+    },
+  },
+  // FK edge — 주황 점선.
+  {
+    selector: 'edge[edgeKind = "fk"]',
+    style: {
+      'line-style': 'dashed',
+      'line-color': '#fb923c',
+      'target-arrow-color': '#fb923c',
+      'width': 1.5,
     },
   },
   // expand-collapse cue 노드 스타일.
   {
     selector: '.cy-expand-collapse-collapsed-node',
-    style: {
-      'background-color': '#7c3aed',
-      'border-color': '#5b21b6',
-    },
+    style: { 'background-color': '#7c3aed', 'border-color': '#5b21b6' },
   },
 ]
 
@@ -190,7 +272,7 @@ export function buildTab1CytoscapeOptions(graph: IRGraph, maxDepth?: number): Cy
     layout: ELK_LAYERED,
     style: TAB1_STYLE,
     expandCollapse: EXPAND_COLLAPSE_OPTS,
-    wheelSensitivity: 0.2,
+    wheelSensitivity: 1.0,
     meta: makeMeta(elements, 'tab1'),
   }
 }
@@ -202,7 +284,7 @@ export function buildTab2CytoscapeOptions(graph: IRGraph, maxDepth?: number): Cy
     layout: ELK_LAYERED,
     style: TAB2_STYLE,
     expandCollapse: EXPAND_COLLAPSE_OPTS,
-    wheelSensitivity: 0.2,
+    wheelSensitivity: 1.0,
     meta: makeMeta(elements, 'tab2'),
   }
 }
@@ -214,7 +296,7 @@ export function buildTab3CytoscapeOptions(graph: IRGraph): CytoscapeOptions {
     layout: ELK_LAYERED,
     style: TAB3_STYLE,
     expandCollapse: EXPAND_COLLAPSE_OPTS,
-    wheelSensitivity: 0.2,
+    wheelSensitivity: 1.0,
     meta: makeMeta(elements, 'tab3'),
   }
 }
