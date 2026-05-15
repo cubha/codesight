@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Spring Boot fixture 생성기 — Cytoscape PoC collapse UX 수동 검증용.
+// Spring Boot fixture 생성기 — 대규모 라우트 수동 검증용 (chunk/grid 회귀).
 // 10 modules × 5 resources × 5 actions = 250 routes.
 import * as fs from 'node:fs'
 import * as path from 'node:path'

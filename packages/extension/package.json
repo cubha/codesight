@@ -2,7 +2,7 @@
   "name": "codebase-arch-viz",
   "displayName": "Codebase Architecture Visualizer",
   "description": "Architecture diagrams for 13 frameworks — route hierarchy, component trees, DB schema, and FE↔BE cross-project analysis. Static analysis, no API key needed.",
-  "version": "1.2.0-poc.2",
+  "version": "1.1.6",
   "publisher": "cubha",
   "license": "MIT",
   "icon": "media/icon.png",
@@ -101,10 +101,6 @@
       {
         "command": "codesight.clearApiKey",
         "title": "CodeSight: Clear Anthropic API Key"
-      },
-      {
-        "command": "codesight.openCytoscapePoc",
-        "title": "CodeSight: Open Cytoscape PoC (experimental)"
       }
     ],
     "configuration": {
@@ -167,11 +163,7 @@
     "@codebase-viz/core": "workspace:*",
     "@codebase-viz/llm": "workspace:*",
     "@codebase-viz/renderer": "workspace:*",
-    "@codebase-viz/types": "workspace:*",
-    "cytoscape": "^3.33.3",
-    "cytoscape-elk": "^2.3.0",
-    "cytoscape-expand-collapse": "^4.1.1",
-    "elkjs": "^0.9.3"
+    "@codebase-viz/types": "workspace:*"
   },
   "devDependencies": {
     "@mermaid-js/layout-elk": "^0.2.1",

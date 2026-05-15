@@ -2,7 +2,6 @@ import * as vscode from 'vscode'
 import * as path from 'node:path'
 import * as fs from 'node:fs'
 import { CodeSightPanel } from './webview.js'
-import { CytoscapePocPanel } from './cytoscapePocPanel.js'
 import { SidebarProvider, type StatusInfo } from './sidebarProvider.js'
 import { PanelProvider } from './panelProvider.js'
 import { runAnalysis } from './analyzer.js'
@@ -373,29 +372,6 @@ export function activate(context: vscode.ExtensionContext): void {
       await context.secrets.delete('codesight.anthropicKey')
       sidebarProvider?.updateStatus({ hasApiKey: false })
       void vscode.window.showInformationMessage(t('msg.apiKeyCleared', getLocale()))
-    }),
-
-    // Task 1 PoC — Cytoscape webview (회귀 0; mermaid viewer와 sibling).
-    // 캐시(.codesight/cache.json)에는 IRGraph 본체가 저장되지 않아 다시 분석한다.
-    vscode.commands.registerCommand('codesight.openCytoscapePoc', async () => {
-      const workspaceRoot = getWorkspaceRoot(context)
-      if (workspaceRoot === undefined) {
-        void vscode.window.showErrorMessage(t('msg.noWorkspace', getLocale()))
-        return
-      }
-      try {
-        const groupingCfg = vscode.workspace.getConfiguration('codesight.grouping')
-        const grouping = {
-          maxNodesPerGroup: groupingCfg.get<number>('maxNodesPerGroup', 30),
-          maxDepth: groupingCfg.get<number>('maxDepth', 8),
-        }
-        const { graph } = await runAnalysis(workspaceRoot, { grouping })
-        const panel = CytoscapePocPanel.createOrShow(context.extensionUri)
-        panel.showGraph(graph)
-      } catch (err) {
-        const message = err instanceof Error ? err.message : String(err)
-        void vscode.window.showErrorMessage(t('msg.analysisFailed', getLocale(), { message }))
-      }
     }),
   )
 }
