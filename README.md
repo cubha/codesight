@@ -4,9 +4,9 @@
 
 Routes, components, and DB relationships — extracted statically from **13 frameworks**, optionally enriched by LLM, rendered as three live diagram tabs inside VS Code.
 
-> Marketplace: [`cubha.codebase-arch-viz`](https://marketplace.visualstudio.com/items?itemName=cubha.codebase-arch-viz) · Current release: **v1.1.6**
+> Marketplace: [`cubha.codebase-arch-viz`](https://marketplace.visualstudio.com/items?itemName=cubha.codebase-arch-viz) · Current release: **v1.1.54**
 >
-> **v1.1.6 highlights** — React Router JSX expression child를 1-hop으로 추적해 누락 라우트 회수 / Viewer chunk별 독립 zoom·pan + 그리드 wrap / 부모 subgraph 안 자식 가로 정렬(`direction LR` 행 래퍼) / Spring Boot `src/test/**` 노이즈 제외. CHANGELOG 참고.
+> **v1.1.54 highlights** — React Router JSX expression child를 1-hop으로 추적해 누락 라우트 회수 / Viewer chunk별 독립 zoom·pan + 그리드 wrap / 부모 subgraph 안 자식 가로 정렬(`direction LR` 행 래퍼) / Spring Boot `src/test/**` 노이즈 제외. CHANGELOG 참고.
 
 ---
 
