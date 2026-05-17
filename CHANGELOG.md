@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.2.0] — 2026-05-17
+
+### Added — Multi-provider LLM (BYOK 확장)
+
+Anthropic 단일 의존에서 3-provider 지원으로 확장. `@anthropic-ai/sdk` 제거 → Vercel AI SDK (`ai` + `@ai-sdk/anthropic` + `@ai-sdk/google` + `@ai-sdk/openai`).
+
+- **Google Gemini 무료 키 지원**: `gemini-2.5-flash` 기본 모델. Free Tier 1,500 RPD · 1M TPM — 비용 없이 LLM 분석 가능.
+- **OpenAI 지원**: `gpt-4o` 기본 모델.
+- **Zod 스키마 검증 + 1회 retry**: LLM 응답 파싱 실패 시 자동 재시도.
+- **사이드바 AI Provider 드롭다운**: Anthropic / Google (Gemini 무료) / OpenAI 선택. Google 선택 시 aistudio.google.com 발급 안내 링크 표시.
+- **기존 Anthropic 키 자동 무중단 마이그레이션**: 첫 실행 시 `codesight.anthropicKey` → `codesight.llm.apiKey.anthropic` 슬롯으로 자동 이전.
+- **`codesight.llm.provider` 설정 키 추가**: VS Code Settings에서 provider 전환 가능 (default: `anthropic`).
+- **i18n 4로케일 provider 키 추가**: 한국어 · 영어 · 일본어 · 중국어 간체.
+- **README LLM Analysis 섹션 추가**: provider 비교 표 · Gemini 3단계 발급 가이드 · Free Tier 한계 명시.
+
 ## [1.1.6] — 2026-05-15
 
 ### Improved — React Router 분석기 (T1)

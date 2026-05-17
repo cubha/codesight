@@ -1,12 +1,22 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import type { LLMAnalysisResult } from './schema.js'
 
-const mockCreate = vi.fn()
+const mockGenerateText = vi.fn()
 
-vi.mock('@anthropic-ai/sdk', () => ({
-  default: vi.fn().mockImplementation(() => ({
-    messages: { create: mockCreate },
-  })),
+vi.mock('ai', () => ({
+  generateText: mockGenerateText,
+}))
+
+vi.mock('@ai-sdk/anthropic', () => ({
+  createAnthropic: vi.fn().mockReturnValue(vi.fn().mockReturnValue('mock-anthropic-model')),
+}))
+
+vi.mock('@ai-sdk/google', () => ({
+  createGoogleGenerativeAI: vi.fn().mockReturnValue(vi.fn().mockReturnValue('mock-google-model')),
+}))
+
+vi.mock('@ai-sdk/openai', () => ({
+  createOpenAI: vi.fn().mockReturnValue(vi.fn().mockReturnValue('mock-openai-model')),
 }))
 
 beforeEach(() => {
@@ -22,9 +32,7 @@ describe('analyzWithLLM', () => {
       inferenceNotes: ['blog route is server-rendered'],
     }
 
-    mockCreate.mockResolvedValue({
-      content: [{ type: 'text', text: JSON.stringify(mockResult) }],
-    })
+    mockGenerateText.mockResolvedValue({ text: JSON.stringify(mockResult) })
 
     const { analyzWithLLM } = await import('./client.js')
     const result = await analyzWithLLM(
@@ -46,8 +54,8 @@ describe('analyzWithLLM', () => {
       inferenceNotes: [],
     }
 
-    mockCreate.mockResolvedValue({
-      content: [{ type: 'text', text: `Here is the analysis:\n\`\`\`json\n${JSON.stringify(mockResult)}\n\`\`\`` }],
+    mockGenerateText.mockResolvedValue({
+      text: `Here is the analysis:\n\`\`\`json\n${JSON.stringify(mockResult)}\n\`\`\``,
     })
 
     const { analyzWithLLM } = await import('./client.js')
@@ -59,12 +67,12 @@ describe('analyzWithLLM', () => {
     expect(result.framework).toBe('vite-react')
   })
 
-  it('텍스트 응답이 없으면 에러를 던진다', async () => {
-    mockCreate.mockResolvedValue({ content: [] })
+  it('JSON이 없는 응답이면 에러를 던진다', async () => {
+    mockGenerateText.mockResolvedValue({ text: 'No JSON content here' })
 
     const { analyzWithLLM } = await import('./client.js')
     await expect(
       analyzWithLLM({ apiKey: 'test-key' }, { projectName: 'test', framework: 'unknown', fileContents: {} }),
-    ).rejects.toThrow('LLM returned no text content')
+    ).rejects.toThrow('LLM response does not contain valid JSON')
   })
 })

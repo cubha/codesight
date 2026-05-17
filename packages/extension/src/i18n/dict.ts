@@ -87,6 +87,17 @@ const KO: Dict = {
   'msg.btnSetApiKey': 'Set API Key',
   'msg.languageChanged': 'CodeSight: 언어 설정이 변경되었습니다. 변경 사항을 적용하려면 창을 다시 로드하세요.',
   'msg.reloadNow': '지금 다시 로드',
+  // sidebar — provider selector
+  'sidebar.llmProvider': 'AI 제공자',
+  'sidebar.providerAnthropic': 'Anthropic (Claude)',
+  'sidebar.providerGoogle': 'Google (Gemini 무료)',
+  'sidebar.providerOpenAI': 'OpenAI (GPT-4o)',
+  'sidebar.geminiGuide': 'Gemini 무료 키 발급 →',
+  // extension.ts — setApiKey
+  'msg.setApiKeyPrompt': '{provider} API 키를 입력하세요',
+  'msg.setApiKeyPlaceholderAnthropic': 'sk-ant-api03-...',
+  'msg.setApiKeyPlaceholderGoogle': 'AIza...',
+  'msg.setApiKeyPlaceholderOpenAI': 'sk-...',
   // extension.ts — showQuickPick
   'pick.selectWorkspace': 'Select workspace folder to analyze',
   'pick.selectPair': 'Select paired BE project (optional) — Esc or Skip to analyze single project',
@@ -159,6 +170,17 @@ const EN: Dict = {
   'msg.btnSetApiKey': 'Set API Key',
   'msg.languageChanged': 'CodeSight: Language changed. Reload window to apply.',
   'msg.reloadNow': 'Reload Now',
+  // sidebar — provider selector
+  'sidebar.llmProvider': 'AI Provider',
+  'sidebar.providerAnthropic': 'Anthropic (Claude)',
+  'sidebar.providerGoogle': 'Google (Gemini free)',
+  'sidebar.providerOpenAI': 'OpenAI (GPT-4o)',
+  'sidebar.geminiGuide': 'Get free Gemini key →',
+  // extension.ts — setApiKey
+  'msg.setApiKeyPrompt': 'Enter your {provider} API key',
+  'msg.setApiKeyPlaceholderAnthropic': 'sk-ant-api03-...',
+  'msg.setApiKeyPlaceholderGoogle': 'AIza...',
+  'msg.setApiKeyPlaceholderOpenAI': 'sk-...',
   'pick.selectWorkspace': 'Select workspace folder to analyze',
   'pick.selectPair': 'Select paired BE project (optional) — Esc or Skip to analyze single project',
 }
@@ -230,6 +252,17 @@ const JA: Dict = {
   'msg.btnSetApiKey': 'API キー設定',
   'msg.languageChanged': 'CodeSight: 言語設定が変更されました。適用するにはウィンドウを再読み込みしてください。',
   'msg.reloadNow': '今すぐ再読み込み',
+  // sidebar — provider selector
+  'sidebar.llmProvider': 'AI プロバイダー',
+  'sidebar.providerAnthropic': 'Anthropic (Claude)',
+  'sidebar.providerGoogle': 'Google (Gemini 無料)',
+  'sidebar.providerOpenAI': 'OpenAI (GPT-4o)',
+  'sidebar.geminiGuide': 'Gemini 無料キーを取得 →',
+  // extension.ts — setApiKey
+  'msg.setApiKeyPrompt': '{provider} API キーを入力してください',
+  'msg.setApiKeyPlaceholderAnthropic': 'sk-ant-api03-...',
+  'msg.setApiKeyPlaceholderGoogle': 'AIza...',
+  'msg.setApiKeyPlaceholderOpenAI': 'sk-...',
   'pick.selectWorkspace': '分析するワークスペースフォルダーを選択',
   'pick.selectPair': 'ペアの BE プロジェクトを選択 (オプション) — Esc またはスキップで単一分析',
 }
@@ -301,6 +334,17 @@ const ZH_CN: Dict = {
   'msg.btnSetApiKey': '设置 API Key',
   'msg.languageChanged': 'CodeSight: 语言已更改。重新加载窗口以应用。',
   'msg.reloadNow': '立即重新加载',
+  // sidebar — provider selector
+  'sidebar.llmProvider': 'AI 提供商',
+  'sidebar.providerAnthropic': 'Anthropic (Claude)',
+  'sidebar.providerGoogle': 'Google (Gemini 免费)',
+  'sidebar.providerOpenAI': 'OpenAI (GPT-4o)',
+  'sidebar.geminiGuide': '获取免费 Gemini Key →',
+  // extension.ts — setApiKey
+  'msg.setApiKeyPrompt': '请输入 {provider} API Key',
+  'msg.setApiKeyPlaceholderAnthropic': 'sk-ant-api03-...',
+  'msg.setApiKeyPlaceholderGoogle': 'AIza...',
+  'msg.setApiKeyPlaceholderOpenAI': 'sk-...',
   'pick.selectWorkspace': '选择要分析的工作区文件夹',
   'pick.selectPair': '选择配对的 BE 项目 (可选) — Esc 或 跳过 进行单项目分析',
 }

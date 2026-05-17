@@ -1,4 +1,8 @@
-import Anthropic from '@anthropic-ai/sdk'
+import { createAnthropic } from '@ai-sdk/anthropic'
+import { createGoogleGenerativeAI } from '@ai-sdk/google'
+import { createOpenAI } from '@ai-sdk/openai'
+import { generateText } from 'ai'
+import { z } from 'zod'
 import type { LLMAnalysisResult } from './schema.js'
 
 const SYSTEM_PROMPT = `You are a code architecture analyzer. Analyze the provided source code and return a JSON object describing the project structure.
@@ -48,8 +52,42 @@ Rules:
 - ISR if revalidate is set, SSG if generateStaticParams with no revalidate
 - If no backend is found, set backendServices to []`
 
+const DEFAULT_MODELS = {
+  anthropic: 'claude-sonnet-4-6',
+  google: 'gemini-2.5-flash',
+  openai: 'gpt-4o',
+} as const
+
+const LLMResultSchema = z.object({
+  framework: z.string(),
+  deployTarget: z.string().optional(),
+  hasSupabase: z.boolean().optional(),
+  hasPrisma: z.boolean().optional(),
+  hasDexie: z.boolean().optional(),
+  hasFirebase: z.boolean().optional(),
+  routes: z.array(z.object({
+    path: z.string(),
+    file: z.string(),
+    mode: z.string(),
+    components: z.array(z.string()),
+  })),
+  tables: z.array(z.object({
+    name: z.string(),
+    usedBy: z.array(z.string()),
+  })),
+  backendServices: z.array(z.object({
+    name: z.string(),
+    framework: z.string(),
+    modules: z.array(z.string()).optional(),
+    entities: z.array(z.string()).optional(),
+    dbType: z.string().optional(),
+  })).optional(),
+  inferenceNotes: z.array(z.string()),
+})
+
 export interface LLMClientOptions {
   apiKey: string
+  provider?: 'anthropic' | 'google' | 'openai'
   model?: string
   maxTokens?: number
 }
@@ -60,12 +98,19 @@ export interface AnalyzeOptions {
   fileContents: Record<string, string>
 }
 
+function createModel(opts: LLMClientOptions) {
+  const provider = opts.provider ?? 'anthropic'
+  const modelId = opts.model ?? DEFAULT_MODELS[provider]
+  if (provider === 'google') return createGoogleGenerativeAI({ apiKey: opts.apiKey })(modelId)
+  if (provider === 'openai') return createOpenAI({ apiKey: opts.apiKey })(modelId)
+  return createAnthropic({ apiKey: opts.apiKey })(modelId)
+}
+
 export async function analyzWithLLM(
   options: LLMClientOptions,
   analyzeOptions: AnalyzeOptions,
 ): Promise<LLMAnalysisResult> {
-  const client = new Anthropic({ apiKey: options.apiKey })
-  const model = options.model ?? 'claude-sonnet-4-5'
+  const model = createModel(options)
   const maxTokens = options.maxTokens ?? 8000
 
   const fileBlock = Object.entries(analyzeOptions.fileContents)
@@ -79,22 +124,23 @@ Analyze the following source files and return the JSON structure:
 
 ${fileBlock}`
 
-  const message = await client.messages.create({
-    model,
-    max_tokens: maxTokens,
-    system: SYSTEM_PROMPT,
-    messages: [{ role: 'user', content: userMessage }],
-  })
+  const attempt = async (): Promise<LLMAnalysisResult> => {
+    const { text } = await generateText({
+      model,
+      maxOutputTokens: maxTokens,
+      system: SYSTEM_PROMPT,
+      messages: [{ role: 'user', content: userMessage }],
+    })
 
-  const textContent = message.content.find(c => c.type === 'text')
-  if (textContent === undefined || textContent.type !== 'text') {
-    throw new Error('LLM returned no text content')
+    const jsonMatch = text.match(/\{[\s\S]+\}/)
+    if (jsonMatch === null) throw new Error('LLM response does not contain valid JSON')
+
+    return LLMResultSchema.parse(JSON.parse(jsonMatch[0])) as LLMAnalysisResult
   }
 
-  const jsonMatch = textContent.text.match(/\{[\s\S]+\}/)
-  if (jsonMatch === null) {
-    throw new Error('LLM response does not contain valid JSON')
+  try {
+    return await attempt()
+  } catch {
+    return await attempt()
   }
-
-  return JSON.parse(jsonMatch[0]) as LLMAnalysisResult
 }
