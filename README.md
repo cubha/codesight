@@ -4,9 +4,9 @@
 
 Routes, components, and DB relationships — extracted statically from **13 frameworks**, optionally enriched by LLM, rendered as three live diagram tabs inside VS Code.
 
-> Marketplace: [`cubha.codebase-arch-viz`](https://marketplace.visualstudio.com/items?itemName=cubha.codebase-arch-viz) · Current release: **v1.1.54**
+> Marketplace: [`cubha.codebase-arch-viz`](https://marketplace.visualstudio.com/items?itemName=cubha.codebase-arch-viz) · Current release: **v1.2.0**
 >
-> **v1.1.54 highlights** — React Router JSX expression child를 1-hop으로 추적해 누락 라우트 회수 / Viewer chunk별 독립 zoom·pan + 그리드 wrap / 부모 subgraph 안 자식 가로 정렬(`direction LR` 행 래퍼) / Spring Boot `src/test/**` 노이즈 제외. CHANGELOG 참고.
+> **v1.2.0 highlights** — **Multi-provider LLM** (Anthropic · Google Gemini · OpenAI) BYOK 지원 / **Gemini 무료 키**로 비용 없이 LLM 분석 가능 / 사이드바 AI Provider 드롭다운 + 무료 키 발급 안내 / 기존 Anthropic 키 자동 무중단 마이그레이션. CHANGELOG 참고.
 
 ---
 
@@ -42,6 +42,38 @@ Unmatched FE calls appear as **dangling edges** (inferred, `no-route-match`). Di
 
 ---
 
+## LLM Analysis (Optional, BYOK)
+
+Static analysis covers all 13 frameworks without any API key. LLM enrichment is additive — static results are never discarded.
+
+| | Static only | With LLM |
+|---|---|---|
+| Framework detection | package.json / config files | ✅ + fallback for unknown stacks |
+| Route extraction | File-system + AST | ✅ + dynamic route inference |
+| FE↔BE URL matching | Literal URLs (~30–50%) | ✅ ~70–85% (resolves constants & templates) |
+| Unknown frameworks | L3 LLM-primary mode | ✅ Express, Hono, Rails, Go, … |
+
+### Supported Providers
+
+Select a provider in the CodeSight sidebar under **AI Provider**:
+
+| Provider | Model | Cost |
+|---|---|---|
+| **Anthropic** | `claude-sonnet-4-6` | Paid (BYOK) |
+| **Google Gemini** | `gemini-2.5-flash` | **Free tier available** |
+| **OpenAI** | `gpt-4o` | Paid (BYOK) |
+
+### Getting a Free Gemini API Key
+
+1. Go to **[aistudio.google.com](https://aistudio.google.com/app/apikey)**
+2. Click **Create API key** → select or create a Google Cloud project
+3. Copy the key → open VS Code → CodeSight sidebar → select **Google (Gemini 무료)** → click **Set API Key**
+
+> **Free Tier limits**: 1,500 requests/day · 1M tokens/min · 1M token context window.
+> Large projects (> 500 routes) may approach the daily limit. Use static-only mode for routine browsing and reserve LLM for final analysis.
+
+---
+
 ## Supported Frameworks (static analysis, no API key)
 
 ### Frontend / Full-stack
@@ -69,7 +101,7 @@ Unmatched FE calls appear as **dangling edges** (inferred, `no-route-match`). Di
 
 **L1** = routes only · **L2** = routes + components + DB (ORM-conditional) · **L3** = all 3 tabs always
 
-Frameworks not in this list (Express, Hono, Rails, Go, etc.) fall back to **L3 — LLM primary** mode when an Anthropic API key is provided.
+Frameworks not in this list (Express, Hono, Rails, Go, etc.) fall back to **L3 — LLM primary** mode when an API key is configured (any provider).
 
 ---
 
@@ -238,6 +270,7 @@ npx vsce publish --no-dependencies -p <PAT>
 | v1.1.51 | **chunked path nested grouping 수정** — 937+ routes 환경에서 `buildRouteRowDiagram` · `renderScreenSection` NestedGroup tree 보존 · 청크 경계 1 top-level branch = 1 chunk |
 | v1.1.52 | **Tab1/Tab2 chunk 과다 수정** (698→9 chunks, `collectGroupRoutes` 30 routes/chunk 기준) · **Tab3 extractModule 수정** (`bin/main/sql/primary/**` → 의미 디렉토리 추출) · **row-mode floating island 수정** (`left:50%→0`) · **React Router sub-router 2-pass 파싱** (9→130 routes, `element={<SubRouter/>}` 재귀 추적) |
 | v1.1.53 | **작은 프로젝트 Y축 단조 나열 수정** (adapter-wide) — `SINGLE_DIAGRAM_ROUTE_THRESHOLD = 100` 게이트 추가. 28 routes / 7 top-level folder 같은 작은 프로젝트가 `GROUPS_PER_ROW=5` / `TAB2_GROUPS_PER_ROW=2` 초과만으로 chunked → viewer row-mode Y축 stack되던 결함. 모든 어댑터(angular/fastapi/flask/next/nextpages/nuxt/react-router/remix/sveltekit/vue-spa)의 mini fixture까지 Tab2 chunked였던 adapter-wide 결함 해소. 200-route stress test 회귀 보호 유지. |
+| v1.2.0 | **Multi-provider LLM** — Anthropic · Google Gemini · OpenAI BYOK 지원. Vercel AI SDK로 교체, Zod 스키마 검증 + 1회 retry. **Gemini 무료 키** 지원 (1,500 RPD · 무료): 사이드바 AI Provider 드롭다운에서 Google 선택 후 aistudio.google.com 발급 키 입력. 기존 Anthropic 키 자동 무중단 마이그레이션 (first-run 1회). i18n 4로케일 provider 키 추가. |
 
 ---
 

@@ -21,6 +21,7 @@ import {
 
 export interface LLMOptions {
   apiKey: string
+  provider?: 'anthropic' | 'google' | 'openai'
   model?: string
 }
 

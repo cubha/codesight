@@ -14,6 +14,29 @@ function getLocale() {
   const setting = vscode.workspace.getConfiguration('codesight').get<string>('language', 'auto')
   return resolveLocale(setting, vscode.env.language)
 }
+
+type LLMProvider = 'anthropic' | 'google' | 'openai'
+
+function getProvider(): LLMProvider {
+  const val = vscode.workspace.getConfiguration('codesight').get<string>('llm.provider', 'anthropic')
+  if (val === 'google' || val === 'openai') return val
+  return 'anthropic'
+}
+
+function apiKeySlot(provider: LLMProvider): string {
+  return `codesight.llm.apiKey.${provider}`
+}
+
+async function migrateApiKey(context: vscode.ExtensionContext): Promise<void> {
+  const MIGRATED_FLAG = 'codesight.llm.keyMigrated'
+  if (context.globalState.get<boolean>(MIGRATED_FLAG)) return
+  const legacy = await context.secrets.get('codesight.anthropicKey')
+  if (legacy !== undefined && legacy !== '') {
+    await context.secrets.store(apiKeySlot('anthropic'), legacy)
+    await context.secrets.delete('codesight.anthropicKey')
+  }
+  await context.globalState.update(MIGRATED_FLAG, true)
+}
 import { setWasmDir } from '@codebase-viz/core'
 import type { DiagramSet } from '@codebase-viz/renderer'
 
@@ -134,10 +157,11 @@ async function doAnalyze(
   const config = vscode.workspace.getConfiguration('codesight')
   const enableLLM = config.get<boolean>('enableLLM', false)
   const model = config.get<string>('model', 'claude-sonnet-4-6')
+  const provider = getProvider()
 
   let apiKey: string | undefined
   if (enableLLM) {
-    apiKey = await context.secrets.get('codesight.anthropicKey')
+    apiKey = await context.secrets.get(apiKeySlot(provider))
     if (apiKey === undefined || apiKey === '') {
       const setKeyLabel = t('msg.btnSetApiKey', getLocale())
       const action = await vscode.window.showWarningMessage(
@@ -184,7 +208,7 @@ async function doAnalyze(
       maxDepth: groupingCfg.get<number>('maxDepth', 8),
     }
     const { graph, diagrams } = await runAnalysis(workspaceRoot, {
-      ...(apiKey !== undefined ? { llm: { apiKey, model } } : {}),
+      ...(apiKey !== undefined ? { llm: { apiKey, model, provider } } : {}),
       grouping,
       ...(pairRepoRoot !== undefined ? { pairRepoRoot } : {}),
     })
@@ -224,6 +248,7 @@ async function doAnalyze(
 
 export function activate(context: vscode.ExtensionContext): void {
   setWasmDir(path.join(context.extensionPath, 'dist', 'wasm'))
+  void migrateApiKey(context)
   sidebarProvider = new SidebarProvider(context.extensionUri)
   context.subscriptions.push(
     vscode.window.registerWebviewViewProvider(SidebarProvider.viewType, sidebarProvider),
@@ -236,7 +261,7 @@ export function activate(context: vscode.ExtensionContext): void {
 
   // Push initial status
   void (async () => {
-    const hasApiKey = (await context.secrets.get('codesight.anthropicKey') ?? '') !== ''
+    const hasApiKey = (await context.secrets.get(apiKeySlot(getProvider())) ?? '') !== ''
     const llmEnabled = vscode.workspace.getConfiguration('codesight').get<boolean>('enableLLM', false)
     const workspaceRoot = getWorkspaceRoot(context)
     const cached = workspaceRoot !== undefined ? readCache(workspaceRoot) : undefined
@@ -245,6 +270,7 @@ export function activate(context: vscode.ExtensionContext): void {
     sidebarProvider?.updateStatus({
       hasApiKey,
       llmEnabled,
+      provider: getProvider(),
       hasCache: cached !== undefined,
       projectName: cached?.projectName,
       cachedAt: cached?.savedAt,
@@ -271,6 +297,12 @@ export function activate(context: vscode.ExtensionContext): void {
       if (e.affectsConfiguration('codesight.enableLLM')) {
         const llmEnabled = vscode.workspace.getConfiguration('codesight').get<boolean>('enableLLM', false)
         sidebarProvider?.updateStatus({ llmEnabled })
+      }
+      if (e.affectsConfiguration('codesight.llm.provider')) {
+        const provider = getProvider()
+        void context.secrets.get(apiKeySlot(provider)).then(key => {
+          sidebarProvider?.updateStatus({ provider, hasApiKey: (key ?? '') !== '' })
+        })
       }
       // language 변경 시 모든 webview를 새 locale로 즉시 다시 렌더 (reload 불필요).
       if (e.affectsConfiguration('codesight.language')) {
@@ -356,20 +388,28 @@ export function activate(context: vscode.ExtensionContext): void {
     }),
 
     vscode.commands.registerCommand('codesight.setApiKey', async () => {
+      const provider = getProvider()
+      const locale = getLocale()
+      const providerLabel = provider === 'google' ? 'Google Gemini' : provider === 'openai' ? 'OpenAI' : 'Anthropic'
+      const placeholderMap: Record<LLMProvider, string> = {
+        anthropic: 'sk-ant-api03-...',
+        google: 'AIza...',
+        openai: 'sk-...',
+      }
       const key = await vscode.window.showInputBox({
-        prompt: 'Enter your Anthropic API key',
+        prompt: t('msg.setApiKeyPrompt', locale, { provider: providerLabel }),
         password: true,
-        placeHolder: 'sk-ant-api03-...',
+        placeHolder: placeholderMap[provider],
       })
       if (key !== undefined && key !== '') {
-        await context.secrets.store('codesight.anthropicKey', key)
+        await context.secrets.store(apiKeySlot(getProvider()), key)
         sidebarProvider?.updateStatus({ hasApiKey: true })
         void vscode.window.showInformationMessage(t('msg.apiKeySaved', getLocale()))
       }
     }),
 
     vscode.commands.registerCommand('codesight.clearApiKey', async () => {
-      await context.secrets.delete('codesight.anthropicKey')
+      await context.secrets.delete(apiKeySlot(getProvider()))
       sidebarProvider?.updateStatus({ hasApiKey: false })
       void vscode.window.showInformationMessage(t('msg.apiKeyCleared', getLocale()))
     }),

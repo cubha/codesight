@@ -14,6 +14,7 @@ export interface StatusInfo {
   analyzing?: boolean
   hasApiKey?: boolean
   llmEnabled?: boolean
+  provider?: 'anthropic' | 'google' | 'openai'
   hasCache?: boolean
   framework?: string
   parsingLevel?: 'L1' | 'L2' | 'L3'
@@ -75,6 +76,16 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
             .getConfiguration('codesight')
             .update('language', msg.value, vscode.ConfigurationTarget.Global)
           // setting 변경은 onDidChangeConfiguration에서 sidebar/viewer 모두 refresh 처리.
+          break
+        case 'setProvider':
+          await vscode.workspace
+            .getConfiguration('codesight.llm')
+            .update('provider', msg.value, vscode.ConfigurationTarget.Global)
+          break
+        case 'openExternal':
+          if (typeof msg.value === 'string') {
+            await vscode.env.openExternal(vscode.Uri.parse(msg.value))
+          }
           break
       }
     })
@@ -233,6 +244,21 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
 
 <div class="section">
   <div class="label">${t('sidebar.llmAnalysis', locale)}</div>
+  <div style="margin-bottom:6px;font-size:11px;color:var(--vscode-descriptionForeground)">${t('sidebar.llmProvider', locale)}</div>
+  <select id="providerSelect" onchange="send('setProvider', this.value)"
+    style="width:100%;padding:4px 6px;margin-bottom:6px;background:var(--vscode-dropdown-background);
+    color:var(--vscode-dropdown-foreground);border:1px solid var(--vscode-dropdown-border);
+    border-radius:3px;font-size:11px;">
+    <option value="anthropic">${t('sidebar.providerAnthropic', locale)}</option>
+    <option value="google">${t('sidebar.providerGoogle', locale)}</option>
+    <option value="openai">${t('sidebar.providerOpenAI', locale)}</option>
+  </select>
+  <div id="geminiGuide" style="display:none;margin-bottom:6px;padding:5px 8px;border-radius:3px;
+    font-size:10.5px;background:rgba(66,133,244,0.1);color:var(--vscode-charts-blue,#4285f4);
+    border-left:2px solid var(--vscode-charts-blue,#4285f4);cursor:pointer;"
+    onclick="openGeminiGuide()">
+    ${t('sidebar.geminiGuide', locale)}
+  </div>
   <div class="api-row">
     <div class="dot off" id="apiDot"></div>
     <span id="apiLabel">${t('sidebar.apiKeyNotSet', locale)}</span>
@@ -279,6 +305,10 @@ function tr(key) { return (window.__SIDEBAR_I18N__[key]) || key; }</script>
     llmOn = !llmOn;
     document.getElementById('llmToggle').className = 'toggle' + (llmOn ? ' on' : '');
     send('toggleLLM', llmOn);
+  }
+
+  function openGeminiGuide() {
+    send('openExternal', 'https://aistudio.google.com/app/apikey');
   }
 
   window.addEventListener('message', e => {
@@ -370,6 +400,12 @@ function tr(key) { return (window.__SIDEBAR_I18N__[key]) || key; }</script>
       document.getElementById('stackRow').style.display = 'flex';
     }
     document.getElementById('llmWarning').style.display = s.llmRecommended ? 'block' : 'none';
+
+    // Provider selector
+    if (s.provider != null) {
+      document.getElementById('providerSelect').value = s.provider;
+      document.getElementById('geminiGuide').style.display = s.provider === 'google' ? 'block' : 'none';
+    }
 
     // API Key
     if (s.hasApiKey != null) {

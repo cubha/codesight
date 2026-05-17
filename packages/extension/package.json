@@ -2,7 +2,7 @@
   "name": "codebase-arch-viz",
   "displayName": "Codebase Architecture Visualizer",
   "description": "Architecture diagrams for 13 frameworks — route hierarchy, component trees, DB schema, and FE↔BE cross-project analysis. Static analysis, no API key needed.",
-  "version": "1.1.54",
+  "version": "1.2.0",
   "publisher": "cubha",
   "license": "MIT",
   "icon": "media/icon.png",
@@ -96,11 +96,11 @@
       },
       {
         "command": "codesight.setApiKey",
-        "title": "CodeSight: Set Anthropic API Key"
+        "title": "CodeSight: Set API Key"
       },
       {
         "command": "codesight.clearApiKey",
-        "title": "CodeSight: Clear Anthropic API Key"
+        "title": "CodeSight: Clear API Key"
       }
     ],
     "configuration": {
@@ -125,15 +125,26 @@
           "default": "auto",
           "description": "Display language for CodeSight UI (sidebar, viewer, messages). 'auto' follows VS Code display language."
         },
+        "codesight.llm.provider": {
+          "type": "string",
+          "enum": ["anthropic", "google", "openai"],
+          "enumDescriptions": [
+            "Anthropic Claude (claude-sonnet-4-6)",
+            "Google Gemini (gemini-2.5-flash) — free tier available",
+            "OpenAI (gpt-4o)"
+          ],
+          "default": "anthropic",
+          "description": "LLM provider to use for AI-powered analysis. Each provider requires its own API key."
+        },
         "codesight.model": {
           "type": "string",
-          "default": "claude-sonnet-4-6",
-          "description": "Claude model to use for LLM analysis (requires API key)"
+          "default": "",
+          "description": "Override the default model for the selected provider. Leave empty to use the provider default."
         },
         "codesight.enableLLM": {
           "type": "boolean",
           "default": false,
-          "description": "Enable LLM-based analysis (requires Anthropic API key)"
+          "description": "Enable AI-powered analysis (requires an API key for the selected provider)"
         },
         "codesight.grouping.maxNodesPerGroup": {
           "type": "number",
