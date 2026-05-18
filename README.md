@@ -97,7 +97,7 @@ Select a provider in the CodeSight sidebar under **AI Provider**:
 | Django | **L2** | `requirements.txt` → `django` or `manage.py` | URL patterns · CBV/FBV method detection (GET/POST) · Django ORM models (nullable/FK/db_table) |
 | FastAPI | **L2** | `requirements.txt` → `fastapi` | Routes (GET/POST labels) · Pydantic schemas · SQLAlchemy models (nullable/type/__tablename__) |
 | Flask | **L2** | `requirements.txt` → `flask` | `@app.route` + Blueprint routes · view classes · SQLAlchemy models (Base/db.Model) |
-| Spring Boot | **L2** | `pom.xml` / `build.gradle` | Controllers (GET/POST labels) · `@Service`/`@Repository` · JPA `@Entity` (@JoinColumn/nullable) · MyBatis mapper XML + `@Mapper` interfaces |
+| Spring Boot | **L2** | `pom.xml` / `build.gradle` | Controllers (GET/POST labels) · `@Service`/`@Repository` · JPA `@Entity` (@JoinColumn/nullable) · MyBatis mapper XML + `@Mapper` interfaces · **DI chain** (field/constructor/setter injection → `calls` edges) |
 
 **L1** = routes only · **L2** = routes + components + DB (ORM-conditional) · **L3** = all 3 tabs always
 

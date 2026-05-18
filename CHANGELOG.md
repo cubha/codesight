@@ -1,5 +1,27 @@
 # Changelog
 
+## [1.2.2] — 2026-05-18
+
+### Added — Spring Boot DI 분석기 + BE 전용 렌더러 3종
+
+기존 어댑터에 BE 카테고리 분기를 도입. FE 렌더러 동작은 변경 없음(회귀 0).
+
+- **`AdapterCategory` 도입 (`FE` | `BE` | `Fullstack`)**: `IAdapter.category` + `IRGraphMetadata.adapterCategory` 추가. 13개 어댑터(Next.js / Next.js Pages / Remix / React Router / Nuxt / SvelteKit / Vue SPA / Angular / NestJS / Spring Boot / Django / FastAPI / Flask)에 카테고리 부여.
+- **Spring Boot DI 파서**: tree-sitter Java AST 기반. 필드 주입(`@Autowired private X x`), 생성자 주입(단일 ctor 자동 + `@Autowired` ctor), setter 주입(`@Autowired setX()`) 3종을 감지하여 `calls` 엣지 생성. `confidence:'inferred'` + `inferenceChain` 기록, 중복 엣지 제거.
+- **Tab1 BE 렌더러 (File-First grouping)**: Controller 파일 단위로 subgraph를 생성하고 경로 LCP(longest-common-prefix)를 추출해 subgraph 제목에 prefix를 표기, 노드 라벨에는 suffix만 표시 (`📄 UserController [/api/users]` → `GET /:id`).
+- **Tab2 BE 렌더러 (3-tier DI architecture)**: Controllers / Services / Repositories / Components 4-tier subgraph + DI `calls` 엣지 렌더링. 이름 휴리스틱(`*Controller` / `*Service(Impl)?` / `*Repository|Dao|Mapper`)으로 자동 분류.
+- **Tab3 BE 확장 (Repository cross-ref)**: Repository / Dao / Mapper 컴포넌트를 queries 엣지가 없어도 ER 다이어그램에 표시해 Tab2와 cross-tab 추적이 가능.
+
+### Improved — Tab3 ER 테이블 디자인 (MySQL Workbench 스타일)
+
+- **헤더 / 필드 콘트라스트 강화**: 헤더는 어두운 청회색(`#2a4055`) + 밝은 폰트(`#f8fafc`), 필드(td)는 밝은 배경(`#ffffff` / `#f1f5f9`) + 어두운 폰트(`#1e293b`).
+- **`textColor` themeVariable 추가**: 외부 mermaid 렌더러(viewer CSS 인젝션이 없는 환경)에서도 동일한 td 텍스트 색상 보장.
+
+### Fixed
+
+- **CLI에서 `adapterCategory` 누락**: `packages/cli/src/index.ts`가 `IRGraph.metadata`에 `adapterCategory`를 주입하지 않아 CLI 경로에서 BE 분기가 무시되고 FE URL grouping으로 fall-through 되던 결함 수정. `packages/extension/src/analyzer.ts`와 동일 패턴으로 정렬.
+- **URL grouper 무한 재귀 가드**: `groupRoutesRecursive`의 `shouldRecurse` 조건을 `routes.length > minGroupSize`에서 `distinctPaths > 1`로 변경. 동일 경로 N개 라우트(예: Spring `@RequestMapping` 동일 경로 여러 HTTP 메서드)에서 더 이상 분기하지 않음.
+
 ## [1.2.1] — 2026-05-18
 
 ### Fixed

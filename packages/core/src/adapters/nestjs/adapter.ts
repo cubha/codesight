@@ -11,6 +11,7 @@ export class NestJsAdapter implements IAdapter {
   readonly id = 'nestjs'
   readonly framework = 'nestjs' as const
   readonly parsingLevel = 'L2' as const
+  readonly category = 'BE' as const
 
   async analyze(ctx: AdapterContext): Promise<AdapterResult> {
     const { repoRoot, analyzerVersion, stack } = ctx

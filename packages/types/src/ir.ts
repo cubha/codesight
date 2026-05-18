@@ -159,6 +159,7 @@ export interface IRGraphMetadata {
   hasDexie: boolean
   hasFirebase: boolean
   backends?: IRBackendService[]  // backend services detected by LLM
+  adapterCategory?: 'FE' | 'BE' | 'Fullstack'
 }
 
 // ─── IRGraph (root) ───────────────────────────────────────────────────────────

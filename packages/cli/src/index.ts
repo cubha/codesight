@@ -36,6 +36,7 @@ export async function analyze(
       hasPrisma: stack.hasPrisma,
       hasDexie: stack.hasDexie,
       hasFirebase: false,
+      ...(adapter !== undefined ? { adapterCategory: adapter.category } : {}),
     },
     nodes: [
       ...result.routeNodes,

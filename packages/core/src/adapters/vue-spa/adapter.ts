@@ -13,6 +13,7 @@ export class VueSpaAdapter implements IAdapter {
   readonly id = 'vue-spa'
   readonly framework = 'vue-spa' as const
   readonly parsingLevel = 'L2' as const
+  readonly category = 'FE' as const
 
   async analyze(ctx: AdapterContext): Promise<AdapterResult> {
     const { repoRoot, analyzerVersion, stack } = ctx

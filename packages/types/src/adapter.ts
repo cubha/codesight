@@ -17,10 +17,13 @@ export interface AdapterResult {
   serverEdges?: IREdge[]
 }
 
+export type AdapterCategory = 'FE' | 'BE' | 'Fullstack'
+
 export interface IAdapter {
   readonly id: string
   readonly framework: FrameworkKind
   readonly parsingLevel: ParsingLevel
+  readonly category: AdapterCategory
   analyze(ctx: AdapterContext): Promise<AdapterResult>
 }
 

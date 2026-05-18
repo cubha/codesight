@@ -12,6 +12,7 @@ export class RemixAdapter implements IAdapter {
   readonly id = 'remix'
   readonly framework = 'remix' as const
   readonly parsingLevel = 'L2' as const
+  readonly category = 'FE' as const
 
   async analyze(ctx: AdapterContext): Promise<AdapterResult> {
     const { repoRoot, analyzerVersion, stack } = ctx

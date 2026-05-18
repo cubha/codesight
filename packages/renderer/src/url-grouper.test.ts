@@ -33,12 +33,13 @@ describe('groupRoutesByUrl', () => {
     expect(result[0]!.routes).toHaveLength(1)
   })
 
-  it('3. 단일 LCP — /users 공통 접두사', () => {
+  it('3. 단일 LCP — /users 공통 접두사 (distinctPaths→nested)', () => {
     const routes = [r('/users/1'), r('/users/2'), r('/users/3/edit')]
     const result = groupRoutesByUrl(routes)
     expect(result).toHaveLength(1)
     expect(result[0]!.groupKey).toBe('/users')
-    expect(result[0]!.routes).toHaveLength(3)
+    // distinctPaths > 1 → 재귀 발생 → 직접 routes는 [] (각 하위 path별 children으로 분리)
+    expect(result[0]!.children.length).toBeGreaterThan(0)
   })
 
   it('4. multi-cluster fallback — /api, /admin, / 3개 그룹', () => {
@@ -51,12 +52,13 @@ describe('groupRoutesByUrl', () => {
     expect(keys).toContain('/')
   })
 
-  it('5. nested LCP — /api/v1 공통 접두사', () => {
+  it('5. nested LCP — /api/v1 공통 접두사 (distinctPaths→nested)', () => {
     const routes = [r('/api/v1/users'), r('/api/v1/orders')]
     const result = groupRoutesByUrl(routes)
     expect(result).toHaveLength(1)
     expect(result[0]!.groupKey).toBe('/api/v1')
-    expect(result[0]!.routes).toHaveLength(2)
+    // distinctPaths > 1 → 재귀 발생 → /users, /orders 각자 child 그룹
+    expect(result[0]!.children.length).toBeGreaterThan(0)
   })
 
   it('6. mixed dynamic segment — /users와 /posts 2개 그룹', () => {
@@ -102,18 +104,19 @@ describe('groupRoutesByUrl', () => {
     expect(nestingDepth(result)).toBeLessThanOrEqual(2)
   })
 
-  it('9. minGroupSize:10 — 그룹 크기 ≤ 10 은 평면화 (B1)', () => {
+  it('9. minGroupSize 옵션은 distinctPaths 기반 재귀에서 무시 — maxDepth만 깊이 제어 (B1)', () => {
     const routes = [
       r('/api/v1/partner/A'), r('/api/v1/partner/B'),
       r('/api/v1/partner/C'), r('/api/v1/partner/D'),
       r('/api/v1/admin/X'), r('/api/v1/admin/Y'),
       r('/api/v1/admin/Z'), r('/api/v1/admin/W'),
     ]
+    // distinctPaths.size > 1 이면 minGroupSize와 무관하게 재귀 발생
     const result = groupRoutesByUrl(routes, { minGroupSize: 10 })
     function hasChildren(groups: typeof result): boolean {
       return groups.some(g => g.children.length > 0 || hasChildren(g.children))
     }
-    expect(hasChildren(result)).toBe(false)
+    expect(hasChildren(result)).toBe(true)
   })
 
   it('10. 모든 path 동일 — 무한 재귀 없이 단일 그룹 반환 (B1)', () => {
@@ -121,5 +124,25 @@ describe('groupRoutesByUrl', () => {
     expect(() => groupRoutesByUrl(routes)).not.toThrow()
     const result = groupRoutesByUrl(routes)
     expect(result.length).toBeGreaterThan(0)
+  })
+
+  it('11. BE 동일 path 다중 HTTP method — 재귀 없이 평면 유지', () => {
+    // GET /list, POST /list → distinctPaths.size === 1 → 재귀 안 함
+    const routes = [r('/api/list'), r('/api/list')]
+    const result = groupRoutesByUrl(routes)
+    function hasChildren(groups: typeof result): boolean {
+      return groups.some(g => g.children.length > 0 || hasChildren(g.children))
+    }
+    expect(hasChildren(result)).toBe(false)
+  })
+
+  it('12. BE 2개 경로 — distinctPaths.size > 1 이면 minGroupSize 무관하게 분리', () => {
+    // 기존 minGroupSize:3 기본값이면 2개 라우트는 재귀 안 했지만, 이제 distinctPaths 기준
+    const routes = [r('/api/v1/users'), r('/api/v1/orders')]
+    const result = groupRoutesByUrl(routes)
+    // /api/v1 LCP → 단일 그룹, children 없이 평면이거나 nested
+    expect(result.length).toBeGreaterThan(0)
+    // 두 경로가 하나의 그룹 아래 묶임 (LCP=/api/v1)
+    expect(result[0]!.groupKey).toBe('/api/v1')
   })
 })
