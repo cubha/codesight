@@ -368,7 +368,7 @@ function fitRowSvgsInitial(t, inner) {
     const natH = (vb && vb.height > 0) ? vb.height : (parseFloat(svg.getAttribute('height')) || 600);
     // row-diagram cell width는 grid가 결정 (minmax(560,1fr)). clientWidth로 측정.
     const cellW = row.clientWidth - 8;
-    const fitS = cellW > 0 && natW > 0 ? Math.min(cellW / natW, 1.0) : 1.0;
+    const fitS = 1.0;
     // SVG width를 cell에 fit → row-diagram min-height에도 반영
     svg.setAttribute('width', natW);
     svg.setAttribute('height', natH);

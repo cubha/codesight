@@ -3,6 +3,7 @@ import { describe, it, expect } from 'vitest'
 import { parseReactRoutes } from './route-parser.js'
 
 const FIXTURE = path.resolve(process.cwd(), 'fixtures/mini-react-router-jsx-expr')
+const FIXTURE_MAP_PREFIX = path.resolve(process.cwd(), 'fixtures/mini-react-router-map-prefix')
 
 describe('parseReactRoutes — JsxExpression 1-hop 추적 (v1.1.6 T1)', () => {
   // E-1: 동일 파일 const + .map() 데이터 배열 → inferred
@@ -61,5 +62,37 @@ describe('parseReactRoutes — JsxExpression 1-hop 추적 (v1.1.6 T1)', () => {
     const paths = new Set(routes.map(r => r.path))
     const expected = ['/login', '/inside', '/dashboard', '/settings', '/profile', '/m/home', '/m/search', '/m/login']
     for (const p of expected) expect(paths.has(p)).toBe(true)
+  })
+})
+
+describe('parseReactRoutes — .map() path prefix 추출 (T-FIX-2)', () => {
+  // P-1: BinaryExpression '/' + route.path → prefix 적용
+  it('P-1: BinaryExpression prefix — /dashboard, /settings 추출', async () => {
+    const routes = await parseReactRoutes(FIXTURE_MAP_PREFIX, 'test@0.1')
+    const paths = routes.map(r => r.path)
+    expect(paths).toContain('/dashboard')
+    expect(paths).toContain('/settings')
+  })
+
+  // P-2: TemplateLiteral `/api/${r.path}` → prefix 적용
+  it('P-2: TemplateLiteral prefix — /api/users, /api/orders 추출', async () => {
+    const routes = await parseReactRoutes(FIXTURE_MAP_PREFIX, 'test@0.1')
+    const paths = routes.map(r => r.path)
+    expect(paths).toContain('/api/users')
+    expect(paths).toContain('/api/orders')
+  })
+
+  // P-3: prefix 없는 기존 경로(/login)는 회귀 없음
+  it('P-3: literal Route(/login) 회귀 없음', async () => {
+    const routes = await parseReactRoutes(FIXTURE_MAP_PREFIX, 'test@0.1')
+    expect(routes.map(r => r.path)).toContain('/login')
+  })
+
+  // P-4: .map() 결과 라우트는 confidence: inferred
+  it('P-4: .map() prefix 라우트는 confidence: inferred', async () => {
+    const routes = await parseReactRoutes(FIXTURE_MAP_PREFIX, 'test@0.1')
+    const dashboard = routes.find(r => r.path === '/dashboard')
+    expect(dashboard?.confidence).toBe('inferred')
+    expect(Array.isArray((dashboard as { inferenceChain?: string[] }).inferenceChain)).toBe(true)
   })
 })

@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.2.1] — 2026-05-18
+
+### Fixed
+
+- **Sidebar API key guide for all providers**: Previously only Google (Gemini) showed a key-generation link. Now Anthropic (`console.anthropic.com`) and OpenAI (`platform.openai.com/api-keys`) also display a provider-specific guide link when selected.
+- **React Router `.map()` path prefix extraction**: Routes declared as `appRoutes.map(r => <Route path={'/' + r.path} />)` or template-literal form `` path={`/${r.path}`} `` now correctly extract the prefix and produce `/dashboard`, `/settings`, etc. instead of bare `dashboard`.
+- **Row-mode initial zoom fixed at 1.0**: Large BE projects (e.g. 975 routes / 33 chunks) were auto-scaled to an unreadable size. Each chunk SVG now starts at 1:1 scale; use scroll-wheel zoom and drag-pan to navigate.
+
 ## [1.2.0] — 2026-05-17
 
 ### Added — Multi-provider LLM (BYOK 확장)

@@ -92,7 +92,9 @@ const KO: Dict = {
   'sidebar.providerAnthropic': 'Anthropic (Claude)',
   'sidebar.providerGoogle': 'Google (Gemini 무료)',
   'sidebar.providerOpenAI': 'OpenAI (GPT-4o)',
-  'sidebar.geminiGuide': 'Gemini 무료 키 발급 →',
+  'sidebar.googleGuide': 'Gemini 무료 키 발급 →',
+  'sidebar.anthropicGuide': 'Anthropic API 키 발급 →',
+  'sidebar.openaiGuide': 'OpenAI API 키 발급 →',
   // extension.ts — setApiKey
   'msg.setApiKeyPrompt': '{provider} API 키를 입력하세요',
   'msg.setApiKeyPlaceholderAnthropic': 'sk-ant-api03-...',
@@ -175,7 +177,9 @@ const EN: Dict = {
   'sidebar.providerAnthropic': 'Anthropic (Claude)',
   'sidebar.providerGoogle': 'Google (Gemini free)',
   'sidebar.providerOpenAI': 'OpenAI (GPT-4o)',
-  'sidebar.geminiGuide': 'Get free Gemini key →',
+  'sidebar.googleGuide': 'Get free Gemini key →',
+  'sidebar.anthropicGuide': 'Get Anthropic API key →',
+  'sidebar.openaiGuide': 'Get OpenAI API key →',
   // extension.ts — setApiKey
   'msg.setApiKeyPrompt': 'Enter your {provider} API key',
   'msg.setApiKeyPlaceholderAnthropic': 'sk-ant-api03-...',
@@ -257,7 +261,9 @@ const JA: Dict = {
   'sidebar.providerAnthropic': 'Anthropic (Claude)',
   'sidebar.providerGoogle': 'Google (Gemini 無料)',
   'sidebar.providerOpenAI': 'OpenAI (GPT-4o)',
-  'sidebar.geminiGuide': 'Gemini 無料キーを取得 →',
+  'sidebar.googleGuide': 'Gemini 無料キーを取得 →',
+  'sidebar.anthropicGuide': 'Anthropic APIキーを取得 →',
+  'sidebar.openaiGuide': 'OpenAI APIキーを取得 →',
   // extension.ts — setApiKey
   'msg.setApiKeyPrompt': '{provider} API キーを入力してください',
   'msg.setApiKeyPlaceholderAnthropic': 'sk-ant-api03-...',
@@ -339,7 +345,9 @@ const ZH_CN: Dict = {
   'sidebar.providerAnthropic': 'Anthropic (Claude)',
   'sidebar.providerGoogle': 'Google (Gemini 免费)',
   'sidebar.providerOpenAI': 'OpenAI (GPT-4o)',
-  'sidebar.geminiGuide': '获取免费 Gemini Key →',
+  'sidebar.googleGuide': '获取免费 Gemini Key →',
+  'sidebar.anthropicGuide': '获取 Anthropic API Key →',
+  'sidebar.openaiGuide': '获取 OpenAI API Key →',
   // extension.ts — setApiKey
   'msg.setApiKeyPrompt': '请输入 {provider} API Key',
   'msg.setApiKeyPlaceholderAnthropic': 'sk-ant-api03-...',
