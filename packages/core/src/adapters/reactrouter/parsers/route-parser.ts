@@ -223,6 +223,32 @@ interface ResolverCtx {
 }
 
 // v1.1.6 T1: JsxExpression {identifier} → 1-hop으로 식별자가 가리키는 JSX 자식들을 수집.
+// .map() 콜백 JSX의 <Route path={...}> 속성에서 정적 prefix 추출.
+// 지원: BinaryExpression('prefix' + id) / TemplateLiteral(`prefix${id}`).
+// 추출 실패 시 '' 반환.
+function extractMapPathPrefix(callback: import('ts-morph').Node): string {
+  const jsxAttrs = callback.getDescendantsOfKind(SyntaxKind.JsxAttribute)
+    .filter(a => a.getNameNode().getText() === 'path')
+  for (const attr of jsxAttrs) {
+    const attrInit = attr.getInitializer()
+    if (!attrInit?.isKind(SyntaxKind.JsxExpression)) continue
+    const expr = attrInit.asKindOrThrow(SyntaxKind.JsxExpression).getExpression()
+    if (expr === undefined) continue
+    if (expr.isKind(SyntaxKind.BinaryExpression)) {
+      const left = expr.asKindOrThrow(SyntaxKind.BinaryExpression).getLeft()
+      if (left.isKind(SyntaxKind.StringLiteral)) {
+        return left.asKindOrThrow(SyntaxKind.StringLiteral).getLiteralValue()
+      }
+    }
+    if (expr.isKind(SyntaxKind.TemplateExpression)) {
+      // TemplateHead getText() → "`prefix${" 형태. 앞 ` 와 뒤 ${ 제거하여 literal prefix 추출.
+      const raw = expr.asKindOrThrow(SyntaxKind.TemplateExpression).getHead().getText()
+      if (raw.startsWith('`') && raw.endsWith('${')) return raw.slice(1, raw.length - 2)
+    }
+  }
+  return ''
+}
+
 // Case A: 동일 파일 const 변수 (array literal of JSX 또는 .map() 결과)
 // Case B: named/default import → 모듈 파일 추가 후 export default/named의 array literal 또는 fragment
 // 재귀 불가 (depth=1 hard limit, Less is More).
@@ -256,11 +282,15 @@ function resolveIdentifierToJsxChildren(
               const dataInit = dataVar?.getInitializer()
               if (dataInit !== undefined && dataInit.isKind(SyntaxKind.ArrayLiteralExpression)) {
                 const entries = extractRoutesFromArray(dataInit)
+                const callback = call.getArguments()[0]
+                const pathPrefix = callback !== undefined ? extractMapPathPrefix(callback) : ''
                 return entries.map(e => ({
-                  routePath: e.path,
+                  routePath: pathPrefix + e.path,
                   elementComponent: e.elementComponent,
                   line: call.getStartLineNumber(),
-                  inferenceChain: [`${target.getText()} 배열의 path 프로퍼티를 정적 평가`],
+                  inferenceChain: pathPrefix
+                    ? [`${target.getText()} 배열의 path 프로퍼티를 정적 평가, prefix '${pathPrefix}' 추출`]
+                    : [`${target.getText()} 배열의 path 프로퍼티를 정적 평가`],
                 }))
               }
             }

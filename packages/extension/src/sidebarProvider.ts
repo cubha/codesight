@@ -245,7 +245,7 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
 <div class="section">
   <div class="label">${t('sidebar.llmAnalysis', locale)}</div>
   <div style="margin-bottom:6px;font-size:11px;color:var(--vscode-descriptionForeground)">${t('sidebar.llmProvider', locale)}</div>
-  <select id="providerSelect" onchange="send('setProvider', this.value)"
+  <select id="providerSelect" onchange="send('setProvider', this.value); updateApiKeyGuide(this.value)"
     style="width:100%;padding:4px 6px;margin-bottom:6px;background:var(--vscode-dropdown-background);
     color:var(--vscode-dropdown-foreground);border:1px solid var(--vscode-dropdown-border);
     border-radius:3px;font-size:11px;">
@@ -253,12 +253,12 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
     <option value="google">${t('sidebar.providerGoogle', locale)}</option>
     <option value="openai">${t('sidebar.providerOpenAI', locale)}</option>
   </select>
-  <div id="geminiGuide" style="display:none;margin-bottom:6px;padding:5px 8px;border-radius:3px;
+  <a id="apiKeyGuide" href="#" style="display:none;margin-bottom:6px;padding:5px 8px;border-radius:3px;
     font-size:10.5px;background:rgba(66,133,244,0.1);color:var(--vscode-charts-blue,#4285f4);
-    border-left:2px solid var(--vscode-charts-blue,#4285f4);cursor:pointer;"
-    onclick="openGeminiGuide()">
-    ${t('sidebar.geminiGuide', locale)}
-  </div>
+    border-left:2px solid var(--vscode-charts-blue,#4285f4);cursor:pointer;text-decoration:none;"
+    onclick="openApiKeyGuide();return false;">
+    ${t('sidebar.googleGuide', locale)}
+  </a>
   <div class="api-row">
     <div class="dot off" id="apiDot"></div>
     <span id="apiLabel">${t('sidebar.apiKeyNotSet', locale)}</span>
@@ -307,8 +307,27 @@ function tr(key) { return (window.__SIDEBAR_I18N__[key]) || key; }</script>
     send('toggleLLM', llmOn);
   }
 
-  function openGeminiGuide() {
-    send('openExternal', 'https://aistudio.google.com/app/apikey');
+  const API_KEY_URLS = {
+    google: 'https://aistudio.google.com/app/apikey',
+    anthropic: 'https://console.anthropic.com/',
+    openai: 'https://platform.openai.com/api-keys'
+  };
+  const API_KEY_I18N = {
+    google: 'sidebar.googleGuide',
+    anthropic: 'sidebar.anthropicGuide',
+    openai: 'sidebar.openaiGuide'
+  };
+  function openApiKeyGuide() {
+    const provider = document.getElementById('providerSelect').value;
+    const url = API_KEY_URLS[provider] || API_KEY_URLS.google;
+    send('openExternal', url);
+  }
+  function updateApiKeyGuide(provider) {
+    const guide = document.getElementById('apiKeyGuide');
+    if (!guide) return;
+    guide.style.display = provider ? 'block' : 'none';
+    const key = API_KEY_I18N[provider] || 'sidebar.googleGuide';
+    guide.textContent = tr(key);
   }
 
   window.addEventListener('message', e => {
@@ -404,7 +423,7 @@ function tr(key) { return (window.__SIDEBAR_I18N__[key]) || key; }</script>
     // Provider selector
     if (s.provider != null) {
       document.getElementById('providerSelect').value = s.provider;
-      document.getElementById('geminiGuide').style.display = s.provider === 'google' ? 'block' : 'none';
+      updateApiKeyGuide(s.provider);
     }
 
     // API Key
