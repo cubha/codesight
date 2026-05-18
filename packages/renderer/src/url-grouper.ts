@@ -59,7 +59,7 @@ function groupRoutesRecursive(
     const exactRoutes = routes.filter(r => r.path === fullGroupKey)
     const deeperRoutes = routes.filter(r => r.path !== fullGroupKey)
     // Recurse only when the total group is large enough and we haven't hit maxDepth
-    const shouldRecurse = depth < maxDepth && routes.length > minGroupSize
+    const shouldRecurse = depth < maxDepth && new Set(routes.map(r => r.path)).size > 1
 
     if (!shouldRecurse || deeperRoutes.length === 0) {
       return [{ groupKey: fullGroupKey, routes: [...routes], children: [] }]
@@ -91,7 +91,7 @@ function groupRoutesRecursive(
     const exactRoutes = clusterRoutes.filter(r => r.path === clusterKey)
     const deeperRoutes = clusterRoutes.filter(r => r.path !== clusterKey)
     // Each cluster checks its own size for recursion
-    const shouldRecurseCluster = depth < maxDepth && clusterRoutes.length > minGroupSize
+    const shouldRecurseCluster = depth < maxDepth && new Set(clusterRoutes.map(r => r.path)).size > 1
 
     if (!shouldRecurseCluster || deeperRoutes.length === 0) {
       return { groupKey: clusterKey, routes: clusterRoutes, children: [] }

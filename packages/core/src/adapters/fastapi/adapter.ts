@@ -12,6 +12,7 @@ export class FastApiAdapter implements IAdapter {
   readonly id = 'fastapi'
   readonly framework = 'fastapi' as const
   readonly parsingLevel = 'L2' as const
+  readonly category = 'BE' as const
 
   async analyze(ctx: AdapterContext): Promise<AdapterResult> {
     const { repoRoot, analyzerVersion } = ctx

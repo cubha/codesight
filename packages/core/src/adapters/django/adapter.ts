@@ -13,6 +13,7 @@ export class DjangoAdapter implements IAdapter {
   readonly id = 'django'
   readonly framework = 'django' as const
   readonly parsingLevel = 'L1' as const
+  readonly category = 'BE' as const
 
   async analyze(ctx: AdapterContext): Promise<AdapterResult> {
     const { repoRoot, analyzerVersion } = ctx

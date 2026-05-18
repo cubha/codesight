@@ -45,7 +45,9 @@ graph TD
   end
   subgraph USERS_G["📄 /users"]
     route_src_app_app_config_ts__users["/users · CSR"]:::csr
-    route_src_app_app_config_ts__users__id[":id · CSR"]:::csr
+    subgraph USERS__ID_G["📄 /:id"]
+      route_src_app_app_config_ts__users__id["/users/:id · CSR"]:::csr
+    end
   end"
 `;
 
@@ -64,12 +66,14 @@ graph TB
   end
   subgraph USERS_S["📄 /users"]
     route_src_app_app_config_ts__users["/users · CSR"]:::csr
-    route_src_app_app_config_ts__users__id[":id · CSR"]:::csr
+    subgraph USERS__ID_S["📄 /:id"]
+      route_src_app_app_config_ts__users__id["/users/:id · CSR"]:::csr
+    end
   end"
 `;
 
 exports[`Phase XI — fixture baseline snapshots (P1) > mini-angular-app > Tab3 db-screen diagram 1`] = `
-"%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0a2030','primaryTextColor':'#e2e8f0','primaryBorderColor':'#1e4060','lineColor':'#f59e0b','secondaryColor':'#0f172a','tertiaryColor':'#1a0a20','attributeBackgroundColorEven':'#ffffff','attributeBackgroundColorOdd':'#f1f5f9','nodeBorder':'#1e4060','clusterBkg':'#0a0e1a','fontFamily':'JetBrains Mono','fontSize':'14'}}}%%
+"%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#2a4055','primaryTextColor':'#f8fafc','primaryBorderColor':'#1e4060','lineColor':'#f59e0b','secondaryColor':'#0f172a','tertiaryColor':'#1a0a20','attributeBackgroundColorEven':'#ffffff','attributeBackgroundColorOdd':'#f1f5f9','textColor':'#1e293b','nodeBorder':'#1e4060','clusterBkg':'#0a0e1a','fontFamily':'JetBrains Mono','fontSize':'14'}}}%%
 erDiagram"
 `;
 
@@ -110,11 +114,15 @@ graph TD
   subgraph API_G["⚡ /api"]
     subgraph API_USERS_G["📄 /users"]
       route_api_urls_py__api_users_include["/api/users · SSR"]:::ssr
-      route_api_urls_py__api_users__pk_include[":pk · SSR"]:::ssr
+      subgraph API_USERS__PK_G["📄 /:pk"]
+        route_api_urls_py__api_users__pk_include["/api/users/:pk · SSR"]:::ssr
+      end
     end
     subgraph API_POSTS_G["📄 /posts"]
       route_api_urls_py__api_posts_include["/api/posts · SSR"]:::ssr
-      route_api_urls_py__api_posts__slug_include[":slug · SSR"]:::ssr
+      subgraph API_POSTS__SLUG_G["📄 /:slug"]
+        route_api_urls_py__api_posts__slug_include["/api/posts/:slug · SSR"]:::ssr
+      end
     end
   end
   subgraph DATALAYER["🔌 API LAYER"]
@@ -135,16 +143,20 @@ graph TB
   classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
   subgraph API_USERS_S["📄 /users"]
     route_api_urls_py__api_users_include["/api/users · SSR"]:::ssr
-    route_api_urls_py__api_users__pk_include[":pk · SSR"]:::ssr
+    subgraph API_USERS__PK_S["📄 /:pk"]
+      route_api_urls_py__api_users__pk_include["/api/users/:pk · SSR"]:::ssr
+    end
   end
   subgraph API_POSTS_S["📄 /posts"]
     route_api_urls_py__api_posts_include["/api/posts · SSR"]:::ssr
-    route_api_urls_py__api_posts__slug_include[":slug · SSR"]:::ssr
+    subgraph API_POSTS__SLUG_S["📄 /:slug"]
+      route_api_urls_py__api_posts__slug_include["/api/posts/:slug · SSR"]:::ssr
+    end
   end"
 `;
 
 exports[`Phase XI — fixture baseline snapshots (P1) > mini-django-app > Tab3 db-screen diagram 1`] = `
-"%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0a2030','primaryTextColor':'#e2e8f0','primaryBorderColor':'#1e4060','lineColor':'#f59e0b','secondaryColor':'#0f172a','tertiaryColor':'#1a0a20','attributeBackgroundColorEven':'#ffffff','attributeBackgroundColorOdd':'#f1f5f9','nodeBorder':'#1e4060','clusterBkg':'#0a0e1a','fontFamily':'JetBrains Mono','fontSize':'14'}}}%%
+"%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#2a4055','primaryTextColor':'#f8fafc','primaryBorderColor':'#1e4060','lineColor':'#f59e0b','secondaryColor':'#0f172a','tertiaryColor':'#1a0a20','attributeBackgroundColorEven':'#ffffff','attributeBackgroundColorOdd':'#f1f5f9','textColor':'#1e293b','nodeBorder':'#1e4060','clusterBkg':'#0a0e1a','fontFamily':'JetBrains Mono','fontSize':'14'}}}%%
 erDiagram
 %% table:users path:api/models.py
 %% table:posts path:api/models.py
@@ -211,12 +223,16 @@ graph TD
   subgraph API_G["⚡ /api"]
     subgraph API_USERS_G["📄 /users"]
       route_routers_users_py__api_users_GET["GET /api/users · SSR"]:::ssr
-      route_routers_users_py__api_users__user_id_GET["GET :user_id · SSR"]:::ssr
       route_routers_users_py__api_users_POST["POST /api/users · SSR"]:::ssr
+      subgraph API_USERS__USER_ID_G["📄 /:user_id"]
+        route_routers_users_py__api_users__user_id_GET["GET /api/users/:user_id · SSR"]:::ssr
+      end
     end
     subgraph API_POSTS_G["📄 /posts"]
       route_routers_posts_py__api_posts_GET["GET /api/posts · SSR"]:::ssr
-      route_routers_posts_py__api_posts__post_id_GET["GET :post_id · SSR"]:::ssr
+      subgraph API_POSTS__POST_ID_G["📄 /:post_id"]
+        route_routers_posts_py__api_posts__post_id_GET["GET /api/posts/:post_id · SSR"]:::ssr
+      end
     end
   end
   route_main_py___get["GET / · SSR"]:::ssr
@@ -242,11 +258,15 @@ graph TB
   subgraph API_S["⚡ /api"]
     subgraph API_USERS_S["📄 /users"]
       route_routers_users_py__api_users_GET["/api/users · SSR"]:::ssr
-      route_routers_users_py__api_users__user_id_GET[":user_id · SSR"]:::ssr
+      subgraph API_USERS__USER_ID_S["📄 /:user_id"]
+        route_routers_users_py__api_users__user_id_GET["/api/users/:user_id · SSR"]:::ssr
+      end
     end
     subgraph API_POSTS_S["📄 /posts"]
       route_routers_posts_py__api_posts_GET["/api/posts · SSR"]:::ssr
-      route_routers_posts_py__api_posts__post_id_GET[":post_id · SSR"]:::ssr
+      subgraph API_POSTS__POST_ID_S["📄 /:post_id"]
+        route_routers_posts_py__api_posts__post_id_GET["/api/posts/:post_id · SSR"]:::ssr
+      end
     end
   end
   route_main_py___get["/ · SSR"]:::ssr
@@ -256,7 +276,7 @@ graph TB
 `;
 
 exports[`Phase XI — fixture baseline snapshots (P1) > mini-fastapi-app > Tab3 db-screen diagram 1`] = `
-"%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0a2030','primaryTextColor':'#e2e8f0','primaryBorderColor':'#1e4060','lineColor':'#f59e0b','secondaryColor':'#0f172a','tertiaryColor':'#1a0a20','attributeBackgroundColorEven':'#ffffff','attributeBackgroundColorOdd':'#f1f5f9','nodeBorder':'#1e4060','clusterBkg':'#0a0e1a','fontFamily':'JetBrains Mono','fontSize':'14'}}}%%
+"%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#2a4055','primaryTextColor':'#f8fafc','primaryBorderColor':'#1e4060','lineColor':'#f59e0b','secondaryColor':'#0f172a','tertiaryColor':'#1a0a20','attributeBackgroundColorEven':'#ffffff','attributeBackgroundColorOdd':'#f1f5f9','textColor':'#1e293b','nodeBorder':'#1e4060','clusterBkg':'#0a0e1a','fontFamily':'JetBrains Mono','fontSize':'14'}}}%%
 erDiagram
 %% table:users path:models.py
 %% table:posts path:models.py
@@ -308,12 +328,16 @@ graph TD
   subgraph API_G["⚡ /api"]
     subgraph API_POSTS_G["📄 /posts"]
       route_blueprints_posts_py__api_posts["/api/posts · SSR"]:::ssr
-      route_blueprints_posts_py__api_posts__post_id[":post_id · SSR"]:::ssr
+      subgraph API_POSTS__POST_ID_G["📄 /:post_id"]
+        route_blueprints_posts_py__api_posts__post_id["/api/posts/:post_id · SSR"]:::ssr
+      end
     end
     subgraph API_USERS_G["📄 /users"]
       route_blueprints_users_py__api_users["/api/users · SSR"]:::ssr
-      route_blueprints_users_py__api_users__user_id[":user_id · SSR"]:::ssr
       route_blueprints_users_py__api_users["POST /api/users · SSR"]:::ssr
+      subgraph API_USERS__USER_ID_G["📄 /:user_id"]
+        route_blueprints_users_py__api_users__user_id["/api/users/:user_id · SSR"]:::ssr
+      end
     end
   end"
 `;
@@ -334,17 +358,21 @@ graph TB
   subgraph API_S["⚡ /api"]
     subgraph API_POSTS_S["📄 /posts"]
       route_blueprints_posts_py__api_posts["/api/posts · SSR"]:::ssr
-      route_blueprints_posts_py__api_posts__post_id[":post_id · SSR"]:::ssr
+      subgraph API_POSTS__POST_ID_S["📄 /:post_id"]
+        route_blueprints_posts_py__api_posts__post_id["/api/posts/:post_id · SSR"]:::ssr
+      end
     end
     subgraph API_USERS_S["📄 /users"]
       route_blueprints_users_py__api_users["/api/users · SSR"]:::ssr
-      route_blueprints_users_py__api_users__user_id[":user_id · SSR"]:::ssr
+      subgraph API_USERS__USER_ID_S["📄 /:user_id"]
+        route_blueprints_users_py__api_users__user_id["/api/users/:user_id · SSR"]:::ssr
+      end
     end
   end"
 `;
 
 exports[`Phase XI — fixture baseline snapshots (P1) > mini-flask-app > Tab3 db-screen diagram 1`] = `
-"%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0a2030','primaryTextColor':'#e2e8f0','primaryBorderColor':'#1e4060','lineColor':'#f59e0b','secondaryColor':'#0f172a','tertiaryColor':'#1a0a20','attributeBackgroundColorEven':'#ffffff','attributeBackgroundColorOdd':'#f1f5f9','nodeBorder':'#1e4060','clusterBkg':'#0a0e1a','fontFamily':'JetBrains Mono','fontSize':'14'}}}%%
+"%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#2a4055','primaryTextColor':'#f8fafc','primaryBorderColor':'#1e4060','lineColor':'#f59e0b','secondaryColor':'#0f172a','tertiaryColor':'#1a0a20','attributeBackgroundColorEven':'#ffffff','attributeBackgroundColorOdd':'#f1f5f9','textColor':'#1e293b','nodeBorder':'#1e4060','clusterBkg':'#0a0e1a','fontFamily':'JetBrains Mono','fontSize':'14'}}}%%
 erDiagram"
 `;
 
@@ -420,12 +448,14 @@ graph TB
   classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
   subgraph USERS_S["📄 /users"]
     route_src_users_users_controller_ts_UsersController_create["/users · SSR"]:::ssr
-    route_src_users_users_controller_ts_UsersController_remove[":id · SSR"]:::ssr
+    subgraph USERS__ID_S["📄 /:id"]
+      route_src_users_users_controller_ts_UsersController_remove["/users/:id · SSR"]:::ssr
+    end
   end"
 `;
 
 exports[`Phase XI — fixture baseline snapshots (P1) > mini-nest-app > Tab3 db-screen diagram 1`] = `
-"%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0a2030','primaryTextColor':'#e2e8f0','primaryBorderColor':'#1e4060','lineColor':'#f59e0b','secondaryColor':'#0f172a','tertiaryColor':'#1a0a20','attributeBackgroundColorEven':'#ffffff','attributeBackgroundColorOdd':'#f1f5f9','nodeBorder':'#1e4060','clusterBkg':'#0a0e1a','fontFamily':'JetBrains Mono','fontSize':'14'}}}%%
+"%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#2a4055','primaryTextColor':'#f8fafc','primaryBorderColor':'#1e4060','lineColor':'#f59e0b','secondaryColor':'#0f172a','tertiaryColor':'#1a0a20','attributeBackgroundColorEven':'#ffffff','attributeBackgroundColorOdd':'#f1f5f9','textColor':'#1e293b','nodeBorder':'#1e4060','clusterBkg':'#0a0e1a','fontFamily':'JetBrains Mono','fontSize':'14'}}}%%
 erDiagram
 %% table:users path:src/user.entity.ts
   users {
@@ -559,7 +589,7 @@ graph TB
 `;
 
 exports[`Phase XI — fixture baseline snapshots (P1) > mini-next-app > Tab3 db-screen diagram 1`] = `
-"%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0a2030','primaryTextColor':'#e2e8f0','primaryBorderColor':'#1e4060','lineColor':'#f59e0b','secondaryColor':'#0f172a','tertiaryColor':'#1a0a20','attributeBackgroundColorEven':'#ffffff','attributeBackgroundColorOdd':'#f1f5f9','nodeBorder':'#1e4060','clusterBkg':'#0a0e1a','fontFamily':'JetBrains Mono','fontSize':'14'}}}%%
+"%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#2a4055','primaryTextColor':'#f8fafc','primaryBorderColor':'#1e4060','lineColor':'#f59e0b','secondaryColor':'#0f172a','tertiaryColor':'#1a0a20','attributeBackgroundColorEven':'#ffffff','attributeBackgroundColorOdd':'#f1f5f9','textColor':'#1e293b','nodeBorder':'#1e4060','clusterBkg':'#0a0e1a','fontFamily':'JetBrains Mono','fontSize':'14'}}}%%
 erDiagram
 %% table:posts path:types/supabase.ts
 %% table:profiles path:types/supabase.ts
@@ -624,8 +654,12 @@ graph TD
       subgraph FRAMEWORK["▲ Next.js · App Router"]
         subgraph REACT["⚛ React · SSR Engine"]
           subgraph _COMPONENTS_G["📄 /_components"]
-            route_pages__components_UserBadge_tsx_page["UserBadge · SSR"]:::ssr
-            route_pages__components_UserCard_tsx_page["UserCard · SSR"]:::ssr
+            subgraph _COMPONENTS_USERBADGE_G["📄 /UserBadge"]
+              route_pages__components_UserBadge_tsx_page["/_components/UserBadge · SSR"]:::ssr
+            end
+            subgraph _COMPONENTS_USERCARD_G["📄 /UserCard"]
+              route_pages__components_UserCard_tsx_page["/_components/UserCard · SSR"]:::ssr
+            end
           end
           subgraph ABOUT_G["👤 /about"]
             route_pages_about_tsx_page["/about · SSR"]:::ssr
@@ -650,8 +684,12 @@ graph TB
   classDef ppr fill:#0d1a2d,stroke:#2563eb,color:#93c5fd
   classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
   subgraph _COMPONENTS_S["📄 /_components"]
-    route_pages__components_UserBadge_tsx_page["UserBadge · SSR"]:::ssr
-    route_pages__components_UserCard_tsx_page["UserCard · SSR"]:::ssr
+    subgraph _COMPONENTS_USERBADGE_S["📄 /UserBadge"]
+      route_pages__components_UserBadge_tsx_page["/_components/UserBadge · SSR"]:::ssr
+    end
+    subgraph _COMPONENTS_USERCARD_S["📄 /UserCard"]
+      route_pages__components_UserCard_tsx_page["/_components/UserCard · SSR"]:::ssr
+    end
   end
   subgraph ABOUT_S["👤 /about"]
     route_pages_about_tsx_page["/about · SSR"]:::ssr
@@ -663,7 +701,7 @@ graph TB
 `;
 
 exports[`Phase XI — fixture baseline snapshots (P1) > mini-nextpages-app > Tab3 db-screen diagram 1`] = `
-"%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0a2030','primaryTextColor':'#e2e8f0','primaryBorderColor':'#1e4060','lineColor':'#f59e0b','secondaryColor':'#0f172a','tertiaryColor':'#1a0a20','attributeBackgroundColorEven':'#ffffff','attributeBackgroundColorOdd':'#f1f5f9','nodeBorder':'#1e4060','clusterBkg':'#0a0e1a','fontFamily':'JetBrains Mono','fontSize':'14'}}}%%
+"%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#2a4055','primaryTextColor':'#f8fafc','primaryBorderColor':'#1e4060','lineColor':'#f59e0b','secondaryColor':'#0f172a','tertiaryColor':'#1a0a20','attributeBackgroundColorEven':'#ffffff','attributeBackgroundColorOdd':'#f1f5f9','textColor':'#1e293b','nodeBorder':'#1e4060','clusterBkg':'#0a0e1a','fontFamily':'JetBrains Mono','fontSize':'14'}}}%%
 erDiagram"
 `;
 
@@ -736,7 +774,7 @@ graph TB
 `;
 
 exports[`Phase XI — fixture baseline snapshots (P1) > mini-nuxt-app > Tab3 db-screen diagram 1`] = `
-"%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0a2030','primaryTextColor':'#e2e8f0','primaryBorderColor':'#1e4060','lineColor':'#f59e0b','secondaryColor':'#0f172a','tertiaryColor':'#1a0a20','attributeBackgroundColorEven':'#ffffff','attributeBackgroundColorOdd':'#f1f5f9','nodeBorder':'#1e4060','clusterBkg':'#0a0e1a','fontFamily':'JetBrains Mono','fontSize':'14'}}}%%
+"%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#2a4055','primaryTextColor':'#f8fafc','primaryBorderColor':'#1e4060','lineColor':'#f59e0b','secondaryColor':'#0f172a','tertiaryColor':'#1a0a20','attributeBackgroundColorEven':'#ffffff','attributeBackgroundColorOdd':'#f1f5f9','textColor':'#1e293b','nodeBorder':'#1e4060','clusterBkg':'#0a0e1a','fontFamily':'JetBrains Mono','fontSize':'14'}}}%%
 erDiagram"
 `;
 
@@ -785,7 +823,9 @@ graph TD
   end
   subgraph USERS_G["📄 /users"]
     route_src_router_tsx__users["/users · CSR"]:::csr
-    route_src_router_tsx__users__id[":id · CSR"]:::csr
+    subgraph USERS__ID_G["📄 /:id"]
+      route_src_router_tsx__users__id["/users/:id · CSR"]:::csr
+    end
   end"
 `;
 
@@ -807,10 +847,14 @@ graph TB
   end
   subgraph USERS_S["📄 /users"]
     route_src_router_tsx__users["/users · CSR"]:::csr
-    route_src_router_tsx__users__id[":id · CSR"]:::csr
     subgraph USERS_S_C
       component_src_pages_UserListPage_tsx_UserListPage["UserListPage [CSR]"]
-      component_src_pages_UserDetailPage_tsx_UserDetailPage["UserDetailPage [CSR]"]
+    end
+    subgraph USERS__ID_S["📄 /:id"]
+      route_src_router_tsx__users__id["/users/:id · CSR"]:::csr
+      subgraph USERS__ID_S_C
+        component_src_pages_UserDetailPage_tsx_UserDetailPage["UserDetailPage [CSR]"]
+      end
     end
   end
   route_src_router_tsx__about --> component_src_pages_AboutPage_tsx_AboutPage
@@ -819,7 +863,7 @@ graph TB
 `;
 
 exports[`Phase XI — fixture baseline snapshots (P1) > mini-react-router-app > Tab3 db-screen diagram 1`] = `
-"%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0a2030','primaryTextColor':'#e2e8f0','primaryBorderColor':'#1e4060','lineColor':'#f59e0b','secondaryColor':'#0f172a','tertiaryColor':'#1a0a20','attributeBackgroundColorEven':'#ffffff','attributeBackgroundColorOdd':'#f1f5f9','nodeBorder':'#1e4060','clusterBkg':'#0a0e1a','fontFamily':'JetBrains Mono','fontSize':'14'}}}%%
+"%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#2a4055','primaryTextColor':'#f8fafc','primaryBorderColor':'#1e4060','lineColor':'#f59e0b','secondaryColor':'#0f172a','tertiaryColor':'#1a0a20','attributeBackgroundColorEven':'#ffffff','attributeBackgroundColorOdd':'#f1f5f9','textColor':'#1e293b','nodeBorder':'#1e4060','clusterBkg':'#0a0e1a','fontFamily':'JetBrains Mono','fontSize':'14'}}}%%
 erDiagram"
 `;
 
@@ -883,7 +927,7 @@ graph TB
 `;
 
 exports[`Phase XI — fixture baseline snapshots (P1) > mini-remix-app > Tab3 db-screen diagram 1`] = `
-"%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0a2030','primaryTextColor':'#e2e8f0','primaryBorderColor':'#1e4060','lineColor':'#f59e0b','secondaryColor':'#0f172a','tertiaryColor':'#1a0a20','attributeBackgroundColorEven':'#ffffff','attributeBackgroundColorOdd':'#f1f5f9','nodeBorder':'#1e4060','clusterBkg':'#0a0e1a','fontFamily':'JetBrains Mono','fontSize':'14'}}}%%
+"%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#2a4055','primaryTextColor':'#f8fafc','primaryBorderColor':'#1e4060','lineColor':'#f59e0b','secondaryColor':'#0f172a','tertiaryColor':'#1a0a20','attributeBackgroundColorEven':'#ffffff','attributeBackgroundColorOdd':'#f1f5f9','textColor':'#1e293b','nodeBorder':'#1e4060','clusterBkg':'#0a0e1a','fontFamily':'JetBrains Mono','fontSize':'14'}}}%%
 erDiagram"
 `;
 
@@ -976,12 +1020,14 @@ graph TB
   end
   subgraph API_USERS_S["📄 /users"]
     route_src_main_java_com_example_controller_UserController_java__api_users_PostMapping["/api/users · SSR"]:::ssr
-    route_src_main_java_com_example_controller_UserController_java__api_users__userId_DeleteMapping[":userId · SSR"]:::ssr
+    subgraph API_USERS__USERID_S["📄 /:userId"]
+      route_src_main_java_com_example_controller_UserController_java__api_users__userId_DeleteMapping["/api/users/:userId · SSR"]:::ssr
+    end
   end"
 `;
 
 exports[`Phase XI — fixture baseline snapshots (P1) > mini-spring-app > Tab3 db-screen diagram 1`] = `
-"%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0a2030','primaryTextColor':'#e2e8f0','primaryBorderColor':'#1e4060','lineColor':'#f59e0b','secondaryColor':'#0f172a','tertiaryColor':'#1a0a20','attributeBackgroundColorEven':'#ffffff','attributeBackgroundColorOdd':'#f1f5f9','nodeBorder':'#1e4060','clusterBkg':'#0a0e1a','fontFamily':'JetBrains Mono','fontSize':'14'}}}%%
+"%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#2a4055','primaryTextColor':'#f8fafc','primaryBorderColor':'#1e4060','lineColor':'#f59e0b','secondaryColor':'#0f172a','tertiaryColor':'#1a0a20','attributeBackgroundColorEven':'#ffffff','attributeBackgroundColorOdd':'#f1f5f9','textColor':'#1e293b','nodeBorder':'#1e4060','clusterBkg':'#0a0e1a','fontFamily':'JetBrains Mono','fontSize':'14'}}}%%
 erDiagram
 %% table:users path:src/main/java/com/example/entity/User.java
 %% table:flyway_users path:src/main/resources/db/migration/V1__init.sql
@@ -1065,7 +1111,7 @@ graph TB
 `;
 
 exports[`Phase XI — fixture baseline snapshots (P1) > mini-sveltekit-app > Tab3 db-screen diagram 1`] = `
-"%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0a2030','primaryTextColor':'#e2e8f0','primaryBorderColor':'#1e4060','lineColor':'#f59e0b','secondaryColor':'#0f172a','tertiaryColor':'#1a0a20','attributeBackgroundColorEven':'#ffffff','attributeBackgroundColorOdd':'#f1f5f9','nodeBorder':'#1e4060','clusterBkg':'#0a0e1a','fontFamily':'JetBrains Mono','fontSize':'14'}}}%%
+"%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#2a4055','primaryTextColor':'#f8fafc','primaryBorderColor':'#1e4060','lineColor':'#f59e0b','secondaryColor':'#0f172a','tertiaryColor':'#1a0a20','attributeBackgroundColorEven':'#ffffff','attributeBackgroundColorOdd':'#f1f5f9','textColor':'#1e293b','nodeBorder':'#1e4060','clusterBkg':'#0a0e1a','fontFamily':'JetBrains Mono','fontSize':'14'}}}%%
 erDiagram"
 `;
 
@@ -1113,7 +1159,9 @@ graph TD
   end
   subgraph USERS_G["📄 /users"]
     route_src_router_index_ts__users["/users · CSR"]:::csr
-    route_src_router_index_ts__users__id[":id · CSR"]:::csr
+    subgraph USERS__ID_G["📄 /:id"]
+      route_src_router_index_ts__users__id["/users/:id · CSR"]:::csr
+    end
   end"
 `;
 
@@ -1132,11 +1180,13 @@ graph TB
   end
   subgraph USERS_S["📄 /users"]
     route_src_router_index_ts__users["/users · CSR"]:::csr
-    route_src_router_index_ts__users__id[":id · CSR"]:::csr
+    subgraph USERS__ID_S["📄 /:id"]
+      route_src_router_index_ts__users__id["/users/:id · CSR"]:::csr
+    end
   end"
 `;
 
 exports[`Phase XI — fixture baseline snapshots (P1) > mini-vue-spa-app > Tab3 db-screen diagram 1`] = `
-"%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0a2030','primaryTextColor':'#e2e8f0','primaryBorderColor':'#1e4060','lineColor':'#f59e0b','secondaryColor':'#0f172a','tertiaryColor':'#1a0a20','attributeBackgroundColorEven':'#ffffff','attributeBackgroundColorOdd':'#f1f5f9','nodeBorder':'#1e4060','clusterBkg':'#0a0e1a','fontFamily':'JetBrains Mono','fontSize':'14'}}}%%
+"%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#2a4055','primaryTextColor':'#f8fafc','primaryBorderColor':'#1e4060','lineColor':'#f59e0b','secondaryColor':'#0f172a','tertiaryColor':'#1a0a20','attributeBackgroundColorEven':'#ffffff','attributeBackgroundColorOdd':'#f1f5f9','textColor':'#1e293b','nodeBorder':'#1e4060','clusterBkg':'#0a0e1a','fontFamily':'JetBrains Mono','fontSize':'14'}}}%%
 erDiagram"
 `;

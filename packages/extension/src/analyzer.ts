@@ -79,6 +79,7 @@ export async function runAnalysis(
       hasPrisma: stack.hasPrisma,
       hasDexie: stack.hasDexie,
       hasFirebase: false,
+      ...(adapter !== undefined ? { adapterCategory: adapter.category } : {}),
     },
     nodes: [
       ...result.routeNodes,
@@ -159,6 +160,7 @@ async function buildPairResult(
       hasPrisma: pairStack.hasPrisma,
       hasDexie: pairStack.hasDexie,
       hasFirebase: false,
+      ...(pairAdapter !== undefined ? { adapterCategory: pairAdapter.category } : {}),
     },
     nodes: [
       ...pairAdapterResult.routeNodes,

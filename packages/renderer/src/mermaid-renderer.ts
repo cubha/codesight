@@ -412,7 +412,66 @@ function renderScreenSection(
   return lines.join('\n')
 }
 
+// Path-segment-aware longest common prefix.
+// Finds the longest shared URL prefix (up to segment boundaries).
+// Single path: strips the last segment (leaf endpoint) to return its parent prefix.
+function pathSegmentLcp(paths: string[]): string {
+  if (paths.length === 0) return ''
+  const segArrays = paths.map(p => p.split('/').filter(Boolean))
+  if (paths.length === 1) {
+    const segs = segArrays[0]!
+    return segs.length > 1 ? '/' + segs.slice(0, -1).join('/') : ''
+  }
+  const minLen = Math.min(...segArrays.map(a => a.length))
+  let lcpCount = 0
+  for (let i = 0; i < minLen; i++) {
+    const seg = segArrays[0]![i]!
+    if (segArrays.every(a => a[i] === seg)) lcpCount++
+    else break
+  }
+  if (lcpCount === 0) return ''
+  return '/' + segArrays[0]!.slice(0, lcpCount).join('/')
+}
+
+// Tab1 BE: File-First grouping — one subgraph per Controller file.
+// Intrinsic prefix auto-detected and shown in subgraph title; suffix in node labels.
+function buildBeRenderingDiagram(graph: IRGraph): string {
+  const routeNodes = graph.nodes.filter(isRouteNode)
+  if (routeNodes.length === 0) return 'graph TD\n  empty["(no endpoints found)"]'
+
+  const byFile = new Map<string, RouteNode[]>()
+  for (const r of routeNodes) {
+    const existing = byFile.get(r.filePath) ?? []
+    existing.push(r)
+    byFile.set(r.filePath, existing)
+  }
+
+  const lines: string[] = [RENDERING_INIT, 'graph TD', CLASS_DEFS]
+
+  for (const [filePath, routes] of byFile) {
+    const controllerName = path.basename(filePath, path.extname(filePath))
+    const sgId = sanitizeId(controllerName) + '_BE'
+    const prefix = pathSegmentLcp(routes.map(r => r.path))
+    const titleSuffix = prefix !== '' ? ` [${prefix}]` : ''
+
+    lines.push(`  subgraph ${sgId}["📄 ${controllerName}${titleSuffix}"]`)
+    lines.push(...emitInnerRowSubgraphs('    ', sgId, routes.length, (i, ind) => {
+      const r = routes[i]!
+      const suffix = prefix !== '' && r.path.startsWith(prefix)
+        ? (r.path.slice(prefix.length) || '/')
+        : r.path
+      const methodPrefix = r.httpMethod !== undefined ? `${r.httpMethod} ` : ''
+      return `${ind}${sanitizeId(r.id)}["${methodPrefix}${suffix}"]:::ssr`
+    }))
+    lines.push('  end')
+  }
+
+  return lines.join('\n')
+}
+
 function buildRenderingDiagram(graph: IRGraph): string {
+  if (graph.metadata?.adapterCategory === 'BE') return buildBeRenderingDiagram(graph)
+
   const infra = metadataToInfra(graph.metadata)
   // Only page routes — skip loading, layout, error, template, route-handler (same as Tab 2)
   const routeNodes = graph.nodes.filter(isRouteNode).filter(r => r.routeFileKind === 'page')
@@ -541,7 +600,55 @@ function buildRenderingDiagram(graph: IRGraph): string {
   return lines.join('\n')
 }
 
+function isBeController(name: string): boolean { return name.endsWith('Controller') }
+function isBeService(name: string): boolean { return name.endsWith('Service') || name.endsWith('ServiceImpl') }
+function isBeRepository(name: string): boolean {
+  return name.endsWith('Repository') || name.endsWith('Dao') || name.endsWith('Mapper')
+}
+
+// Tab2 BE: 3-tier DI architecture — Controller → Service → Repository.
+// `calls` edges (from di-parser) are rendered as the DI chain.
+function buildBeArchitectureDiagram(graph: IRGraph): string {
+  const componentNodes = graph.nodes.filter(isComponentNode)
+  if (componentNodes.length === 0) return 'graph TD\n  empty["(no BE components found)"]'
+
+  const controllers = componentNodes.filter(c => isBeController(c.name))
+  const services = componentNodes.filter(c => !isBeController(c.name) && isBeService(c.name))
+  const repositories = componentNodes.filter(c => !isBeController(c.name) && !isBeService(c.name) && isBeRepository(c.name))
+  const others = componentNodes.filter(c => !isBeController(c.name) && !isBeService(c.name) && !isBeRepository(c.name))
+  const callsEdges = graph.edges.filter(e => e.kind === 'calls')
+
+  const lines: string[] = [RENDERING_INIT, 'graph TD', CLASS_DEFS]
+
+  if (controllers.length > 0) {
+    lines.push('  subgraph CTRL_G["🎯 Controllers"]')
+    for (const c of controllers) lines.push(`    ${sanitizeId(c.id)}["${c.name}"]:::ssr`)
+    lines.push('  end')
+  }
+  if (services.length > 0) {
+    lines.push('  subgraph SVC_G["⚙ Services"]')
+    for (const c of services) lines.push(`    ${sanitizeId(c.id)}["${c.name}"]:::unk`)
+    lines.push('  end')
+  }
+  if (repositories.length > 0) {
+    lines.push('  subgraph REPO_G["🗄 Repositories"]')
+    for (const c of repositories) lines.push(`    ${sanitizeId(c.id)}["${c.name}"]:::ssg`)
+    lines.push('  end')
+  }
+  if (others.length > 0) {
+    lines.push('  subgraph COMP_G["📦 Components"]')
+    for (const c of others) lines.push(`    ${sanitizeId(c.id)}["${c.name}"]:::unk`)
+    lines.push('  end')
+  }
+  for (const edge of callsEdges) {
+    lines.push(`  ${sanitizeId(edge.from)} ${edgeArrow(edge)} ${sanitizeId(edge.to)}`)
+  }
+
+  return lines.join('\n')
+}
+
 function buildScreenComponentDiagram(graph: IRGraph): string {
+  if (graph.metadata?.adapterCategory === 'BE') return buildBeArchitectureDiagram(graph)
   const allRouteNodes = graph.nodes.filter(isRouteNode)
   const componentNodes = graph.nodes.filter(isComponentNode)
 
@@ -607,9 +714,10 @@ function buildScreenComponentDiagram(graph: IRGraph): string {
   return renderScreenSection(branchingGroups, rendersEdges, importsEdges, componentNodes)
 }
 
-// th(테이블명 헤더): primaryColor 어두운 배경 + primaryTextColor 밝은 텍스트 유지
-// td(컬럼 행): 밝은 배경(attributeBackgroundColor*) + 어두운 텍스트 (viewer CSS 인젝션으로 보완)
-const DB_DIAGRAM_INIT = `%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0a2030','primaryTextColor':'#e2e8f0','primaryBorderColor':'#1e4060','lineColor':'#f59e0b','secondaryColor':'#0f172a','tertiaryColor':'#1a0a20','attributeBackgroundColorEven':'#ffffff','attributeBackgroundColorOdd':'#f1f5f9','nodeBorder':'#1e4060','clusterBkg':'#0a0e1a','fontFamily':'JetBrains Mono','fontSize':'14'}}}%%`
+// MySQL Workbench 스타일 — th(테이블명 헤더): 어두운 청회색 배경 + 밝은 텍스트
+// td(컬럼 행): 밝은 배경(attributeBackgroundColor*) + 어두운 텍스트(textColor)
+// primaryTextColor가 헤더 텍스트를 override하므로 textColor(전역)는 td 텍스트에만 실효
+const DB_DIAGRAM_INIT = `%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#2a4055','primaryTextColor':'#f8fafc','primaryBorderColor':'#1e4060','lineColor':'#f59e0b','secondaryColor':'#0f172a','tertiaryColor':'#1a0a20','attributeBackgroundColorEven':'#ffffff','attributeBackgroundColorOdd':'#f1f5f9','textColor':'#1e293b','nodeBorder':'#1e4060','clusterBkg':'#0a0e1a','fontFamily':'JetBrains Mono','fontSize':'14'}}}%%`
 
 function getSourceLabel(node: IRNode): string | undefined {
   if (isRouteNode(node)) {
@@ -651,6 +759,16 @@ function buildDbScreenDiagram(graph: IRGraph): string {
       lines.push(`    ${sanitizeId(col.type)} ${sanitizeId(col.name)}${pkFlag}${fkFlag}`)
     }
     lines.push('  }')
+  }
+
+  // BE-specific: include Repository/Dao/Mapper components even without queries edges.
+  // Ensures Tab3 tracks the same Repository nodes as Tab2 (cross-tab traceability).
+  if (graph.metadata?.adapterCategory === 'BE') {
+    for (const node of graph.nodes) {
+      if (!isComponentNode(node)) continue
+      if (!isBeRepository(node.name)) continue
+      if (!sourcesMap.has(node.id)) sourcesMap.set(node.id, sanitizeId(node.name))
+    }
   }
 
   // Source (route/component/action) proxy entities

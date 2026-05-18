@@ -12,6 +12,7 @@ export class NextJsPagesAdapter implements IAdapter {
   readonly id = 'nextjs-pages'
   readonly framework = 'nextjs-pages' as const
   readonly parsingLevel = 'L2' as const
+  readonly category = 'FE' as const
 
   async analyze(ctx: AdapterContext): Promise<AdapterResult> {
     const { repoRoot, analyzerVersion, stack } = ctx

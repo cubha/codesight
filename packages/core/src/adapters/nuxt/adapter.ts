@@ -12,6 +12,7 @@ export class NuxtAdapter implements IAdapter {
   readonly id = 'nuxt'
   readonly framework = 'nuxt' as const
   readonly parsingLevel = 'L1' as const
+  readonly category = 'FE' as const
 
   async analyze(ctx: AdapterContext): Promise<AdapterResult> {
     const { repoRoot, analyzerVersion, stack } = ctx

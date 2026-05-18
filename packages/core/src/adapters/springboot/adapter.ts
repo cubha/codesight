@@ -6,6 +6,7 @@ import {
 } from '@codebase-viz/types'
 import { parseAnnotations } from './parsers/annotation-parser.js'
 import { parseSpringComponents } from './parsers/component-parser.js'
+import { parseSpringDependencies } from './parsers/di-parser.js'
 import { parseJpaEntities } from './parsers/orm-parser.js'
 import { parseMybatisMappers } from './parsers/mybatis-parser.js'
 import { buildMapperEdges } from '../_shared/mapper-utils.js'
@@ -15,6 +16,7 @@ export class SpringBootAdapter implements IAdapter {
   readonly id = 'springboot'
   readonly framework = 'springboot' as const
   readonly parsingLevel = 'L2' as const
+  readonly category = 'BE' as const
 
   async analyze(ctx: AdapterContext): Promise<AdapterResult> {
     const { repoRoot, analyzerVersion } = ctx
@@ -25,6 +27,8 @@ export class SpringBootAdapter implements IAdapter {
       parseMybatisMappers(repoRoot, analyzerVersion).catch(() => []),
       parseFlywayMigrations(repoRoot).catch(() => []),
     ])
+
+    const diEdges = await parseSpringDependencies(repoRoot, componentNodes, analyzerVersion).catch(() => [])
 
     // Merge: JPA nodes take precedence (more columns), MyBatis supplements missing tables
     const tablesByName = new Map(jpaNodes.map(n => [n.name, n]))
@@ -45,6 +49,7 @@ export class SpringBootAdapter implements IAdapter {
       componentNodes,
       tableNodes,
       mapperEdges,
+      serverEdges: diEdges,
     }
   }
 }

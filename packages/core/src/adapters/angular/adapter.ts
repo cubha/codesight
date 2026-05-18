@@ -17,6 +17,7 @@ export class AngularAdapter implements IAdapter {
   readonly id = 'angular'
   readonly framework = 'angular' as const
   readonly parsingLevel = 'L2' as const
+  readonly category = 'FE' as const
 
   async analyze(ctx: AdapterContext): Promise<AdapterResult> {
     const { repoRoot, analyzerVersion, stack } = ctx

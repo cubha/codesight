@@ -12,6 +12,7 @@ export class ReactRouterAdapter implements IAdapter {
   readonly id = 'react-router'
   readonly framework = 'react-router' as const
   readonly parsingLevel = 'L2' as const
+  readonly category = 'FE' as const
 
   async analyze(ctx: AdapterContext): Promise<AdapterResult> {
     const { repoRoot, analyzerVersion, stack } = ctx
