@@ -4,9 +4,9 @@
 
 Routes, components, and DB relationships — extracted statically from **13 frameworks**, optionally enriched by LLM, rendered as three live diagram tabs inside VS Code.
 
-> Marketplace: [`cubha.codebase-arch-viz`](https://marketplace.visualstudio.com/items?itemName=cubha.codebase-arch-viz) · Current release: **v1.2.0**
+> Marketplace: [`cubha.codebase-arch-viz`](https://marketplace.visualstudio.com/items?itemName=cubha.codebase-arch-viz) · Current release: **v1.2.40**
 >
-> **v1.2.0 highlights** — **Multi-provider LLM** (Anthropic · Google Gemini · OpenAI) BYOK 지원 / **Gemini 무료 키**로 비용 없이 LLM 분석 가능 / 사이드바 AI Provider 드롭다운 + 무료 키 발급 안내 / 기존 Anthropic 키 자동 무중단 마이그레이션. CHANGELOG 참고.
+> **v1.2.40 highlights** — **BE Tab1/Tab2 트리 다이어그램 표준화** (`docs/design/BE-DIAGRAM-STANDARD.md`): `graph TD` 트리(패키지=노드, 부모-자식=엣지) + Controller leaf 옆 endpoints subgraph + Tab2 leaf에 Controller→Service→Repository 수직 DI 체인 + top-level 패키지 단위 chunking + **ELK mrtree opt-in**(R-T1.9). 대규모 BE 프로젝트에서 X축 폭발·nested subgraph 가독성 한계 해소. FE 회귀 0.
 
 ---
 
@@ -271,6 +271,11 @@ npx vsce publish --no-dependencies -p <PAT>
 | v1.1.52 | **Tab1/Tab2 chunk 과다 수정** (698→9 chunks, `collectGroupRoutes` 30 routes/chunk 기준) · **Tab3 extractModule 수정** (`bin/main/sql/primary/**` → 의미 디렉토리 추출) · **row-mode floating island 수정** (`left:50%→0`) · **React Router sub-router 2-pass 파싱** (9→130 routes, `element={<SubRouter/>}` 재귀 추적) |
 | v1.1.53 | **작은 프로젝트 Y축 단조 나열 수정** (adapter-wide) — `SINGLE_DIAGRAM_ROUTE_THRESHOLD = 100` 게이트 추가. 28 routes / 7 top-level folder 같은 작은 프로젝트가 `GROUPS_PER_ROW=5` / `TAB2_GROUPS_PER_ROW=2` 초과만으로 chunked → viewer row-mode Y축 stack되던 결함. 모든 어댑터(angular/fastapi/flask/next/nextpages/nuxt/react-router/remix/sveltekit/vue-spa)의 mini fixture까지 Tab2 chunked였던 adapter-wide 결함 해소. 200-route stress test 회귀 보호 유지. |
 | v1.2.0 | **Multi-provider LLM** — Anthropic · Google Gemini · OpenAI BYOK 지원. Vercel AI SDK로 교체, Zod 스키마 검증 + 1회 retry. **Gemini 무료 키** 지원 (1,500 RPD · 무료): 사이드바 AI Provider 드롭다운에서 Google 선택 후 aistudio.google.com 발급 키 입력. 기존 Anthropic 키 자동 무중단 마이그레이션 (first-run 1회). i18n 4로케일 provider 키 추가. |
+| v1.2.1 | **Phase 2.5 버그픽스 3종** — Anthropic/OpenAI 키 발급 링크 사이드바 추가 (provider별 동적 href) · React Router 동적 `.map()` 패턴 path prefix 인식 (`extractMapPathPrefix` 헬퍼, BinaryExpression+TemplateLiteral 지원) · 대규모 BE 프로젝트 Row-mode 초기 scale 1.0 고정 (fit-to-box 폐기). |
+| v1.2.2 | **BE 어댑터 표준화 (BE-A~E)** — `IAdapter.category` 도입(FE/BE/Fullstack) + url-grouper `distinctPaths` 변경(동일 path 다중 method 평면 유지) · Spring Boot **DI 의존성 파서** (`@Autowired`·생성자·setter 3종) → Controller→Service→Repository `calls` 엣지 생성 · Tab1 BE 전용 렌더러 (File-First grouping) + Tab2 BE 전용 렌더러 (3-tier DI subgraph) + Tab3 BE Repository 노드 cross-ref. |
+| v1.2.3 | **v1.2.2 후속 결함 3건 + Tab1 nested grouping** — Tab2 chunking 가드 (`buildWithChunkFallback` BE 분기) · JPA `interface Repository` Spring 컴포넌트 인식 보완 · Gemini "Not Found" 진단 강화 · Tab1 BE 패키지 nested subgraph 추가 (`buildPkgTree` + `extractPackageSegments`). |
+| v1.2.31 | **LLM 빈 model fallback hotfix** — `codesight.model` 기본값 `""` → undefined 변환 + client trimmed 가드. Gemini Not Found 근본 원인 해결. |
+| v1.2.40 | **BE Tab1/Tab2 트리 다이어그램 표준화** — `docs/design/BE-DIAGRAM-STANDARD.md` 단일진실 수립. `graph TD` 트리(패키지=node, 부모-자식=edge, `:::pkg` 클래스) + 헤더 annotation `📁 src/main/java/<lcp>` (R-T1.2) + leaf `📄 Controller [/api/prefix]` + endpoints subgraph (R-T1.6) · **Tab2 leaf**에 `Controller→Service→Repository` 수직 DI subgraph (R-T2.2) + DI edge 없는 Controller는 leaf만 표시 (R-T2.5 Less is More) + cross-package DI dashed edge (R-T2.4) · **top-level 패키지 단위 chunking** (R-T1.8) — wide-pkg 프로젝트 X축 폭발 방지 · **ELK mrtree per-diagram opt-in** (R-T1.9, vsix +0.49MB) — chunk 내부 leaf 자식 가로 폭발 추가 완화 · `mini-spring-wide-pkg-app`/`mini-spring-deep-pkg-app` fixture 회귀 보호. FE 회귀 0. |
 
 ---
 

@@ -17,6 +17,8 @@ const FIXTURE_LIST = [
   'mini-django-app',
   'mini-fastapi-app',
   'mini-spring-app',
+  'mini-spring-deep-pkg-app',
+  'mini-spring-wide-pkg-app',
   'mini-flask-app',
   'mini-vue-spa-app',
   'mini-angular-app',
@@ -68,6 +70,7 @@ async function buildGraphForFixture(fixtureName: string): Promise<IRGraph> {
       hasPrisma: stack.hasPrisma,
       hasDexie: stack.hasDexie,
       hasFirebase: false,
+      ...(adapter?.category !== undefined ? { adapterCategory: adapter.category } : {}),
     },
     nodes: [
       ...result.routeNodes,
