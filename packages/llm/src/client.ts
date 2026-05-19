@@ -100,7 +100,9 @@ export interface AnalyzeOptions {
 
 function createModel(opts: LLMClientOptions) {
   const provider = opts.provider ?? 'anthropic'
-  const modelId = opts.model ?? DEFAULT_MODELS[provider]
+  // 빈 문자열·공백만 있는 model은 invalid (provider API가 404 반환) → DEFAULT_MODELS fallback.
+  const trimmed = opts.model?.trim()
+  const modelId = trimmed !== undefined && trimmed.length > 0 ? trimmed : DEFAULT_MODELS[provider]
   if (provider === 'google') return createGoogleGenerativeAI({ apiKey: opts.apiKey })(modelId)
   if (provider === 'openai') return createOpenAI({ apiKey: opts.apiKey })(modelId)
   return createAnthropic({ apiKey: opts.apiKey })(modelId)
