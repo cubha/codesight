@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wina.headoffice.materialMgmt.cuttingPlanInfoMgmt.repository.CuttingPlanMgmtRepository">
+  <select id="retrieveMoldList" resultType="map">
+    SELECT * FROM TWO_MOLD_CUTING_NRM
+  </select>
+  <select id="retrieveMoldNrmList" resultType="map">
+    SELECT * FROM TWO_MOLD_CUTING_NRM WHERE MOLD_CD = #{moldCd}
+  </select>
+  <insert id="insertMoldNrm">
+    INSERT INTO TWO_MOLD_CUTING_NRM (MOLD_CD, NRM_CD) VALUES (#{moldCd}, #{nrmCd})
+  </insert>
+</mapper>

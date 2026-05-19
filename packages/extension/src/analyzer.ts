@@ -128,6 +128,7 @@ export async function runAnalysis(
       hasPrisma: llmResult.hasPrisma ?? stack.hasPrisma,
       hasDexie: llmResult.hasDexie ?? stack.hasDexie,
       hasFirebase: llmResult.hasFirebase ?? false,
+      ...(adapter !== undefined ? { adapterCategory: adapter.category } : {}),
       ...(llmResult.deployTarget !== undefined ? { deployTarget: llmResult.deployTarget } : {}),
       ...(llmResult.backendServices !== undefined && llmResult.backendServices.length > 0
         ? { backends: llmResult.backendServices }
