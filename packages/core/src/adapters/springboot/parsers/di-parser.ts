@@ -74,7 +74,9 @@ export async function parseSpringDependencies(
   const seenEdgeIds = new Set<string>()
 
   function addEdge(from: ComponentNode, toTypeName: string, provenance: Provenance): void {
-    const toNode = nameToNode.get(toTypeName)
+    // v1.2.41 ST-FIX: interface 타입 매핑 실패 시 Impl 컨벤션 fallback
+    // (Spring 표준: Controller가 Service interface 주입 → ServiceImpl 매핑)
+    const toNode = nameToNode.get(toTypeName) ?? nameToNode.get(`${toTypeName}Impl`)
     if (toNode === undefined || from.id === toNode.id) return
     const edgeId = makeEdgeId('calls', from.id, toNode.id)
     if (seenEdgeIds.has(edgeId)) return

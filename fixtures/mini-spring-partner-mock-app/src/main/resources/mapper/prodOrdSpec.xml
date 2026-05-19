@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wina.partner.ordProdPlanMgmt.prodOrdSpec.repository.ProdOrdSpecRepository">
+  <select id="retrieveProdOrdSpecList" resultType="map">
+    SELECT * FROM TWE_ORD_H WHERE STATUS = 'A'
+  </select>
+  <select id="retrievePrdoOrderSpecForIdctExcel" resultType="map">
+    SELECT * FROM TWE_ORD_I WHERE STATUS = 'A'
+  </select>
+  <select id="retrievePrdoLdctList" resultType="map">
+    SELECT * FROM TWE_WRY_SN
+  </select>
+</mapper>

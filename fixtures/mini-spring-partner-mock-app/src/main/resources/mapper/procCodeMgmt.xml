@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wina.headoffice.partnerBaseInfo.procCodeMgmt.repository.ProcCodeMgmtRepository">
+  <select id="retrieveProcCodeList" resultType="map">
+    SELECT * FROM TWO_POWCD WHERE USE_YN = 'Y'
+  </select>
+  <insert id="insertProcCode">
+    INSERT INTO TWO_POWCD (PROC_CD, PROC_NM) VALUES (#{procCd}, #{procNm})
+  </insert>
+</mapper>

@@ -19,11 +19,13 @@ const FIXTURE_LIST = [
   'mini-spring-app',
   'mini-spring-deep-pkg-app',
   'mini-spring-wide-pkg-app',
+  'mini-spring-partner-mock-app',
   'mini-flask-app',
   'mini-vue-spa-app',
   'mini-angular-app',
   'mini-remix-app',
   'mini-react-router-app',
+  'mini-react-partner-mock-app',
   'mini-nextpages-app',
 ] as const
 

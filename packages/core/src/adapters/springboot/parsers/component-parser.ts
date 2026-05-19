@@ -9,7 +9,7 @@ import {
 import { createJavaParser } from '../../_shared/tree-sitter-loader.js'
 import { findJavaFiles } from '../../_shared/file-finder.js'
 
-const COMPONENT_ANNOTATIONS = new Set(['Service', 'Component', 'Repository', 'Controller', 'RestController'])
+const COMPONENT_ANNOTATIONS = new Set(['Service', 'Component', 'Repository', 'Mapper', 'Controller', 'RestController'])
 
 function getAnnotationName(annotNode: import('web-tree-sitter').SyntaxNode): string | undefined {
   for (let i = 0; i < annotNode.childCount; i++) {
@@ -40,6 +40,7 @@ export async function parseSpringComponents(
     const hasComponent = source.includes('@Service')
       || source.includes('@Component')
       || source.includes('@Repository')
+      || source.includes('@Mapper')
       || source.includes('@Controller')
       || source.includes('@RestController')
       // Spring Data interface Repository (어노테이션 없이 extends만 하는 표준 패턴)

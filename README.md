@@ -4,9 +4,11 @@
 
 Routes, components, and DB relationships — extracted statically from **13 frameworks**, optionally enriched by LLM, rendered as three live diagram tabs inside VS Code.
 
-> Marketplace: [`cubha.codebase-arch-viz`](https://marketplace.visualstudio.com/items?itemName=cubha.codebase-arch-viz) · Current release: **v1.2.40**
+> Marketplace: [`cubha.codebase-arch-viz`](https://marketplace.visualstudio.com/items?itemName=cubha.codebase-arch-viz) · Current release: **v1.2.41**
 >
-> **v1.2.40 highlights** — **BE Tab1/Tab2 트리 다이어그램 표준화** (`docs/design/BE-DIAGRAM-STANDARD.md`): `graph TD` 트리(패키지=노드, 부모-자식=엣지) + Controller leaf 옆 endpoints subgraph + Tab2 leaf에 Controller→Service→Repository 수직 DI 체인 + top-level 패키지 단위 chunking + **ELK mrtree opt-in**(R-T1.9). 대규모 BE 프로젝트에서 X축 폭발·nested subgraph 가독성 한계 해소. FE 회귀 0.
+> **v1.2.41 hotfix** — v1.2.40 BE Tab1/Tab2 결함 3건 일괄 수정. (1) ELK mrtree가 cluster wrapper 안의 top-level pkg 노드를 floating root로 인식하여 박스 외곽으로 비어져 나오던 영역 어긋남 → BE diagram에서 mrtree pragma 미사용(dagre)으로 해소. (2) Tab1 `endpoints` subgraph 내부 route 노드가 가로배치되던 결함 → 내부 line chain(`---`)으로 강제 수직 정렬. (3) Tab2 DI 체인(Controller→Service→Repository) Y간격 과대 → `BE_RENDERING_INIT`로 rankSpacing 8 축소. Spring DI Interface 주입(`Service`→`ServiceImpl`) fallback + `@Mapper` 인식 동시 보강. FE 영향 없음. **알려진 한계**: Tab1 endpoints **subgraph 내부** Y간격은 mermaid v11 통제 불가로 다음 minor에서 별도 탐색.
+>
+> **v1.2.40 highlights** — **BE Tab1/Tab2 트리 다이어그램 표준화** (`docs/design/BE-DIAGRAM-STANDARD.md`): `graph TD` 트리(패키지=노드, 부모-자식=엣지) + Controller leaf 옆 endpoints subgraph + Tab2 leaf에 Controller→Service→Repository 수직 DI 체인 + top-level 패키지 단위 chunking. 대규모 BE 프로젝트에서 X축 폭발·nested subgraph 가독성 한계 해소.
 
 ---
 

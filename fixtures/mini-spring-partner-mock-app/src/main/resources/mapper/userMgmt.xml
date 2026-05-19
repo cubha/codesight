@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wina.agency.userMgmt.repository.UserMgmtRepository">
+  <select id="retrieveUserList" resultType="map">
+    SELECT * FROM TWA_USER_MST WHERE USE_YN = 'Y'
+  </select>
+  <insert id="saveUser">
+    INSERT INTO TWA_USER_MST (USER_ID, USER_NAME) VALUES (#{userId}, #{userName})
+  </insert>
+  <delete id="removeUser">
+    DELETE FROM TWA_USER_MST WHERE USER_ID = #{userId}
+  </delete>
+</mapper>

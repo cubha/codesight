@@ -7,6 +7,7 @@ scratch.md
 .tmp-*/
 .gif-tmp/
 .codebase-viz/
+.codesight/
 
 # 환경변수 (토큰/시크릿) — 절대 커밋 금지
 .env.local
@@ -22,3 +23,7 @@ scratch.md
 # Spike / 임시 실험 (영구 산출물 아님)
 .scratch/
 fixtures/mini-next-app/.next/
+
+# Maven 빌드 결과물 (fixture 검증용 소스만 추적)
+fixtures/**/target/
+fixtures/**/.github/

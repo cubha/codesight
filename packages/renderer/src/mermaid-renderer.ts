@@ -32,6 +32,15 @@ function sanitizeId(s: string): string {
 }
 
 const RENDERING_INIT = `%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0c1a30','primaryTextColor':'#7dd3fc','primaryBorderColor':'#0e3a6e','edgeLabelBackground':'#0c1a30','lineColor':'#334155','secondaryColor':'#0f172a','clusterBkg':'#060c18','clusterBorder':'#1e3a5f','fontFamily':'JetBrains Mono','fontSize':'14'}}}%%`
+// v1.2.41 ST-FIX-2: BE 전용 init — flowchart.nodeSpacing/rankSpacing 축소로 DI 체인 간격 조밀화. FE 다이어그램은 RENDERING_INIT 유지.
+// v1.2.41 ST-FIX-3: Y축(rankSpacing) 1/3 축소. visible edge 영역(Tab2 DI 체인)은 정상 반영,
+// invisible `~~~` link 영역(Tab1 endpoints)은 dagre가 별도 처리하므로 endpoints emit 로직에서 visible edge로 전환됨.
+const BE_RENDERING_INIT = `%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0c1a30','primaryTextColor':'#7dd3fc','primaryBorderColor':'#0e3a6e','edgeLabelBackground':'#0c1a30','lineColor':'#334155','secondaryColor':'#0f172a','clusterBkg':'#060c18','clusterBorder':'#1e3a5f','fontFamily':'JetBrains Mono','fontSize':'14'},'flowchart':{'nodeSpacing':25,'rankSpacing':8,'padding':4}}}%%`
+
+// v1.2.41 ST-FIX-3 toggle: endpoints subgraph 유지 vs 제거. 시각 검증 후 사용자 결정 = subgraph 필수 → true 고정.
+// - true: BE-DIAGRAM-STANDARD R-T1.6 준수 (subgraph 박스로 endpoint 묶음). 단점: 내부 Y간격 mermaid v11 통제 불가 (deferred to v1.3.x BE Phase 2).
+// - false: subgraph 제거 + leaf→route vertical chain. Y간격 외부와 동일 (rankSpacing 8 적용). 표준 정정 필요.
+const ENDPOINTS_AS_SUBGRAPH = true
 
 const CLASS_DEFS = [
   `  classDef ssr fill:#0d1a0d,stroke:#16a34a,color:#86efac`,
@@ -487,11 +496,18 @@ function buildPkgTree(
 }
 
 // v1.2.40 ST1: 트리 인프라 헬퍼 — BE Tab1/Tab2 표준 (graph TD, node+edge tree, R-T1.4 / R-T2.1)
-// 패키지 segment = `pkg_<sanitized>` 노드, 부모-자식 = `-->` edge. subgraph 미사용 (R-T1.4).
-function buildPackageHeaderNode(lcpSegments: string[]): string[] {
+// 패키지 segment = `pkg_<sanitized>` 노드, 부모-자식 = `-->` edge.
+// v1.2.41 ST-FIX: HDR_PKG를 일반 노드 → subgraph wrapper로 변경. elk.mrtree가 일반 노드 root에서
+// children을 cluster 밖으로 배치하는 결함 해소. cluster 외곽이 모든 자식 트리를 강제 포함.
+function buildPackageHeaderOpen(lcpSegments: string[]): string[] {
   if (lcpSegments.length === 0) return []
   const label = `📁 src/main/java/${lcpSegments.join('.')}`
-  return [`  HDR_PKG["${label}"]:::hdr`]
+  return [`  subgraph HDR_PKG ["${label}"]`, '    direction TB']
+}
+
+function buildPackageHeaderClose(lcpSegments: string[]): string[] {
+  if (lcpSegments.length === 0) return []
+  return ['  end']
 }
 
 type TreeEmit = {
@@ -502,24 +518,29 @@ type TreeEmit = {
 
 // 패키지 트리에서 node+edge만 emit. leaf(파일) 노드는 별도 emitter에서 처리하고 wiring만 책임진다.
 // rootLabel: 헤더 노드 없이 단일 트리일 때 root segment를 안 그릴 수 있도록 'BE_ROOT' 기본
+// v1.2.41 ST-FIX: clusterRoot=true 시 첫 depth edge 생략. HDR_PKG subgraph wrapper가 자식 트리 외곽선 역할.
+// (mrtree에 invisible link `~~~`도 시도했으나 mrtree가 이를 무력화 → cluster 어긋남 재발. mrtree pragma는 BE에서 제거됨.)
 function emitTreeNodes(
   tree: PkgTreeNode,
   rootId: string,
   prefixPath: string[] = [],
+  opts: { clusterRoot?: boolean } = {},
 ): TreeEmit {
   const lines: string[] = []
   const nodeIdByPath = new Map<string, string>()
-  const walk = (node: PkgTreeNode, parentId: string, pathSegs: string[]): void => {
+  const walk = (node: PkgTreeNode, parentId: string, pathSegs: string[], depth: number): void => {
     for (const [seg, child] of node.children) {
       const segs = [...pathSegs, seg]
       const id = `pkg_${sanitizeId(segs.join('__'))}`
       lines.push(`  ${id}["${seg}"]:::pkg`)
-      lines.push(`  ${parentId} --> ${id}`)
+      if (!(opts.clusterRoot === true && depth === 0)) {
+        lines.push(`  ${parentId} --> ${id}`)
+      }
       nodeIdByPath.set(segs.join('.'), id)
-      walk(child, id, segs)
+      walk(child, id, segs, depth + 1)
     }
   }
-  walk(tree, rootId, prefixPath)
+  walk(tree, rootId, prefixPath, 0)
   return { lines, nodeIdByPath }
 }
 
@@ -563,17 +584,42 @@ function emitControllerFileLeaf(
   const lines: string[] = []
   lines.push(`${indent}${leafId}["📄 ${controllerName}${titleSuffix}"]:::ssr`)
   if (routes.length === 0) return { leafId, lines }
-  lines.push(`${indent}subgraph ${epSgId}["endpoints"]`)
-  lines.push(`${indent}  direction TB`)
-  for (const r of routes) {
+  const routeIds = routes.map(r => sanitizeId(r.id))
+  const routeLines: string[] = []
+  for (let i = 0; i < routes.length; i++) {
+    const r = routes[i]!
     const suffix = prefix !== '' && r.path.startsWith(prefix)
       ? (r.path.slice(prefix.length) || '/')
       : r.path
     const methodPrefix = r.httpMethod !== undefined ? `${r.httpMethod} ` : ''
-    lines.push(`${indent}  ${sanitizeId(r.id)}["${methodPrefix}${suffix}"]:::ssr`)
+    routeLines.push(`${methodPrefix}${suffix}`)
   }
-  lines.push(`${indent}end`)
-  lines.push(`${indent}${leafId} --> ${epSgId}`)
+
+  if (ENDPOINTS_AS_SUBGRAPH) {
+    // v1.2.41 원복 경로: BE-DIAGRAM-STANDARD R-T1.6 (endpoints = subgraph) 유지.
+    // 단점: mermaid v11 nested subgraph 내부 노드 Y간격이 init/initialize 옵션으로 통제 불가 (실측 확정).
+    lines.push(`${indent}subgraph ${epSgId}["endpoints"]`)
+    lines.push(`${indent}  direction TB`)
+    for (let i = 0; i < routes.length; i++) {
+      lines.push(`${indent}  ${routeIds[i]}["${routeLines[i]}"]:::ssr`)
+    }
+    for (let i = 0; i < routeIds.length - 1; i++) {
+      lines.push(`${indent}  ${routeIds[i]} --- ${routeIds[i + 1]}`)
+    }
+    lines.push(`${indent}end`)
+    lines.push(`${indent}${leafId} --> ${epSgId}`)
+  } else {
+    // v1.2.41 ST-FIX-3: endpoints subgraph 제거. leaf → route_0 → route_1 → ... vertical chain.
+    // 외부 노드와 동일한 dagre rank로 처리되어 rankSpacing 8 적용 보장. 표준 R-T1.6 정정 필요.
+    // 화살표는 controller → endpoint handle 관계로 해석되어 시각 의미 직관적.
+    for (let i = 0; i < routes.length; i++) {
+      lines.push(`${indent}${routeIds[i]}["${routeLines[i]}"]:::ssr`)
+    }
+    lines.push(`${indent}${leafId} --> ${routeIds[0]}`)
+    for (let i = 0; i < routeIds.length - 1; i++) {
+      lines.push(`${indent}${routeIds[i]} --> ${routeIds[i + 1]}`)
+    }
+  }
   return { leafId, lines }
 }
 
@@ -606,28 +652,35 @@ function buildBeRenderingDiagram(graph: IRGraph): string {
   }))
 
   const emitChunk = (chunkTree: PkgTreeNode, headerSegs: string[]): string[] => {
-    // v1.2.40 R-T1.9: ELK mrtree pragma per-diagram opt-in. viewer가 elk 미로드 시 dagre fallback.
-    const lines: string[] = [ELK_MRTREE_PRAGMA, RENDERING_INIT, 'graph TD', CLASS_DEFS]
-    const hdr = buildPackageHeaderNode(headerSegs)
-    lines.push(...hdr)
-    const rootId = hdr.length > 0 ? 'HDR_PKG' : 'BE_ANCHOR'
-    if (hdr.length === 0) lines.push(`  ${rootId}["(root)"]:::hdr`)
-    const treeEmit = emitTreeNodes(chunkTree, rootId, [])
+    // v1.2.41 ST-FIX: HDR_PKG subgraph wrapper + dagre layout. v1.2.40 ELK mrtree pragma 제거 —
+    // mrtree가 cluster wrapper 내부에서 top-level pkg 노드를 floating root로 인식하여 좌상단 모서리에 박는 결함 야기.
+    // invisible link `~~~` 폴백도 실패. dagre fallback 시각 검증으로 cluster 정렬 정상 동작 확인.
+    // v1.2.41 ST-FIX-2: BE_RENDERING_INIT 사용 — flowchart.nodeSpacing/rankSpacing 축소로 DI 체인 간격 조밀.
+    const lines: string[] = [BE_RENDERING_INIT, 'graph TD', CLASS_DEFS]
+    const hdrOpen = buildPackageHeaderOpen(headerSegs)
+    const isCluster = hdrOpen.length > 0
+    lines.push(...hdrOpen)
+    const rootId = isCluster ? 'HDR_PKG' : 'BE_ANCHOR'
+    if (!isCluster) lines.push(`  ${rootId}["(root)"]:::hdr`)
+    const treeEmit = emitTreeNodes(chunkTree, rootId, [], { clusterRoot: isCluster })
     lines.push(...treeEmit.lines)
-    // Leaf 파일: 부모 패키지 노드에 leaf controller 연결
-    const walkFiles = (node: PkgTreeNode, parentId: string, pathSegs: string[]): void => {
+    // Leaf 파일: 부모 패키지 노드에 leaf controller 연결. cluster root의 직접 leaf는 cluster 내부 노드로 정의되고 edge 생략 (HDR_PKG wrapper가 외곽).
+    const walkFiles = (node: PkgTreeNode, parentId: string, pathSegs: string[], depth: number): void => {
       for (const [seg, child] of node.children) {
         const segs = [...pathSegs, seg]
         const pkgId = treeEmit.nodeIdByPath.get(segs.join('.')) ?? parentId
-        walkFiles(child, pkgId, segs)
+        walkFiles(child, pkgId, segs, depth + 1)
       }
       for (const f of node.files) {
         const { leafId, lines: leafLines } = emitControllerFileLeaf('  ', f.filePath, f.routes)
         lines.push(...leafLines)
-        lines.push(`  ${parentId} --> ${leafId}`)
+        if (!(isCluster && depth === 0)) {
+          lines.push(`  ${parentId} --> ${leafId}`)
+        }
       }
     }
-    walkFiles(chunkTree, rootId, [])
+    walkFiles(chunkTree, rootId, [], 0)
+    lines.push(...buildPackageHeaderClose(headerSegs))
     return lines
   }
 
@@ -901,22 +954,24 @@ function buildBeArchitectureDiagram(graph: IRGraph): string {
   }
 
   const emitChunk = (chunkTree: PkgTreeNode, chunkPath: string[], headerSegs: string[]): string[] => {
-    // v1.2.40 R-T1.9: ELK mrtree pragma per-diagram opt-in. viewer가 elk 미로드 시 dagre fallback.
-    const lines: string[] = [ELK_MRTREE_PRAGMA, RENDERING_INIT, 'graph TD', CLASS_DEFS]
-    const hdr = buildPackageHeaderNode(headerSegs)
-    lines.push(...hdr)
-    const rootId = hdr.length > 0 ? 'HDR_PKG' : 'BE_ANCHOR'
-    if (hdr.length === 0) lines.push(`  ${rootId}["(root)"]:::hdr`)
-    const treeEmit = emitTreeNodes(chunkTree, rootId, chunkPath)
+    // v1.2.41 ST-FIX: HDR_PKG subgraph wrapper + dagre layout. v1.2.40 ELK mrtree pragma 제거 (Tab1과 동일 이유).
+    // v1.2.41 ST-FIX-2: BE_RENDERING_INIT — DI 체인 간격 조밀.
+    const lines: string[] = [BE_RENDERING_INIT, 'graph TD', CLASS_DEFS]
+    const hdrOpen = buildPackageHeaderOpen(headerSegs)
+    const isCluster = hdrOpen.length > 0
+    lines.push(...hdrOpen)
+    const rootId = isCluster ? 'HDR_PKG' : 'BE_ANCHOR'
+    if (!isCluster) lines.push(`  ${rootId}["(root)"]:::hdr`)
+    const treeEmit = emitTreeNodes(chunkTree, rootId, chunkPath, { clusterRoot: isCluster })
     lines.push(...treeEmit.lines)
     // 본 chunk에서 emit된 component ID 추적 — cross-pkg edge 필터에 사용
     const emittedNodeIds = new Set<string>()
-    // Leaf Controllers: 부모 패키지 노드에서 leaf로 edge 연결
-    const walkFiles = (node: PkgTreeNode, parentId: string, pathSegs: string[]): void => {
+    // Leaf Controllers: 부모 패키지 노드에서 leaf로 edge 연결. cluster root의 직접 leaf는 edge 생략 (HDR_PKG wrapper가 외곽).
+    const walkFiles = (node: PkgTreeNode, parentId: string, pathSegs: string[], depth: number): void => {
       for (const [seg, child] of node.children) {
         const segs = [...pathSegs, seg]
         const pkgId = treeEmit.nodeIdByPath.get(segs.join('.')) ?? parentId
-        walkFiles(child, pkgId, segs)
+        walkFiles(child, pkgId, segs, depth + 1)
       }
       for (const f of node.files) {
         const ctrl = trimmed.find(b => b.filePath === f.filePath)?.controller
@@ -925,7 +980,9 @@ function buildBeArchitectureDiagram(graph: IRGraph): string {
         const chain = chainByCtrl.get(ctrl.id)
         const hasAnyDi = chain !== undefined && (chain.svc !== undefined || chain.repo !== undefined)
         const leafTargetId = hasAnyDi ? `di_${sanitizeId(ctrl.id)}` : sanitizeId(ctrl.id)
-        lines.push(`  ${parentId} --> ${leafTargetId}`)
+        if (!(isCluster && depth === 0)) {
+          lines.push(`  ${parentId} --> ${leafTargetId}`)
+        }
         // 본 chunk에서 in-chain으로 실제 emit된 컴포넌트만 추적 (cross-pkg edge 필터용)
         emittedNodeIds.add(ctrl.id)
         if (chain?.svc !== undefined && (compIdToPkg.get(ctrl.id) ?? []).join('.') === (compIdToPkg.get(chain.svc.id) ?? []).join('.')) {
@@ -955,11 +1012,12 @@ function buildBeArchitectureDiagram(graph: IRGraph): string {
       alignedFiles = next
     }
     const final = intersect(alignedFiles, chunkTree)
-    walkFiles(final, rootId, chunkPath)
+    walkFiles(final, rootId, chunkPath, 0)
 
     // R-T2.4 cross-pkg edge: leaf DI subgraph 안의 dashed 화살표에 인라인 라벨로 표시 (renderControllerLeaf 참조).
     // 외부 별도 edge 미emit — ghost-node 회피 + 중복 화살표 방지. emittedNodeIds는 향후 확장 용도.
     void emittedNodeIds
+    lines.push(...buildPackageHeaderClose(headerSegs))
     return lines
   }
 

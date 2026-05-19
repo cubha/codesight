@@ -1,5 +1,39 @@
 # Changelog
 
+## [1.2.41] — 2026-05-19
+
+### Fixed — BE Tab1/Tab2 cluster 영역 어긋남 (v1.2.40 ELK mrtree 결함)
+
+v1.2.40에서 도입된 BE Tab1/Tab2 트리 다이어그램이 ELK mrtree 활성 환경(실제 사용자 webview)에서 cluster wrapper와 자식 트리의 좌표가 어긋남. 패키지 라벨이 박스 좌상단 모서리에 박히고 top-level pkg 노드가 박스 외곽으로 비어져 나오는 시각 결함.
+
+- 근본 원인: `elk.mrtree` 알고리즘이 cluster(subgraph) 내부의 top-level pkg 노드를 floating root로 인식하여 cluster 외곽과 별개 좌표계로 배치. mermaid `~~~` invisible link 폴백 시도도 mrtree에 의해 무력화됨(실측 확인).
+- 해결: BE 어댑터의 `buildBeRenderingDiagram`·`buildBeArchitectureDiagram` emitChunk에서 `ELK_MRTREE_PRAGMA` 미emit. dagre layout이 cluster wrapper와 자식 트리를 올바르게 정렬. **v1.2.40 ST4(elk mrtree opt-in)의 BE 적용은 폐기**, FE 다이어그램 영향 없음.
+- `HDR_PKG` 헤더는 일반 노드 → `subgraph` wrapper로 전환 + `clusterRoot` edge skip(외곽선은 wrapper가 담당) 패턴 유지.
+
+### Fixed — Tab1 endpoints 가로배치 + Tab2 DI 체인 간격 과대 (ST-FIX-2)
+
+- **Tab1 endpoints subgraph 가로배치**: mermaid v11에서 외부 edge가 들어오는 subgraph는 immediate `direction TB`가 무시되고 outer graph direction을 상속 → dagre가 endpoint route 노드들을 같은 rank(가로)로 정렬하던 결함. `endpoints` 내부 route 노드 사이에 line chain(`---`)을 추가하여 dagre rank 강제 수직 정렬.
+- **Tab2 DI 체인 노드 간격 과대**: dagre 기본 rankSpacing=50이 DI subgraph 안의 `Controller → ServiceImpl → Repository` vertical chain을 stretched하고 outer chain 간격까지 키우던 결함. **`BE_RENDERING_INIT`** 신규 정의 — `flowchart.nodeSpacing=25, rankSpacing=8, padding=4` 명시. BE Tab1/Tab2 emitChunk에서 사용, FE 다이어그램 init은 유지(회귀 0).
+- **Tab2 DI 간격은 1/3 축소 성공 ✅** / **Tab1 endpoints 내부 Y간격은 통제 불가 ⚠️**: mermaid v11의 nested subgraph가 외부 edge incoming + 내부 chain edge 조합에서 init directive·`mermaid.initialize` 전역 flowchart spacing 옵션 둘 다 무시(실측 확정 — `rankSpacing` 50→8→1 어느 값에도 endpoints 내부 노드 간격 불변). endpoints subgraph 제거(leaf→route vertical chain) 안은 v1.2.41 사용자 검증에서 시각 의미 저하 판단으로 폐기. **endpoints 내부 gap 축소는 v1.3.x BE Phase 2에서 별도 탐색** (mermaid 소스 추적·SVG 후처리·대체 layout 등). 토글 상수 `ENDPOINTS_AS_SUBGRAPH` (mermaid-renderer.ts:38)로 향후 실험 진입 경로 보존.
+
+### Improved — Spring 부수 보강
+
+- DI 파서가 interface 타입 주입(`Controller → Service interface → ServiceImpl`)을 못 잡던 결함에 `${toTypeName}Impl` convention fallback 추가. Spring 표준 패턴(Service interface + Impl) 완전 인식.
+- `@Mapper` 어노테이션을 `COMPONENT_ANNOTATIONS`에 추가 — MyBatis Mapper interface가 ComponentNode로 등록.
+- `analyzer.ts`가 `metadata.adapterCategory`를 전달하여 BE 렌더러 분기 신뢰성 강화.
+
+### Tests
+
+- 회귀 fixture 2종 신규: `fixtures/mini-spring-partner-mock-app/` (7도메인 21라우트 + MyBatis XML 7개) / `fixtures/mini-react-partner-mock-app/`.
+- snapshot 13건 갱신 (mrtree pragma 제거 반영). `verify.sh` 682 PASS, 회귀 0.
+- Playwright 시각검증: cluster 영역 어긋남 완전 해소 확인.
+
+## [1.2.40] — 2026-05-19
+
+### Added — BE Tab1/Tab2 트리 다이어그램 표준화 (`docs/design/BE-DIAGRAM-STANDARD.md`)
+
+대규모 BE 프로젝트(985 routes / 422 tables) Tab1/Tab2의 X축 폭발·nested subgraph 가독성 한계를 트리 다이어그램으로 전환. `graph TD` 패키지 트리(패키지=노드, 부모-자식=엣지) + Controller leaf 옆 endpoints subgraph + Tab2 leaf에 Controller→Service→Repository 수직 DI 체인 + top-level 패키지 단위 chunking + **ELK mrtree opt-in**(R-T1.9). FE 회귀 0.
+
 ## [1.2.31] — 2026-05-19
 
 ### Fixed — LLM 빈 model 문자열 fallback (Gemini "Not Found" 근본 원인)
