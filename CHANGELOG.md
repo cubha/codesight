@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.2.31] — 2026-05-19
+
+### Fixed — LLM 빈 model 문자열 fallback (Gemini "Not Found" 근본 원인)
+
+- **`codesight.model` 설정 default가 빈 문자열(`""`)**이라 VS Code config가 항상 빈 값을 반환 → `analyzWithLLM`에 빈 model이 전달 → Google AI SDK가 empty model path로 호출 → API가 `AI_APICallError: Not Found` (404) 응답. v1.2.3 진단 로깅으로 `model=` 빈 값이 드러나 근본 원인 확정.
+- 수정 두 곳: (1) `extension.ts`에서 빈 문자열·공백을 `undefined`로 변환하여 전달, (2) `llm/client.ts`의 `createModel`도 trimmed falsy 가드 추가 → 두 단계 모두 provider별 `DEFAULT_MODELS`로 fallback.
+- Provider 미지정 + key 없는 사용자 모두에게 영향이 있었으나 진단 surface 부족으로 Gemini 사례에서만 표면화됨. 본 hotfix로 anthropic/google/openai 모두 동일 보호.
+
 ## [1.2.3] — 2026-05-19
 
 ### Fixed — v1.2.2 후속 BE 결함 3건

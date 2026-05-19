@@ -156,7 +156,10 @@ async function doAnalyze(
 ): Promise<void> {
   const config = vscode.workspace.getConfiguration('codesight')
   const enableLLM = config.get<boolean>('enableLLM', false)
-  const model = config.get<string>('model', 'claude-sonnet-4-6')
+  // codesight.model default는 ""(빈 문자열) — 사용자가 명시 지정한 경우만 전달.
+  // 빈 문자열은 llm/client.ts의 provider별 DEFAULT_MODELS로 fallback.
+  const modelRaw = config.get<string>('model', '')
+  const model = modelRaw.trim().length > 0 ? modelRaw.trim() : undefined
   const provider = getProvider()
 
   let apiKey: string | undefined
@@ -208,7 +211,7 @@ async function doAnalyze(
       maxDepth: groupingCfg.get<number>('maxDepth', 8),
     }
     const { graph, diagrams } = await runAnalysis(workspaceRoot, {
-      ...(apiKey !== undefined ? { llm: { apiKey, model, provider } } : {}),
+      ...(apiKey !== undefined ? { llm: { apiKey, ...(model !== undefined ? { model } : {}), provider } } : {}),
       grouping,
       ...(pairRepoRoot !== undefined ? { pairRepoRoot } : {}),
     })
