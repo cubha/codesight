@@ -383,29 +383,22 @@ describe('BE 렌더러 — Tab3 (BE-E)', () => {
   })
 })
 
-describe('BE 렌더러 — Tab2 (BE-D)', () => {
-  it('adapterCategory=BE 시 3-tier DI subgraph 생성', async () => {
-    const ctrl = makeBeComponent('UserController', 'controller/UserController.java')
-    const svc = makeBeComponent('UserService', 'service/UserService.java')
-    const repo = makeBeComponent('UserRepository', 'repository/UserRepository.java')
+describe('BE 렌더러 — Tab2 (BE-D, v1.2.40 표준)', () => {
+  it('adapterCategory=BE 시 leaf DI 수직 체인 subgraph 생성', async () => {
+    // 동일 도메인 패키지(user) 안의 Controller·Service·Repository — cross-pkg edge 없어야 함
+    const ctrl = makeBeComponent('UserController', 'src/main/java/com/example/user/controller/UserController.java')
+    const svc = makeBeComponent('UserService', 'src/main/java/com/example/user/service/UserService.java')
+    const repo = makeBeComponent('UserRepository', 'src/main/java/com/example/user/repository/UserRepository.java')
 
-    const prov = { file: 'controller/UserController.java', line: 1, adapter: 'test', analyzerVersion: '0.1' }
+    const prov = { file: ctrl.filePath, line: 1, adapter: 'test', analyzerVersion: '0.1' }
     const callsEdge = createEdge({
       id: makeEdgeId('calls', ctrl.id, svc.id),
-      from: ctrl.id,
-      to: svc.id,
-      kind: 'calls',
-      provenance: prov,
-      confidence: 'inferred',
+      from: ctrl.id, to: svc.id, kind: 'calls', provenance: prov, confidence: 'inferred',
       inferenceChain: ['spring-di: UserController → UserService'],
     })
     const callsEdge2 = createEdge({
       id: makeEdgeId('calls', svc.id, repo.id),
-      from: svc.id,
-      to: repo.id,
-      kind: 'calls',
-      provenance: prov,
-      confidence: 'inferred',
+      from: svc.id, to: repo.id, kind: 'calls', provenance: prov, confidence: 'inferred',
       inferenceChain: ['spring-di: UserService → UserRepository'],
     })
 
@@ -420,16 +413,115 @@ describe('BE 렌더러 — Tab2 (BE-D)', () => {
     await renderMermaid(graph, OUTPUT_DIR)
     const content = await fs.readFile(path.join(OUTPUT_DIR, 'screen-component.md'), 'utf8')
 
-    expect(content).toContain('CTRL_G')
-    expect(content).toContain('SVC_G')
-    expect(content).toContain('REPO_G')
+    expect(content).toContain('graph TD')
+    expect(content).toContain('📁 src/main/java/com.example.user') // 헤더 annotation (R-T1.2)
+    expect(content).toMatch(/subgraph di_[^"]*\["\[ DI \]"\]/) // leaf DI subgraph (R-T2.2)
     expect(content).toContain('UserController')
     expect(content).toContain('UserService')
     expect(content).toContain('UserRepository')
     expect(content).toContain('-.->') // inferred edge
+    expect(content).not.toContain('cross-pkg') // 동일 도메인 → cross-pkg 없음
+    expect(content).not.toContain('CTRL_G') // 구 v1.2.2 layout 폐기 확인
   })
 
-  it('BE 컴포넌트 없으면 empty 표시', async () => {
+  it('Service/Repository 누락 시 (none) placeholder emit', async () => {
+    const ctrl = makeBeComponent('AdminController', 'src/main/java/com/example/admin/controller/AdminController.java')
+    const svc = makeBeComponent('AdminService', 'src/main/java/com/example/admin/service/AdminService.java')
+    const prov = { file: ctrl.filePath, line: 1, adapter: 'test', analyzerVersion: '0.1' }
+    const callsEdge = createEdge({
+      id: makeEdgeId('calls', ctrl.id, svc.id),
+      from: ctrl.id, to: svc.id, kind: 'calls', provenance: prov, confidence: 'verified',
+    })
+    const graph = createIRGraph({
+      analyzerVersion: '0.1',
+      repoRoot: '/tmp/be',
+      metadata: { framework: 'springboot', hasSupabase: false, hasPrisma: false, hasDexie: false, hasFirebase: false, adapterCategory: 'BE' },
+      nodes: [ctrl, svc],
+      edges: [callsEdge],
+    })
+    await renderMermaid(graph, OUTPUT_DIR)
+    const content = await fs.readFile(path.join(OUTPUT_DIR, 'screen-component.md'), 'utf8')
+    expect(content).toContain('(no Repository)')
+    expect(content).toContain(':::muted')
+  })
+
+  it('DI edge 없는 Controller는 leaf만 표시 — (none) 추정 안 함 (R-T2.5)', async () => {
+    const ctrl = makeBeComponent('UtilController', 'src/main/java/com/example/util/controller/UtilController.java')
+    const graph = createIRGraph({
+      analyzerVersion: '0.1',
+      repoRoot: '/tmp/be',
+      metadata: { framework: 'springboot', hasSupabase: false, hasPrisma: false, hasDexie: false, hasFirebase: false, adapterCategory: 'BE' },
+      nodes: [ctrl],
+      edges: [],
+    })
+    await renderMermaid(graph, OUTPUT_DIR)
+    const content = await fs.readFile(path.join(OUTPUT_DIR, 'screen-component.md'), 'utf8')
+    expect(content).toContain('📄 UtilController')
+    expect(content).not.toContain('(no Service)')
+    expect(content).not.toContain('(no Repository)')
+    expect(content).not.toMatch(/subgraph di_/)
+  })
+
+  it('cross-package DI: 외부 컴포넌트 ID 참조 금지 — placeholder로 대체 (ghost-node 회피)', async () => {
+    // partner Controller·Service는 chunk A, agency Controller·Service·Repository는 chunk B.
+    // partner Service → agency Repository 주입 (cross-pkg) → 외부 ID 참조 대신 (external Repository) placeholder 사용.
+    const pCtrl = makeBeComponent('PartnerController', 'src/main/java/com/example/partner/controller/PartnerController.java')
+    const pSvc = makeBeComponent('PartnerService', 'src/main/java/com/example/partner/service/PartnerService.java')
+    const aCtrl = makeBeComponent('AgencyController', 'src/main/java/com/example/agency/controller/AgencyController.java')
+    const aSvc = makeBeComponent('AgencyService', 'src/main/java/com/example/agency/service/AgencyService.java')
+    const aRepo = makeBeComponent('AgencyRepository', 'src/main/java/com/example/agency/repository/AgencyRepository.java')
+    const prov = { file: pCtrl.filePath, line: 1, adapter: 'test', analyzerVersion: '0.1' }
+    const e1 = createEdge({ id: makeEdgeId('calls', pCtrl.id, pSvc.id), from: pCtrl.id, to: pSvc.id, kind: 'calls', provenance: prov, confidence: 'verified' })
+    const e2 = createEdge({ id: makeEdgeId('calls', pSvc.id, aRepo.id), from: pSvc.id, to: aRepo.id, kind: 'calls', provenance: prov, confidence: 'verified' })
+    const e3 = createEdge({ id: makeEdgeId('calls', aCtrl.id, aSvc.id), from: aCtrl.id, to: aSvc.id, kind: 'calls', provenance: prov, confidence: 'verified' })
+    const e4 = createEdge({ id: makeEdgeId('calls', aSvc.id, aRepo.id), from: aSvc.id, to: aRepo.id, kind: 'calls', provenance: prov, confidence: 'verified' })
+    const graph = createIRGraph({
+      analyzerVersion: '0.1',
+      repoRoot: '/tmp/be',
+      metadata: { framework: 'springboot', hasSupabase: false, hasPrisma: false, hasDexie: false, hasFirebase: false, adapterCategory: 'BE' },
+      nodes: [pCtrl, pSvc, aCtrl, aSvc, aRepo],
+      edges: [e1, e2, e3, e4],
+    })
+    await renderMermaid(graph, OUTPUT_DIR)
+    const content = await fs.readFile(path.join(OUTPUT_DIR, 'screen-component.md'), 'utf8')
+    // chunked emit 확인
+    expect(content).toContain('%%--CHUNK--%%')
+    // partner chunk는 (external Repository) placeholder 사용 (실제 aRepo 노드 ID 참조 금지)
+    expect(content).toContain('(external Repository)')
+    // cross-pkg 라벨 in-chain edge에 정상 부여
+    expect(content).toContain('cross-pkg')
+    // 핵심: partner chunk가 외부 aRepo의 node ID를 직접 참조하지 않아야 함 → ghost-node 회피
+    expect(content).not.toMatch(/PartnerService.* -.-> +component_src_main_java_com_example_agency/)
+  })
+
+  it('cross-package DI edge emit (R-T2.4)', async () => {
+    // 단일 chunk(partner) 안에 from·to 양쪽 모두 존재 — cross-pkg edge emit
+    const ctrl = makeBeComponent('PartnerController', 'src/main/java/com/example/partner/controller/PartnerController.java')
+    const svc = makeBeComponent('PartnerService', 'src/main/java/com/example/partner/service/PartnerService.java')
+    // partner 안에서 agency Repository를 주입받는 가정 — 실제 도메인 다름
+    const repo = makeBeComponent('AgencyRepository', 'src/main/java/com/example/partner/agency/repository/AgencyRepository.java')
+    const prov = { file: ctrl.filePath, line: 1, adapter: 'test', analyzerVersion: '0.1' }
+    const e1 = createEdge({
+      id: makeEdgeId('calls', ctrl.id, svc.id),
+      from: ctrl.id, to: svc.id, kind: 'calls', provenance: prov, confidence: 'verified',
+    })
+    const e2 = createEdge({
+      id: makeEdgeId('calls', svc.id, repo.id),
+      from: svc.id, to: repo.id, kind: 'calls', provenance: prov, confidence: 'verified',
+    })
+    const graph = createIRGraph({
+      analyzerVersion: '0.1',
+      repoRoot: '/tmp/be',
+      metadata: { framework: 'springboot', hasSupabase: false, hasPrisma: false, hasDexie: false, hasFirebase: false, adapterCategory: 'BE' },
+      nodes: [ctrl, svc, repo],
+      edges: [e1, e2],
+    })
+    await renderMermaid(graph, OUTPUT_DIR)
+    const content = await fs.readFile(path.join(OUTPUT_DIR, 'screen-component.md'), 'utf8')
+    expect(content).toContain('cross-pkg')
+  })
+
+  it('BE Controller 없으면 empty 표시', async () => {
     const graph = createIRGraph({
       analyzerVersion: '0.1',
       repoRoot: '/tmp/be',
@@ -443,11 +535,12 @@ describe('BE 렌더러 — Tab2 (BE-D)', () => {
   })
 })
 
-describe('BE 렌더러 — Tab1 (BE-C)', () => {
-  it('adapterCategory=BE 시 File-First subgraph 생성', async () => {
-    const r1 = makeBeRoute('controller/UserController.java', '/api/users', 'GET')
-    const r2 = makeBeRoute('controller/UserController.java', '/api/users/{id}', 'GET')
-    const r3 = makeBeRoute('controller/PostController.java', '/api/posts', 'GET')
+describe('BE 렌더러 — Tab1 (BE-C, v1.2.40 표준)', () => {
+  it('adapterCategory=BE 시 트리 + 헤더 + leaf Controller + endpoints subgraph', async () => {
+    // LCP=com.example.svc.user, top-level 2개(profile, account), profile 아래 photo 패키지 depth → :::pkg 출현 보장
+    const r1 = makeBeRoute('src/main/java/com/example/svc/user/profile/photo/controller/PhotoController.java', '/api/photo', 'GET')
+    const r2 = makeBeRoute('src/main/java/com/example/svc/user/profile/photo/controller/AvatarController.java', '/api/avatar', 'GET')
+    const r3 = makeBeRoute('src/main/java/com/example/svc/user/account/main/controller/AccountController.java', '/api/account', 'GET')
 
     const graph = createIRGraph({
       analyzerVersion: '0.1',
@@ -460,16 +553,18 @@ describe('BE 렌더러 — Tab1 (BE-C)', () => {
     await renderMermaid(graph, OUTPUT_DIR)
     const content = await fs.readFile(path.join(OUTPUT_DIR, 'rendering.md'), 'utf8')
 
-    expect(content).toContain('UserController')
-    expect(content).toContain('PostController')
-    expect(content).toContain('📄 UserController')
-    expect(content).toContain('📄 PostController')
     expect(content).toContain('graph TD')
+    expect(content).toContain('📁 src/main/java/com.example.svc.user.profile') // 헤더 = LCP+topSeg (R-T1.2 + R-T1.8)
+    expect(content).toContain('📄 PhotoController')
+    expect(content).toContain('📄 AccountController')
+    expect(content).toMatch(/subgraph endpoints_/) // endpoint subgraph (R-T1.6)
+    expect(content).toContain(':::pkg') // 패키지 트리 노드 (R-T1.4)
+    expect(content).not.toContain('BE_ROOT') // 구 outer subgraph 폐기 확인 (D7)
   })
 
-  it('intrinsic prefix 자동 추출 — suffix만 라벨 표시', async () => {
-    const r1 = makeBeRoute('controller/UserController.java', '/api/v1/users/list', 'GET')
-    const r2 = makeBeRoute('controller/UserController.java', '/api/v1/users/detail', 'GET')
+  it('intrinsic prefix 자동 추출 — suffix만 라벨 표시 (R-T1.5)', async () => {
+    const r1 = makeBeRoute('src/main/java/com/example/user/controller/UserController.java', '/api/v1/users/list', 'GET')
+    const r2 = makeBeRoute('src/main/java/com/example/user/controller/UserController.java', '/api/v1/users/detail', 'GET')
 
     const graph = createIRGraph({
       analyzerVersion: '0.1',
@@ -481,9 +576,28 @@ describe('BE 렌더러 — Tab1 (BE-C)', () => {
 
     await renderMermaid(graph, OUTPUT_DIR)
     const content = await fs.readFile(path.join(OUTPUT_DIR, 'rendering.md'), 'utf8')
-    expect(content).toContain('/api/v1/users')
+    expect(content).toContain('/api/v1/users') // leaf 라벨에 prefix
     expect(content).toContain('/list')
     expect(content).toContain('/detail')
+  })
+
+  it('top-level 패키지 단위 chunking (R-T1.8) — wide-pkg 시 chunk 분할', async () => {
+    // 같은 top-level(domain) 아래 다수 Controller는 1 chunk, 다른 top-level은 별도 chunk
+    const partner1 = makeBeRoute('src/main/java/com/example/partner/order/controller/OrderController.java', '/api/order', 'GET')
+    const partner2 = makeBeRoute('src/main/java/com/example/partner/inv/controller/InvController.java', '/api/inv', 'GET')
+    const agency = makeBeRoute('src/main/java/com/example/agency/main/controller/AgencyController.java', '/api/agency', 'GET')
+    const graph = createIRGraph({
+      analyzerVersion: '0.1',
+      repoRoot: '/tmp/be',
+      metadata: { framework: 'springboot', hasSupabase: false, hasPrisma: false, hasDexie: false, hasFirebase: false, adapterCategory: 'BE' },
+      nodes: [partner1, partner2, agency],
+      edges: [],
+    })
+    await renderMermaid(graph, OUTPUT_DIR)
+    const content = await fs.readFile(path.join(OUTPUT_DIR, 'rendering.md'), 'utf8')
+    expect(content).toContain('%%--CHUNK--%%') // chunk separator 검출
+    expect(content).toContain('com.example.partner')
+    expect(content).toContain('com.example.agency')
   })
 
   it('FE 프로젝트는 기존 URL-grouping 렌더러 유지', async () => {

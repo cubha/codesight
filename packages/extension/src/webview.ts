@@ -153,6 +153,10 @@ export class CodeSightPanel {
     const mermaidUri = webview.asWebviewUri(
       vscode.Uri.joinPath(this.extensionUri, 'media', 'mermaid.min.js'),
     )
+    // v1.2.40: ELK layout bundle (BE Tab1/Tab2 mrtree opt-in). 부재 시 dynamic import 실패 → dagre fallback.
+    const elkUri = webview.asWebviewUri(
+      vscode.Uri.joinPath(this.extensionUri, 'media', 'mermaid-layout-elk.bundle.mjs'),
+    )
 
     const viewerPath = path.join(this.extensionUri.fsPath, 'media', 'viewer.html')
     let template: string | undefined
@@ -175,6 +179,7 @@ export class CodeSightPanel {
       `window.__CODESIGHT_META__ = ${JSON.stringify({ projectName, routeCount, tableCount, cachedAt })};`,
       `window.__CODESIGHT_LOCALE__ = ${JSON.stringify(locale)};`,
       `window.__CODESIGHT_I18N__ = ${JSON.stringify(dict)};`,
+      `window.__CODESIGHT_ELK_URL__ = ${JSON.stringify(elkUri.toString())};`,
       `</script>`,
     ].join('\n')
 

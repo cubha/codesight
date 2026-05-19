@@ -282,12 +282,31 @@ const DIAGRAMS = {
 // ── Runtime ──────────────────────────────────────────────────────────────────
 mermaid.initialize({
   startOnLoad: false, securityLevel: 'loose', maxTextSize: 1000000, maxEdges: 2000,
-  // ELK 폐기 사유: graph LR에서 라우트/테이블 column 분리로 Tab3 가독성 저하.
-  // 인덱스 라우트 등 짧은 라벨 노드가 매우 작아져 Tab2 비율 깨짐.
-  // dagre 복귀 + htmlLabels=false (SVG vector text → zoom 시 픽셀화 방지).
+  // 기본: dagre + htmlLabels=false (SVG vector text → zoom 시 픽셀화 방지).
+  // ELK mrtree는 v1.2.40부터 per-diagram opt-in (BE Tab1/Tab2 diagram text에 config 헤더로 활성화).
   flowchart: { useMaxWidth: false, htmlLabels: false, nodeSpacing: 30, rankSpacing: 50, padding: 8 },
   er: { useMaxWidth: false }
 });
+
+// v1.2.40 ELK mrtree 동적 로드 — BE Tab1/Tab2 트리 레이아웃에 사용.
+// 실패 시 silent skip → 기본 dagre로 자동 폴백 (mrtree pragma는 무시됨).
+const ELK_BUNDLE_URL = (typeof window.__CODESIGHT_ELK_URL__ === 'string' && window.__CODESIGHT_ELK_URL__)
+  ? window.__CODESIGHT_ELK_URL__
+  : './mermaid-layout-elk.bundle.mjs';
+const elkReady = (async () => {
+  try {
+    const mod = await import(ELK_BUNDLE_URL);
+    if (typeof window.mermaid.registerLayoutLoaders === 'function') {
+      window.mermaid.registerLayoutLoaders(mod.default);
+      return true;
+    }
+    console.warn('[CodeSight] mermaid.registerLayoutLoaders 미가용 — dagre fallback');
+    return false;
+  } catch (e) {
+    console.warn('[CodeSight] ELK layout 로드 실패 — dagre fallback:', e && e.message);
+    return false;
+  }
+})();
 
 // Chunk fallback: renderer/_shared/wrap-fallback.ts emits %%--CHUNK--%% separator
 // between sub-diagrams when output exceeds chunkThreshold (default 1M).
@@ -311,6 +330,9 @@ function applyErdColors(svgEl) {
 }
 
 async function renderChunked(idPrefix, diagram) {
+  // ELK 등록 대기 — pragma가 있는 BE diagram이 mrtree로 layout되도록 보장.
+  // 실패 시 elkReady가 false로 resolve → dagre fallback (pragma 자체는 mermaid가 unknown layout으로 무시).
+  await elkReady;
   const chunks = splitChunks(diagram);
   if (chunks.length <= 1) {
     const {svg} = await mermaid.render(idPrefix+'_'+Date.now(), diagram);

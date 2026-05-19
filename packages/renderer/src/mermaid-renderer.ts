@@ -40,7 +40,15 @@ const CLASS_DEFS = [
   `  classDef isr fill:#1a1a0d,stroke:#ca8a04,color:#fde047`,
   `  classDef ppr fill:#0d1a2d,stroke:#2563eb,color:#93c5fd`,
   `  classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af`,
+  `  classDef pkg fill:#0c1018,stroke:#475569,color:#cbd5e1`,
+  `  classDef muted fill:#0a0d14,stroke:#374151,color:#64748b,stroke-dasharray: 3 3`,
+  `  classDef hdr fill:#06080f,stroke:#1e3a5f,color:#7dd3fc`,
 ].join('\n')
+
+// v1.2.40 ST4: ELK mrtree per-diagram opt-in (R-T1.9). BE Tab1/Tab2 트리 레이아웃 전용.
+// viewer.html에서 @mermaid-js/layout-elk 번들을 동적 import 후 registerLayoutLoaders로 등록한다.
+// 등록 실패 시 mermaid가 unknown layout으로 무시 → dagre fallback (UX 회귀 0).
+const ELK_MRTREE_PRAGMA = `---\nconfig:\n  layout: elk.mrtree\n---`
 
 function modeClass(mode: string): string {
   const map: Record<string, string> = {
@@ -478,53 +486,97 @@ function buildPkgTree(
   return root
 }
 
-function emitControllerFileSubgraph(
+// v1.2.40 ST1: 트리 인프라 헬퍼 — BE Tab1/Tab2 표준 (graph TD, node+edge tree, R-T1.4 / R-T2.1)
+// 패키지 segment = `pkg_<sanitized>` 노드, 부모-자식 = `-->` edge. subgraph 미사용 (R-T1.4).
+function buildPackageHeaderNode(lcpSegments: string[]): string[] {
+  if (lcpSegments.length === 0) return []
+  const label = `📁 src/main/java/${lcpSegments.join('.')}`
+  return [`  HDR_PKG["${label}"]:::hdr`]
+}
+
+type TreeEmit = {
+  lines: string[]
+  // pkg path segments joined by '.' → sanitized node id. Used by leaf emitters to wire edges.
+  nodeIdByPath: Map<string, string>
+}
+
+// 패키지 트리에서 node+edge만 emit. leaf(파일) 노드는 별도 emitter에서 처리하고 wiring만 책임진다.
+// rootLabel: 헤더 노드 없이 단일 트리일 때 root segment를 안 그릴 수 있도록 'BE_ROOT' 기본
+function emitTreeNodes(
+  tree: PkgTreeNode,
+  rootId: string,
+  prefixPath: string[] = [],
+): TreeEmit {
+  const lines: string[] = []
+  const nodeIdByPath = new Map<string, string>()
+  const walk = (node: PkgTreeNode, parentId: string, pathSegs: string[]): void => {
+    for (const [seg, child] of node.children) {
+      const segs = [...pathSegs, seg]
+      const id = `pkg_${sanitizeId(segs.join('__'))}`
+      lines.push(`  ${id}["${seg}"]:::pkg`)
+      lines.push(`  ${parentId} --> ${id}`)
+      nodeIdByPath.set(segs.join('.'), id)
+      walk(child, id, segs)
+    }
+  }
+  walk(tree, rootId, prefixPath)
+  return { lines, nodeIdByPath }
+}
+
+// top-level 패키지(공통 prefix strip 직후 첫 depth) 단위로 chunk 분할.
+// 각 chunk = { topSeg, subtree } — 호출자가 헤더+트리+leaf를 한 chunk로 emit.
+// R-T1.8 (Tab1) / R-T2.1 (Tab2) chunk gate.
+function chunkByTopLevelPackage(
+  tree: PkgTreeNode,
+): Array<{ topSeg: string; subtree: PkgTreeNode }> {
+  const chunks: Array<{ topSeg: string; subtree: PkgTreeNode }> = []
+  for (const [topSeg, subtree] of tree.children) {
+    chunks.push({ topSeg, subtree })
+  }
+  // root에 직접 매달린 파일이 있으면(드물지만 — 공통 prefix가 패키지 leaf인 경우) "(_root)" chunk로 묶음
+  if (tree.files.length > 0) {
+    const rootOnly: PkgTreeNode = { children: new Map(), files: tree.files }
+    chunks.push({ topSeg: '_root', subtree: rootOnly })
+  }
+  return chunks
+}
+
+// v1.2.40 ST3: BE Tab1 = 패키지 트리(node+edge) + leaf = 📄 Controller [/api/prefix] + endpoint subgraph.
+// 표준: docs/design/BE-DIAGRAM-STANDARD.md §2 (R-T1.1~9).
+// - 트리: emitTreeNodes (R-T1.4) — outer BE_ROOT subgraph 폐기 (D7)
+// - 헤더: 📁 src/main/java/com.<lcp> annotation 노드 (R-T1.2)
+// - suffix strip: 마지막 segment가 controller(s)면 strip (R-T1.3)
+// - leaf: 📄 ControllerName [URL prefix] (R-T1.5)
+// - endpoints: leaf 옆 endpoints_<Ctrl> subgraph, METHOD /suffix만 (R-T1.6)
+// - chunk: chunkByTopLevelPackage (R-T1.8)
+function emitControllerFileLeaf(
   indent: string,
-  parentId: string,
   filePath: string,
   routes: RouteNode[],
-): string[] {
+): { leafId: string; lines: string[] } {
   const controllerName = path.basename(filePath, path.extname(filePath))
-  const sgId = `${parentId}__${sanitizeId(controllerName)}`
+  const safeName = sanitizeId(controllerName)
   const prefix = pathSegmentLcp(routes.map(r => r.path))
   const titleSuffix = prefix !== '' ? ` [${prefix}]` : ''
+  const leafId = `leaf_${safeName}`
+  const epSgId = `endpoints_${safeName}`
   const lines: string[] = []
-  lines.push(`${indent}subgraph ${sgId}["📄 ${controllerName}${titleSuffix}"]`)
-  lines.push(...emitInnerRowSubgraphs(indent + '  ', sgId, routes.length, (i, ind) => {
-    const r = routes[i]!
+  lines.push(`${indent}${leafId}["📄 ${controllerName}${titleSuffix}"]:::ssr`)
+  if (routes.length === 0) return { leafId, lines }
+  lines.push(`${indent}subgraph ${epSgId}["endpoints"]`)
+  lines.push(`${indent}  direction TB`)
+  for (const r of routes) {
     const suffix = prefix !== '' && r.path.startsWith(prefix)
       ? (r.path.slice(prefix.length) || '/')
       : r.path
     const methodPrefix = r.httpMethod !== undefined ? `${r.httpMethod} ` : ''
-    return `${ind}${sanitizeId(r.id)}["${methodPrefix}${suffix}"]:::ssr`
-  }))
+    lines.push(`${indent}  ${sanitizeId(r.id)}["${methodPrefix}${suffix}"]:::ssr`)
+  }
   lines.push(`${indent}end`)
-  return lines
+  lines.push(`${indent}${leafId} --> ${epSgId}`)
+  return { leafId, lines }
 }
 
-function emitPkgTreeSubgraphs(
-  node: PkgTreeNode,
-  indent: string,
-  parentId: string,
-): string[] {
-  const lines: string[] = []
-  for (const [seg, child] of node.children) {
-    const sgId = `${parentId}__${sanitizeId(seg)}`
-    lines.push(`${indent}subgraph ${sgId}["📦 ${seg}"]`)
-    lines.push(...emitPkgTreeSubgraphs(child, indent + '  ', sgId))
-    lines.push(`${indent}end`)
-  }
-  for (const { filePath, routes } of node.files) {
-    lines.push(...emitControllerFileSubgraph(indent, parentId, filePath, routes))
-  }
-  return lines
-}
-
-// Tab1 BE: 패키지 경로 기반 nested grouping.
-// src/main/{java,kotlin}/ 이후 segments를 트리화 → 중첩 subgraph 생성.
-// - 모든 Controller가 공유하는 공통 prefix(예: com.wina) 자동 strip
-// - 마지막 segment가 모두 `controller(s)`일 때 strip (Spring 패키지 컨벤션)
-// - leaf = Controller 파일 단위 subgraph + URL prefix LCP 자동 추출
 function buildBeRenderingDiagram(graph: IRGraph): string {
   const routeNodes = graph.nodes.filter(isRouteNode)
   if (routeNodes.length === 0) return 'graph TD\n  empty["(no endpoints found)"]'
@@ -547,15 +599,49 @@ function buildBeRenderingDiagram(graph: IRGraph): string {
     const last = f.segments[f.segments.length - 1]
     return f.segments.length > lcpLen && last !== undefined && /^controllers?$/i.test(last)
   })
+  const lcpSegments = fileRoutes[0]?.segments.slice(0, lcpLen) ?? []
   const trimmed = fileRoutes.map(f => ({
     ...f,
     segments: f.segments.slice(lcpLen, trimController ? -1 : undefined),
   }))
 
+  const emitChunk = (chunkTree: PkgTreeNode, headerSegs: string[]): string[] => {
+    // v1.2.40 R-T1.9: ELK mrtree pragma per-diagram opt-in. viewer가 elk 미로드 시 dagre fallback.
+    const lines: string[] = [ELK_MRTREE_PRAGMA, RENDERING_INIT, 'graph TD', CLASS_DEFS]
+    const hdr = buildPackageHeaderNode(headerSegs)
+    lines.push(...hdr)
+    const rootId = hdr.length > 0 ? 'HDR_PKG' : 'BE_ANCHOR'
+    if (hdr.length === 0) lines.push(`  ${rootId}["(root)"]:::hdr`)
+    const treeEmit = emitTreeNodes(chunkTree, rootId, [])
+    lines.push(...treeEmit.lines)
+    // Leaf 파일: 부모 패키지 노드에 leaf controller 연결
+    const walkFiles = (node: PkgTreeNode, parentId: string, pathSegs: string[]): void => {
+      for (const [seg, child] of node.children) {
+        const segs = [...pathSegs, seg]
+        const pkgId = treeEmit.nodeIdByPath.get(segs.join('.')) ?? parentId
+        walkFiles(child, pkgId, segs)
+      }
+      for (const f of node.files) {
+        const { leafId, lines: leafLines } = emitControllerFileLeaf('  ', f.filePath, f.routes)
+        lines.push(...leafLines)
+        lines.push(`  ${parentId} --> ${leafId}`)
+      }
+    }
+    walkFiles(chunkTree, rootId, [])
+    return lines
+  }
+
   const tree = buildPkgTree(trimmed)
-  const lines: string[] = [RENDERING_INIT, 'graph TD', CLASS_DEFS]
-  lines.push(...emitPkgTreeSubgraphs(tree, '  ', 'BE_ROOT'))
-  return lines.join('\n')
+  const chunks = chunkByTopLevelPackage(tree)
+  if (chunks.length <= 1) {
+    return emitChunk(tree, lcpSegments).join('\n')
+  }
+  // 각 chunk header = LCP + topSeg. 트리는 topSeg children부터 시작 (R-T1.2 + R-T1.8: 중복 노드 제거)
+  const parts = chunks.map(({ topSeg, subtree }) => {
+    const headerSegs = topSeg === '_root' ? lcpSegments : [...lcpSegments, topSeg]
+    return emitChunk(subtree, headerSegs).join('\n')
+  })
+  return joinChunks(parts)
 }
 
 function buildRenderingDiagram(graph: IRGraph): string {
@@ -695,45 +781,201 @@ function isBeRepository(name: string): boolean {
   return name.endsWith('Repository') || name.endsWith('Dao') || name.endsWith('Mapper')
 }
 
-// Tab2 BE: 3-tier DI architecture — Controller → Service → Repository.
-// `calls` edges (from di-parser) are rendered as the DI chain.
+// v1.2.40 ST2: BE Tab2 = Tab1 동일 패키지 트리 + leaf에 Controller→Service→Repository 수직 DI 체인 subgraph.
+// 표준: docs/design/BE-DIAGRAM-STANDARD.md §3 (R-T2.1~6).
+// - 트리: emitTreeNodes (R-T2.1, Tab1 동일 정책)
+// - leaf DI 체인: di_<Ctrl> subgraph, 수직 verified --> 또는 inferred -.->
+// - (none) placeholder: Controller에 DI edge ≥1 있을 때만 누락 슬롯 채움 (D4 / R-T2.5 Less is More)
+// - cross-package DI: from·to 패키지 다르면 leaf 외부 dashed edge (R-T2.4)
+// - chunk: chunkByTopLevelPackage → top-level 패키지별 분할 (R-T2.1 + R-T1.8)
 function buildBeArchitectureDiagram(graph: IRGraph): string {
   const componentNodes = graph.nodes.filter(isComponentNode)
   if (componentNodes.length === 0) return 'graph TD\n  empty["(no BE components found)"]'
 
-  const controllers = componentNodes.filter(c => isBeController(c.name))
-  const services = componentNodes.filter(c => !isBeController(c.name) && isBeService(c.name))
-  const repositories = componentNodes.filter(c => !isBeController(c.name) && !isBeService(c.name) && isBeRepository(c.name))
-  const others = componentNodes.filter(c => !isBeController(c.name) && !isBeService(c.name) && !isBeRepository(c.name))
   const callsEdges = graph.edges.filter(e => e.kind === 'calls')
 
-  const lines: string[] = [RENDERING_INIT, 'graph TD', CLASS_DEFS]
+  // Controller만 트리 구조의 leaf로 표시. Service·Repository는 leaf DI subgraph 안에서 별도 노드로 emit.
+  const controllers = componentNodes.filter(c => isBeController(c.name))
+  if (controllers.length === 0) return 'graph TD\n  empty["(no BE controllers found)"]'
 
-  if (controllers.length > 0) {
-    lines.push('  subgraph CTRL_G["🎯 Controllers"]')
-    for (const c of controllers) lines.push(`    ${sanitizeId(c.id)}["${c.name}"]:::ssr`)
-    lines.push('  end')
+  // component.id → 도메인 패키지 (cross-pkg 분류용, D3)
+  // Spring 컨벤션: <domain>/{controller,service,repository,dao,mapper}/*.java
+  // 마지막 segment가 컨벤션 폴더면 strip → 같은 도메인 안의 Controller·Service·Repository는 same-pkg
+  const stripDomainSuffix = (segs: string[]): string[] => {
+    const last = segs[segs.length - 1]
+    if (last !== undefined && /^(controllers?|services?|repositor(?:y|ies)|dao(?:s)?|mappers?)$/i.test(last)) {
+      return segs.slice(0, -1)
+    }
+    return segs
   }
-  if (services.length > 0) {
-    lines.push('  subgraph SVC_G["⚙ Services"]')
-    for (const c of services) lines.push(`    ${sanitizeId(c.id)}["${c.name}"]:::unk`)
-    lines.push('  end')
-  }
-  if (repositories.length > 0) {
-    lines.push('  subgraph REPO_G["🗄 Repositories"]')
-    for (const c of repositories) lines.push(`    ${sanitizeId(c.id)}["${c.name}"]:::ssg`)
-    lines.push('  end')
-  }
-  if (others.length > 0) {
-    lines.push('  subgraph COMP_G["📦 Components"]')
-    for (const c of others) lines.push(`    ${sanitizeId(c.id)}["${c.name}"]:::unk`)
-    lines.push('  end')
-  }
-  for (const edge of callsEdges) {
-    lines.push(`  ${sanitizeId(edge.from)} ${edgeArrow(edge)} ${sanitizeId(edge.to)}`)
+  const compIdToPkg = new Map<string, string[]>()
+  for (const c of componentNodes) compIdToPkg.set(c.id, stripDomainSuffix(extractPackageSegments(c.filePath)))
+
+  // controller filePath → package segments (트리 그룹핑용)
+  const ctrlBuckets: Array<{ filePath: string; segments: string[]; controller: ComponentNode }> = controllers.map(c => ({
+    filePath: c.filePath,
+    segments: extractPackageSegments(c.filePath),
+    controller: c,
+  }))
+
+  const lcpLen = commonPrefixLen(ctrlBuckets.map(b => b.segments))
+  const trimController = ctrlBuckets.every(b => {
+    const last = b.segments[b.segments.length - 1]
+    return b.segments.length > lcpLen && last !== undefined && /^controllers?$/i.test(last)
+  })
+  const lcpSegments = ctrlBuckets[0]?.segments.slice(0, lcpLen) ?? []
+  const trimmed = ctrlBuckets.map(b => ({
+    ...b,
+    segments: b.segments.slice(lcpLen, trimController ? -1 : undefined),
+  }))
+
+  // Controller의 DI 체인 수집 (Less is More: edge 없으면 빈 체인 — placeholder도 안 그림)
+  type DiChain = { svc?: ComponentNode | undefined; repo?: ComponentNode | undefined; svcEdge?: IREdge | undefined; repoEdge?: IREdge | undefined }
+  const compById = new Map<string, ComponentNode>()
+  for (const c of componentNodes) compById.set(c.id, c)
+  const chainByCtrl = new Map<string, DiChain>()
+  for (const c of controllers) {
+    const svcEdge = callsEdges.find(e => e.from === c.id && (compById.get(e.to)?.name !== undefined && isBeService(compById.get(e.to)!.name)))
+    const svc = svcEdge !== undefined ? compById.get(svcEdge.to) : undefined
+    let repoEdge: IREdge | undefined
+    let repo: ComponentNode | undefined
+    if (svc !== undefined) {
+      repoEdge = callsEdges.find(e => e.from === svc.id && (compById.get(e.to)?.name !== undefined && isBeRepository(compById.get(e.to)!.name)))
+      repo = repoEdge !== undefined ? compById.get(repoEdge.to) : undefined
+    }
+    chainByCtrl.set(c.id, { svc, repo, svcEdge, repoEdge })
   }
 
-  return lines.join('\n')
+  const samePkg = (a: ComponentNode, b: ComponentNode): boolean => {
+    const ap = compIdToPkg.get(a.id) ?? []
+    const bp = compIdToPkg.get(b.id) ?? []
+    return ap.length > 0 && ap.join('.') === bp.join('.')
+  }
+
+  const renderControllerLeaf = (ctrl: ComponentNode, indent: string): string[] => {
+    const out: string[] = []
+    const chain = chainByCtrl.get(ctrl.id)
+    const hasAnyDi = chain !== undefined && (chain.svc !== undefined || chain.repo !== undefined)
+    if (!hasAnyDi) {
+      // R-T2.5: pure non-DI controller — leaf만 표시. (none) 추정 안 함.
+      out.push(`${indent}${sanitizeId(ctrl.id)}["📄 ${ctrl.name}"]:::ssr`)
+      return out
+    }
+    const diSgId = `di_${sanitizeId(ctrl.id)}`
+    out.push(`${indent}subgraph ${diSgId}["[ DI ]"]`)
+    out.push(`${indent}  direction TB`)
+    const ctrlNode = `${sanitizeId(ctrl.id)}`
+    out.push(`${indent}  ${ctrlNode}["${ctrl.name}"]:::ssr`)
+
+    // Service slot (R-T2.4: cross-pkg일 때는 leaf 내부에 emit 안 하고 외부 edge로 처리)
+    const svcCrossPkg = chain!.svc !== undefined && !samePkg(ctrl, chain!.svc)
+    const svcInChain = chain!.svc !== undefined && !svcCrossPkg
+    const svcId = svcInChain ? sanitizeId(chain!.svc!.id) : `${diSgId}__svc_none`
+    if (svcInChain) {
+      out.push(`${indent}  ${svcId}["${chain!.svc!.name}"]:::unk`)
+    } else if (svcCrossPkg) {
+      out.push(`${indent}  ${svcId}["(external Service)"]:::muted`)
+    } else {
+      out.push(`${indent}  ${svcId}["(no Service)"]:::muted`)
+    }
+    const ctrlToSvcArrow = chain!.svcEdge !== undefined && !svcCrossPkg ? edgeArrow(chain!.svcEdge) : '-.->'
+    const ctrlToSvcLabel = svcCrossPkg ? '|"cross-pkg"|' : ''
+    out.push(`${indent}  ${ctrlNode} ${ctrlToSvcArrow}${ctrlToSvcLabel} ${svcId}`)
+
+    // Repository slot
+    const repoCrossPkg = chain!.repo !== undefined && chain!.svc !== undefined && !samePkg(chain!.svc, chain!.repo)
+    const repoInChain = chain!.repo !== undefined && !repoCrossPkg
+    const repoId = repoInChain ? sanitizeId(chain!.repo!.id) : `${diSgId}__repo_none`
+    if (repoInChain) {
+      out.push(`${indent}  ${repoId}["${chain!.repo!.name}"]:::ssg`)
+    } else if (repoCrossPkg) {
+      out.push(`${indent}  ${repoId}["(external Repository)"]:::muted`)
+    } else {
+      out.push(`${indent}  ${repoId}["(no Repository)"]:::muted`)
+    }
+    const svcToRepoArrow = chain!.repoEdge !== undefined && !repoCrossPkg ? edgeArrow(chain!.repoEdge) : '-.->'
+    const svcToRepoLabel = repoCrossPkg ? '|"cross-pkg"|' : ''
+    out.push(`${indent}  ${svcId} ${svcToRepoArrow}${svcToRepoLabel} ${repoId}`)
+    out.push(`${indent}end`)
+    return out
+  }
+
+  const emitChunk = (chunkTree: PkgTreeNode, chunkPath: string[], headerSegs: string[]): string[] => {
+    // v1.2.40 R-T1.9: ELK mrtree pragma per-diagram opt-in. viewer가 elk 미로드 시 dagre fallback.
+    const lines: string[] = [ELK_MRTREE_PRAGMA, RENDERING_INIT, 'graph TD', CLASS_DEFS]
+    const hdr = buildPackageHeaderNode(headerSegs)
+    lines.push(...hdr)
+    const rootId = hdr.length > 0 ? 'HDR_PKG' : 'BE_ANCHOR'
+    if (hdr.length === 0) lines.push(`  ${rootId}["(root)"]:::hdr`)
+    const treeEmit = emitTreeNodes(chunkTree, rootId, chunkPath)
+    lines.push(...treeEmit.lines)
+    // 본 chunk에서 emit된 component ID 추적 — cross-pkg edge 필터에 사용
+    const emittedNodeIds = new Set<string>()
+    // Leaf Controllers: 부모 패키지 노드에서 leaf로 edge 연결
+    const walkFiles = (node: PkgTreeNode, parentId: string, pathSegs: string[]): void => {
+      for (const [seg, child] of node.children) {
+        const segs = [...pathSegs, seg]
+        const pkgId = treeEmit.nodeIdByPath.get(segs.join('.')) ?? parentId
+        walkFiles(child, pkgId, segs)
+      }
+      for (const f of node.files) {
+        const ctrl = trimmed.find(b => b.filePath === f.filePath)?.controller
+        if (ctrl === undefined) continue
+        lines.push(...renderControllerLeaf(ctrl, '  '))
+        const chain = chainByCtrl.get(ctrl.id)
+        const hasAnyDi = chain !== undefined && (chain.svc !== undefined || chain.repo !== undefined)
+        const leafTargetId = hasAnyDi ? `di_${sanitizeId(ctrl.id)}` : sanitizeId(ctrl.id)
+        lines.push(`  ${parentId} --> ${leafTargetId}`)
+        // 본 chunk에서 in-chain으로 실제 emit된 컴포넌트만 추적 (cross-pkg edge 필터용)
+        emittedNodeIds.add(ctrl.id)
+        if (chain?.svc !== undefined && (compIdToPkg.get(ctrl.id) ?? []).join('.') === (compIdToPkg.get(chain.svc.id) ?? []).join('.')) {
+          emittedNodeIds.add(chain.svc.id)
+        }
+        if (chain?.repo !== undefined && chain.svc !== undefined && (compIdToPkg.get(chain.svc.id) ?? []).join('.') === (compIdToPkg.get(chain.repo.id) ?? []).join('.')) {
+          emittedNodeIds.add(chain.repo.id)
+        }
+      }
+    }
+    // build a wrapper PkgTreeNode with files attached at correct depths
+    const filesTree = buildPkgTree(trimmed.map(b => ({ filePath: b.filePath, segments: b.segments, routes: [] })))
+    // intersect filesTree paths with chunkTree paths so each chunk only renders its own leaves
+    const intersect = (a: PkgTreeNode, b: PkgTreeNode): PkgTreeNode => {
+      const out: PkgTreeNode = { children: new Map(), files: a.files.filter(f => f) }
+      for (const [seg, sub] of a.children) {
+        const matched = b.children.get(seg)
+        if (matched !== undefined) out.children.set(seg, intersect(sub, matched))
+      }
+      return out
+    }
+    // chunkTree was sub-rooted at headerSegs+chunkPath; align filesTree
+    let alignedFiles: PkgTreeNode = filesTree
+    for (const seg of chunkPath) {
+      const next = alignedFiles.children.get(seg)
+      if (next === undefined) { alignedFiles = { children: new Map(), files: [] }; break }
+      alignedFiles = next
+    }
+    const final = intersect(alignedFiles, chunkTree)
+    walkFiles(final, rootId, chunkPath)
+
+    // R-T2.4 cross-pkg edge: leaf DI subgraph 안의 dashed 화살표에 인라인 라벨로 표시 (renderControllerLeaf 참조).
+    // 외부 별도 edge 미emit — ghost-node 회피 + 중복 화살표 방지. emittedNodeIds는 향후 확장 용도.
+    void emittedNodeIds
+    return lines
+  }
+
+  // chunking: top-level 패키지 단위 (D2 — BE 내부에서 emit, L958 가드 유지)
+  const filesTree = buildPkgTree(trimmed.map(b => ({ filePath: b.filePath, segments: b.segments, routes: [] })))
+  const chunks = chunkByTopLevelPackage(filesTree)
+  if (chunks.length <= 1) {
+    return emitChunk(filesTree, [], lcpSegments).join('\n')
+  }
+  // 각 chunk header = LCP + topSeg. 트리는 topSeg children부터 시작 (R-T1.2 + R-T1.8: 중복 노드 제거)
+  const parts = chunks.map(({ topSeg, subtree }) => {
+    const headerSegs = topSeg === '_root' ? lcpSegments : [...lcpSegments, topSeg]
+    const chunkPath = topSeg === '_root' ? [] : [topSeg]
+    return emitChunk(subtree, chunkPath, headerSegs).join('\n')
+  })
+  return joinChunks(parts)
 }
 
 function buildScreenComponentDiagram(graph: IRGraph): string {

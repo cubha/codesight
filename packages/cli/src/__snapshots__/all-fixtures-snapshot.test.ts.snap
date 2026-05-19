@@ -38,6 +38,9 @@ graph TD
   classDef isr fill:#1a1a0d,stroke:#ca8a04,color:#fde047
   classDef ppr fill:#0d1a2d,stroke:#2563eb,color:#93c5fd
   classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
+  classDef pkg fill:#0c1018,stroke:#475569,color:#cbd5e1
+  classDef muted fill:#0a0d14,stroke:#374151,color:#64748b,stroke-dasharray: 3 3
+  classDef hdr fill:#06080f,stroke:#1e3a5f,color:#7dd3fc
   route_src_app_app_config_ts__["/ · CSR"]:::csr
   route_src_app_user_detail_user_detail_module_ts__["/ · CSR"]:::csr
   subgraph ABOUT_G["👤 /about"]
@@ -60,6 +63,9 @@ graph TB
   classDef isr fill:#1a1a0d,stroke:#ca8a04,color:#fde047
   classDef ppr fill:#0d1a2d,stroke:#2563eb,color:#93c5fd
   classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
+  classDef pkg fill:#0c1018,stroke:#475569,color:#cbd5e1
+  classDef muted fill:#0a0d14,stroke:#374151,color:#64748b,stroke-dasharray: 3 3
+  classDef hdr fill:#06080f,stroke:#1e3a5f,color:#7dd3fc
   route_src_app_user_detail_user_detail_module_ts__["/ · CSR"]:::csr
   subgraph ABOUT_S["👤 /about"]
     route_src_app_app_config_ts__about["/about · CSR"]:::csr
@@ -103,7 +109,11 @@ exports[`Phase XI — fixture baseline snapshots (P1) > mini-django-app > IRGrap
 `;
 
 exports[`Phase XI — fixture baseline snapshots (P1) > mini-django-app > Tab1 rendering diagram 1`] = `
-"%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0c1a30','primaryTextColor':'#7dd3fc','primaryBorderColor':'#0e3a6e','edgeLabelBackground':'#0c1a30','lineColor':'#334155','secondaryColor':'#0f172a','clusterBkg':'#060c18','clusterBorder':'#1e3a5f','fontFamily':'JetBrains Mono','fontSize':'14'}}}%%
+"---
+config:
+  layout: elk.mrtree
+---
+%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0c1a30','primaryTextColor':'#7dd3fc','primaryBorderColor':'#0e3a6e','edgeLabelBackground':'#0c1a30','lineColor':'#334155','secondaryColor':'#0f172a','clusterBkg':'#060c18','clusterBorder':'#1e3a5f','fontFamily':'JetBrains Mono','fontSize':'14'}}}%%
 graph TD
   classDef ssr fill:#0d1a0d,stroke:#16a34a,color:#86efac
   classDef csr fill:#2d1200,stroke:#c2410c,color:#fb923c
@@ -111,48 +121,25 @@ graph TD
   classDef isr fill:#1a1a0d,stroke:#ca8a04,color:#fde047
   classDef ppr fill:#0d1a2d,stroke:#2563eb,color:#93c5fd
   classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
-  subgraph API_G["⚡ /api"]
-    subgraph API_USERS_G["📄 /users"]
-      route_api_urls_py__api_users_include["/api/users · SSR"]:::ssr
-      subgraph API_USERS__PK_G["📄 /:pk"]
-        route_api_urls_py__api_users__pk_include["/api/users/:pk · SSR"]:::ssr
-      end
-    end
-    subgraph API_POSTS_G["📄 /posts"]
-      route_api_urls_py__api_posts_include["/api/posts · SSR"]:::ssr
-      subgraph API_POSTS__SLUG_G["📄 /:slug"]
-        route_api_urls_py__api_posts__slug_include["/api/posts/:slug · SSR"]:::ssr
-      end
-    end
+  classDef pkg fill:#0c1018,stroke:#475569,color:#cbd5e1
+  classDef muted fill:#0a0d14,stroke:#374151,color:#64748b,stroke-dasharray: 3 3
+  classDef hdr fill:#06080f,stroke:#1e3a5f,color:#7dd3fc
+  HDR_PKG["📁 src/main/java/api"]:::hdr
+  leaf_urls["📄 urls [/api]"]:::ssr
+  subgraph endpoints_urls["endpoints"]
+    direction TB
+    route_api_urls_py__api_users_include["/users"]:::ssr
+    route_api_urls_py__api_users__pk_include["/users/:pk"]:::ssr
+    route_api_urls_py__api_posts_include["/posts"]:::ssr
+    route_api_urls_py__api_posts__slug_include["/posts/:slug"]:::ssr
   end
-  subgraph DATALAYER["🔌 API LAYER"]
-    subgraph API_G["⚡ REST API · Backend"]
-      API_SVC[("Backend Service")]
-    end
-  end"
+  leaf_urls --> endpoints_urls
+  HDR_PKG --> leaf_urls"
 `;
 
 exports[`Phase XI — fixture baseline snapshots (P1) > mini-django-app > Tab2 screen-component diagram 1`] = `
-"%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0c1a30','primaryTextColor':'#7dd3fc','primaryBorderColor':'#0e3a6e','edgeLabelBackground':'#0c1a30','lineColor':'#334155','secondaryColor':'#0f172a','clusterBkg':'#060c18','clusterBorder':'#1e3a5f','fontFamily':'JetBrains Mono','fontSize':'14'}}}%%
-graph TB
-  classDef ssr fill:#0d1a0d,stroke:#16a34a,color:#86efac
-  classDef csr fill:#2d1200,stroke:#c2410c,color:#fb923c
-  classDef ssg fill:#1a0d1a,stroke:#7c3aed,color:#c4b5fd
-  classDef isr fill:#1a1a0d,stroke:#ca8a04,color:#fde047
-  classDef ppr fill:#0d1a2d,stroke:#2563eb,color:#93c5fd
-  classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
-  subgraph API_USERS_S["📄 /users"]
-    route_api_urls_py__api_users_include["/api/users · SSR"]:::ssr
-    subgraph API_USERS__PK_S["📄 /:pk"]
-      route_api_urls_py__api_users__pk_include["/api/users/:pk · SSR"]:::ssr
-    end
-  end
-  subgraph API_POSTS_S["📄 /posts"]
-    route_api_urls_py__api_posts_include["/api/posts · SSR"]:::ssr
-    subgraph API_POSTS__SLUG_S["📄 /:slug"]
-      route_api_urls_py__api_posts__slug_include["/api/posts/:slug · SSR"]:::ssr
-    end
-  end"
+"graph TD
+  empty["(no BE controllers found)"]"
 `;
 
 exports[`Phase XI — fixture baseline snapshots (P1) > mini-django-app > Tab3 db-screen diagram 1`] = `
@@ -212,7 +199,12 @@ exports[`Phase XI — fixture baseline snapshots (P1) > mini-fastapi-app > IRGra
 `;
 
 exports[`Phase XI — fixture baseline snapshots (P1) > mini-fastapi-app > Tab1 rendering diagram 1`] = `
-"%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0c1a30','primaryTextColor':'#7dd3fc','primaryBorderColor':'#0e3a6e','edgeLabelBackground':'#0c1a30','lineColor':'#334155','secondaryColor':'#0f172a','clusterBkg':'#060c18','clusterBorder':'#1e3a5f','fontFamily':'JetBrains Mono','fontSize':'14'}}}%%
+"%% chunk:1/2
+---
+config:
+  layout: elk.mrtree
+---
+%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0c1a30','primaryTextColor':'#7dd3fc','primaryBorderColor':'#0e3a6e','edgeLabelBackground':'#0c1a30','lineColor':'#334155','secondaryColor':'#0f172a','clusterBkg':'#060c18','clusterBorder':'#1e3a5f','fontFamily':'JetBrains Mono','fontSize':'14'}}}%%
 graph TD
   classDef ssr fill:#0d1a0d,stroke:#16a34a,color:#86efac
   classDef csr fill:#2d1200,stroke:#c2410c,color:#fb923c
@@ -220,59 +212,58 @@ graph TD
   classDef isr fill:#1a1a0d,stroke:#ca8a04,color:#fde047
   classDef ppr fill:#0d1a2d,stroke:#2563eb,color:#93c5fd
   classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
-  subgraph API_G["⚡ /api"]
-    subgraph API_USERS_G["📄 /users"]
-      route_routers_users_py__api_users_GET["GET /api/users · SSR"]:::ssr
-      route_routers_users_py__api_users_POST["POST /api/users · SSR"]:::ssr
-      subgraph API_USERS__USER_ID_G["📄 /:user_id"]
-        route_routers_users_py__api_users__user_id_GET["GET /api/users/:user_id · SSR"]:::ssr
-      end
-    end
-    subgraph API_POSTS_G["📄 /posts"]
-      route_routers_posts_py__api_posts_GET["GET /api/posts · SSR"]:::ssr
-      subgraph API_POSTS__POST_ID_G["📄 /:post_id"]
-        route_routers_posts_py__api_posts__post_id_GET["GET /api/posts/:post_id · SSR"]:::ssr
-      end
-    end
+  classDef pkg fill:#0c1018,stroke:#475569,color:#cbd5e1
+  classDef muted fill:#0a0d14,stroke:#374151,color:#64748b,stroke-dasharray: 3 3
+  classDef hdr fill:#06080f,stroke:#1e3a5f,color:#7dd3fc
+  HDR_PKG["📁 src/main/java/routers"]:::hdr
+  leaf_users["📄 users [/api/users]"]:::ssr
+  subgraph endpoints_users["endpoints"]
+    direction TB
+    route_routers_users_py__api_users_GET["GET /"]:::ssr
+    route_routers_users_py__api_users__user_id_GET["GET /:user_id"]:::ssr
+    route_routers_users_py__api_users_POST["POST /"]:::ssr
   end
-  route_main_py___get["GET / · SSR"]:::ssr
-  subgraph HEALTH_G["📄 /health"]
-    route_main_py__health_get["GET /health · SSR"]:::ssr
+  leaf_users --> endpoints_users
+  HDR_PKG --> leaf_users
+  leaf_posts["📄 posts [/api/posts]"]:::ssr
+  subgraph endpoints_posts["endpoints"]
+    direction TB
+    route_routers_posts_py__api_posts_GET["GET /"]:::ssr
+    route_routers_posts_py__api_posts__post_id_GET["GET /:post_id"]:::ssr
   end
-  subgraph DATALAYER["🔌 API LAYER"]
-    subgraph API_G["⚡ REST API · Backend"]
-      API_SVC[("Backend Service")]
-    end
-  end"
-`;
-
-exports[`Phase XI — fixture baseline snapshots (P1) > mini-fastapi-app > Tab2 screen-component diagram 1`] = `
-"%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0c1a30','primaryTextColor':'#7dd3fc','primaryBorderColor':'#0e3a6e','edgeLabelBackground':'#0c1a30','lineColor':'#334155','secondaryColor':'#0f172a','clusterBkg':'#060c18','clusterBorder':'#1e3a5f','fontFamily':'JetBrains Mono','fontSize':'14'}}}%%
-graph TB
+  leaf_posts --> endpoints_posts
+  HDR_PKG --> leaf_posts
+%%--CHUNK--%%
+%% chunk:2/2
+---
+config:
+  layout: elk.mrtree
+---
+%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0c1a30','primaryTextColor':'#7dd3fc','primaryBorderColor':'#0e3a6e','edgeLabelBackground':'#0c1a30','lineColor':'#334155','secondaryColor':'#0f172a','clusterBkg':'#060c18','clusterBorder':'#1e3a5f','fontFamily':'JetBrains Mono','fontSize':'14'}}}%%
+graph TD
   classDef ssr fill:#0d1a0d,stroke:#16a34a,color:#86efac
   classDef csr fill:#2d1200,stroke:#c2410c,color:#fb923c
   classDef ssg fill:#1a0d1a,stroke:#7c3aed,color:#c4b5fd
   classDef isr fill:#1a1a0d,stroke:#ca8a04,color:#fde047
   classDef ppr fill:#0d1a2d,stroke:#2563eb,color:#93c5fd
   classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
-  subgraph API_S["⚡ /api"]
-    subgraph API_USERS_S["📄 /users"]
-      route_routers_users_py__api_users_GET["/api/users · SSR"]:::ssr
-      subgraph API_USERS__USER_ID_S["📄 /:user_id"]
-        route_routers_users_py__api_users__user_id_GET["/api/users/:user_id · SSR"]:::ssr
-      end
-    end
-    subgraph API_POSTS_S["📄 /posts"]
-      route_routers_posts_py__api_posts_GET["/api/posts · SSR"]:::ssr
-      subgraph API_POSTS__POST_ID_S["📄 /:post_id"]
-        route_routers_posts_py__api_posts__post_id_GET["/api/posts/:post_id · SSR"]:::ssr
-      end
-    end
+  classDef pkg fill:#0c1018,stroke:#475569,color:#cbd5e1
+  classDef muted fill:#0a0d14,stroke:#374151,color:#64748b,stroke-dasharray: 3 3
+  classDef hdr fill:#06080f,stroke:#1e3a5f,color:#7dd3fc
+  BE_ANCHOR["(root)"]:::hdr
+  leaf_main["📄 main"]:::ssr
+  subgraph endpoints_main["endpoints"]
+    direction TB
+    route_main_py___get["GET /"]:::ssr
+    route_main_py__health_get["GET /health"]:::ssr
   end
-  route_main_py___get["/ · SSR"]:::ssr
-  subgraph HEALTH_S["📄 /health"]
-    route_main_py__health_get["/health · SSR"]:::ssr
-  end"
+  leaf_main --> endpoints_main
+  BE_ANCHOR --> leaf_main"
+`;
+
+exports[`Phase XI — fixture baseline snapshots (P1) > mini-fastapi-app > Tab2 screen-component diagram 1`] = `
+"graph TD
+  empty["(no BE controllers found)"]"
 `;
 
 exports[`Phase XI — fixture baseline snapshots (P1) > mini-fastapi-app > Tab3 db-screen diagram 1`] = `
@@ -313,7 +304,12 @@ exports[`Phase XI — fixture baseline snapshots (P1) > mini-flask-app > IRGraph
 `;
 
 exports[`Phase XI — fixture baseline snapshots (P1) > mini-flask-app > Tab1 rendering diagram 1`] = `
-"%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0c1a30','primaryTextColor':'#7dd3fc','primaryBorderColor':'#0e3a6e','edgeLabelBackground':'#0c1a30','lineColor':'#334155','secondaryColor':'#0f172a','clusterBkg':'#060c18','clusterBorder':'#1e3a5f','fontFamily':'JetBrains Mono','fontSize':'14'}}}%%
+"%% chunk:1/2
+---
+config:
+  layout: elk.mrtree
+---
+%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0c1a30','primaryTextColor':'#7dd3fc','primaryBorderColor':'#0e3a6e','edgeLabelBackground':'#0c1a30','lineColor':'#334155','secondaryColor':'#0f172a','clusterBkg':'#060c18','clusterBorder':'#1e3a5f','fontFamily':'JetBrains Mono','fontSize':'14'}}}%%
 graph TD
   classDef ssr fill:#0d1a0d,stroke:#16a34a,color:#86efac
   classDef csr fill:#2d1200,stroke:#c2410c,color:#fb923c
@@ -321,54 +317,58 @@ graph TD
   classDef isr fill:#1a1a0d,stroke:#ca8a04,color:#fde047
   classDef ppr fill:#0d1a2d,stroke:#2563eb,color:#93c5fd
   classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
-  route_app_py__["/ · SSR"]:::ssr
-  subgraph HEALTH_G["📄 /health"]
-    route_app_py__health["/health · SSR"]:::ssr
+  classDef pkg fill:#0c1018,stroke:#475569,color:#cbd5e1
+  classDef muted fill:#0a0d14,stroke:#374151,color:#64748b,stroke-dasharray: 3 3
+  classDef hdr fill:#06080f,stroke:#1e3a5f,color:#7dd3fc
+  HDR_PKG["📁 src/main/java/blueprints"]:::hdr
+  leaf_posts["📄 posts [/api/posts]"]:::ssr
+  subgraph endpoints_posts["endpoints"]
+    direction TB
+    route_blueprints_posts_py__api_posts["/"]:::ssr
+    route_blueprints_posts_py__api_posts__post_id["/:post_id"]:::ssr
   end
-  subgraph API_G["⚡ /api"]
-    subgraph API_POSTS_G["📄 /posts"]
-      route_blueprints_posts_py__api_posts["/api/posts · SSR"]:::ssr
-      subgraph API_POSTS__POST_ID_G["📄 /:post_id"]
-        route_blueprints_posts_py__api_posts__post_id["/api/posts/:post_id · SSR"]:::ssr
-      end
-    end
-    subgraph API_USERS_G["📄 /users"]
-      route_blueprints_users_py__api_users["/api/users · SSR"]:::ssr
-      route_blueprints_users_py__api_users["POST /api/users · SSR"]:::ssr
-      subgraph API_USERS__USER_ID_G["📄 /:user_id"]
-        route_blueprints_users_py__api_users__user_id["/api/users/:user_id · SSR"]:::ssr
-      end
-    end
-  end"
-`;
-
-exports[`Phase XI — fixture baseline snapshots (P1) > mini-flask-app > Tab2 screen-component diagram 1`] = `
-"%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0c1a30','primaryTextColor':'#7dd3fc','primaryBorderColor':'#0e3a6e','edgeLabelBackground':'#0c1a30','lineColor':'#334155','secondaryColor':'#0f172a','clusterBkg':'#060c18','clusterBorder':'#1e3a5f','fontFamily':'JetBrains Mono','fontSize':'14'}}}%%
-graph TB
+  leaf_posts --> endpoints_posts
+  HDR_PKG --> leaf_posts
+  leaf_users["📄 users [/api/users]"]:::ssr
+  subgraph endpoints_users["endpoints"]
+    direction TB
+    route_blueprints_users_py__api_users["/"]:::ssr
+    route_blueprints_users_py__api_users__user_id["/:user_id"]:::ssr
+    route_blueprints_users_py__api_users["POST /"]:::ssr
+  end
+  leaf_users --> endpoints_users
+  HDR_PKG --> leaf_users
+%%--CHUNK--%%
+%% chunk:2/2
+---
+config:
+  layout: elk.mrtree
+---
+%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0c1a30','primaryTextColor':'#7dd3fc','primaryBorderColor':'#0e3a6e','edgeLabelBackground':'#0c1a30','lineColor':'#334155','secondaryColor':'#0f172a','clusterBkg':'#060c18','clusterBorder':'#1e3a5f','fontFamily':'JetBrains Mono','fontSize':'14'}}}%%
+graph TD
   classDef ssr fill:#0d1a0d,stroke:#16a34a,color:#86efac
   classDef csr fill:#2d1200,stroke:#c2410c,color:#fb923c
   classDef ssg fill:#1a0d1a,stroke:#7c3aed,color:#c4b5fd
   classDef isr fill:#1a1a0d,stroke:#ca8a04,color:#fde047
   classDef ppr fill:#0d1a2d,stroke:#2563eb,color:#93c5fd
   classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
-  route_app_py__["/ · SSR"]:::ssr
-  subgraph HEALTH_S["📄 /health"]
-    route_app_py__health["/health · SSR"]:::ssr
+  classDef pkg fill:#0c1018,stroke:#475569,color:#cbd5e1
+  classDef muted fill:#0a0d14,stroke:#374151,color:#64748b,stroke-dasharray: 3 3
+  classDef hdr fill:#06080f,stroke:#1e3a5f,color:#7dd3fc
+  BE_ANCHOR["(root)"]:::hdr
+  leaf_app["📄 app"]:::ssr
+  subgraph endpoints_app["endpoints"]
+    direction TB
+    route_app_py__["/"]:::ssr
+    route_app_py__health["/health"]:::ssr
   end
-  subgraph API_S["⚡ /api"]
-    subgraph API_POSTS_S["📄 /posts"]
-      route_blueprints_posts_py__api_posts["/api/posts · SSR"]:::ssr
-      subgraph API_POSTS__POST_ID_S["📄 /:post_id"]
-        route_blueprints_posts_py__api_posts__post_id["/api/posts/:post_id · SSR"]:::ssr
-      end
-    end
-    subgraph API_USERS_S["📄 /users"]
-      route_blueprints_users_py__api_users["/api/users · SSR"]:::ssr
-      subgraph API_USERS__USER_ID_S["📄 /:user_id"]
-        route_blueprints_users_py__api_users__user_id["/api/users/:user_id · SSR"]:::ssr
-      end
-    end
-  end"
+  leaf_app --> endpoints_app
+  BE_ANCHOR --> leaf_app"
+`;
+
+exports[`Phase XI — fixture baseline snapshots (P1) > mini-flask-app > Tab2 screen-component diagram 1`] = `
+"graph TD
+  empty["(no BE components found)"]"
 `;
 
 exports[`Phase XI — fixture baseline snapshots (P1) > mini-flask-app > Tab3 db-screen diagram 1`] = `
@@ -414,7 +414,11 @@ exports[`Phase XI — fixture baseline snapshots (P1) > mini-nest-app > IRGraph 
 `;
 
 exports[`Phase XI — fixture baseline snapshots (P1) > mini-nest-app > Tab1 rendering diagram 1`] = `
-"%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0c1a30','primaryTextColor':'#7dd3fc','primaryBorderColor':'#0e3a6e','edgeLabelBackground':'#0c1a30','lineColor':'#334155','secondaryColor':'#0f172a','clusterBkg':'#060c18','clusterBorder':'#1e3a5f','fontFamily':'JetBrains Mono','fontSize':'14'}}}%%
+"---
+config:
+  layout: elk.mrtree
+---
+%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0c1a30','primaryTextColor':'#7dd3fc','primaryBorderColor':'#0e3a6e','edgeLabelBackground':'#0c1a30','lineColor':'#334155','secondaryColor':'#0f172a','clusterBkg':'#060c18','clusterBorder':'#1e3a5f','fontFamily':'JetBrains Mono','fontSize':'14'}}}%%
 graph TD
   classDef ssr fill:#0d1a0d,stroke:#16a34a,color:#86efac
   classDef csr fill:#2d1200,stroke:#c2410c,color:#fb923c
@@ -422,36 +426,41 @@ graph TD
   classDef isr fill:#1a1a0d,stroke:#ca8a04,color:#fde047
   classDef ppr fill:#0d1a2d,stroke:#2563eb,color:#93c5fd
   classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
-  subgraph USERS_G["📄 /users"]
-    route_src_users_users_controller_ts_UsersController_findAll["GET /users · SSR"]:::ssr
-    route_src_users_users_controller_ts_UsersController_create["POST /users · SSR"]:::ssr
-    subgraph USERS__ID_G["📄 /:id"]
-      route_src_users_users_controller_ts_UsersController_findOne["GET /users/:id · SSR"]:::ssr
-      route_src_users_users_controller_ts_UsersController_remove["DELETE /users/:id · SSR"]:::ssr
-    end
+  classDef pkg fill:#0c1018,stroke:#475569,color:#cbd5e1
+  classDef muted fill:#0a0d14,stroke:#374151,color:#64748b,stroke-dasharray: 3 3
+  classDef hdr fill:#06080f,stroke:#1e3a5f,color:#7dd3fc
+  HDR_PKG["📁 src/main/java/src.users"]:::hdr
+  leaf_users_controller["📄 users.controller [/users]"]:::ssr
+  subgraph endpoints_users_controller["endpoints"]
+    direction TB
+    route_src_users_users_controller_ts_UsersController_findAll["GET /"]:::ssr
+    route_src_users_users_controller_ts_UsersController_findOne["GET /:id"]:::ssr
+    route_src_users_users_controller_ts_UsersController_create["POST /"]:::ssr
+    route_src_users_users_controller_ts_UsersController_remove["DELETE /:id"]:::ssr
   end
-  subgraph DATALAYER["🔌 API LAYER"]
-    subgraph API_G["⚡ REST API · Backend"]
-      API_SVC[("Backend Service")]
-    end
-  end"
+  leaf_users_controller --> endpoints_users_controller
+  HDR_PKG --> leaf_users_controller"
 `;
 
 exports[`Phase XI — fixture baseline snapshots (P1) > mini-nest-app > Tab2 screen-component diagram 1`] = `
-"%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0c1a30','primaryTextColor':'#7dd3fc','primaryBorderColor':'#0e3a6e','edgeLabelBackground':'#0c1a30','lineColor':'#334155','secondaryColor':'#0f172a','clusterBkg':'#060c18','clusterBorder':'#1e3a5f','fontFamily':'JetBrains Mono','fontSize':'14'}}}%%
-graph TB
+"---
+config:
+  layout: elk.mrtree
+---
+%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0c1a30','primaryTextColor':'#7dd3fc','primaryBorderColor':'#0e3a6e','edgeLabelBackground':'#0c1a30','lineColor':'#334155','secondaryColor':'#0f172a','clusterBkg':'#060c18','clusterBorder':'#1e3a5f','fontFamily':'JetBrains Mono','fontSize':'14'}}}%%
+graph TD
   classDef ssr fill:#0d1a0d,stroke:#16a34a,color:#86efac
   classDef csr fill:#2d1200,stroke:#c2410c,color:#fb923c
   classDef ssg fill:#1a0d1a,stroke:#7c3aed,color:#c4b5fd
   classDef isr fill:#1a1a0d,stroke:#ca8a04,color:#fde047
   classDef ppr fill:#0d1a2d,stroke:#2563eb,color:#93c5fd
   classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
-  subgraph USERS_S["📄 /users"]
-    route_src_users_users_controller_ts_UsersController_create["/users · SSR"]:::ssr
-    subgraph USERS__ID_S["📄 /:id"]
-      route_src_users_users_controller_ts_UsersController_remove["/users/:id · SSR"]:::ssr
-    end
-  end"
+  classDef pkg fill:#0c1018,stroke:#475569,color:#cbd5e1
+  classDef muted fill:#0a0d14,stroke:#374151,color:#64748b,stroke-dasharray: 3 3
+  classDef hdr fill:#06080f,stroke:#1e3a5f,color:#7dd3fc
+  HDR_PKG["📁 src/main/java/src.users"]:::hdr
+  component_src_users_users_controller_ts_UsersController["📄 UsersController"]:::ssr
+  HDR_PKG --> component_src_users_users_controller_ts_UsersController"
 `;
 
 exports[`Phase XI — fixture baseline snapshots (P1) > mini-nest-app > Tab3 db-screen diagram 1`] = `
@@ -536,6 +545,9 @@ graph TD
   classDef isr fill:#1a1a0d,stroke:#ca8a04,color:#fde047
   classDef ppr fill:#0d1a2d,stroke:#2563eb,color:#93c5fd
   classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
+  classDef pkg fill:#0c1018,stroke:#475569,color:#cbd5e1
+  classDef muted fill:#0a0d14,stroke:#374151,color:#64748b,stroke-dasharray: 3 3
+  classDef hdr fill:#06080f,stroke:#1e3a5f,color:#7dd3fc
   subgraph INFRA["☁ VERCEL · Edge Network"]
     subgraph RUNTIME["⚙ Node.js · Server Runtime"]
       subgraph FRAMEWORK["▲ Next.js · App Router"]
@@ -570,6 +582,9 @@ graph TB
   classDef isr fill:#1a1a0d,stroke:#ca8a04,color:#fde047
   classDef ppr fill:#0d1a2d,stroke:#2563eb,color:#93c5fd
   classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
+  classDef pkg fill:#0c1018,stroke:#475569,color:#cbd5e1
+  classDef muted fill:#0a0d14,stroke:#374151,color:#64748b,stroke-dasharray: 3 3
+  classDef hdr fill:#06080f,stroke:#1e3a5f,color:#7dd3fc
   subgraph ABOUT_S["👤 /about"]
     route_app__marketing__about_page["/about · SSR"]:::ssr
     subgraph ABOUT_S_C
@@ -649,6 +664,9 @@ graph TD
   classDef isr fill:#1a1a0d,stroke:#ca8a04,color:#fde047
   classDef ppr fill:#0d1a2d,stroke:#2563eb,color:#93c5fd
   classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
+  classDef pkg fill:#0c1018,stroke:#475569,color:#cbd5e1
+  classDef muted fill:#0a0d14,stroke:#374151,color:#64748b,stroke-dasharray: 3 3
+  classDef hdr fill:#06080f,stroke:#1e3a5f,color:#7dd3fc
   subgraph INFRA["☁ VERCEL · Edge Network"]
     subgraph RUNTIME["⚙ Node.js · Server Runtime"]
       subgraph FRAMEWORK["▲ Next.js · App Router"]
@@ -683,6 +701,9 @@ graph TB
   classDef isr fill:#1a1a0d,stroke:#ca8a04,color:#fde047
   classDef ppr fill:#0d1a2d,stroke:#2563eb,color:#93c5fd
   classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
+  classDef pkg fill:#0c1018,stroke:#475569,color:#cbd5e1
+  classDef muted fill:#0a0d14,stroke:#374151,color:#64748b,stroke-dasharray: 3 3
+  classDef hdr fill:#06080f,stroke:#1e3a5f,color:#7dd3fc
   subgraph _COMPONENTS_S["📄 /_components"]
     subgraph _COMPONENTS_USERBADGE_S["📄 /UserBadge"]
       route_pages__components_UserBadge_tsx_page["/_components/UserBadge · SSR"]:::ssr
@@ -740,6 +761,9 @@ graph TD
   classDef isr fill:#1a1a0d,stroke:#ca8a04,color:#fde047
   classDef ppr fill:#0d1a2d,stroke:#2563eb,color:#93c5fd
   classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
+  classDef pkg fill:#0c1018,stroke:#475569,color:#cbd5e1
+  classDef muted fill:#0a0d14,stroke:#374151,color:#64748b,stroke-dasharray: 3 3
+  classDef hdr fill:#06080f,stroke:#1e3a5f,color:#7dd3fc
   subgraph ABOUT_G["👤 /about"]
     route_pages_about_vue["/about · SSR"]:::ssr
   end
@@ -761,6 +785,9 @@ graph TB
   classDef isr fill:#1a1a0d,stroke:#ca8a04,color:#fde047
   classDef ppr fill:#0d1a2d,stroke:#2563eb,color:#93c5fd
   classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
+  classDef pkg fill:#0c1018,stroke:#475569,color:#cbd5e1
+  classDef muted fill:#0a0d14,stroke:#374151,color:#64748b,stroke-dasharray: 3 3
+  classDef hdr fill:#06080f,stroke:#1e3a5f,color:#7dd3fc
   subgraph ABOUT_S["👤 /about"]
     route_pages_about_vue["/about · SSR"]:::ssr
   end
@@ -817,6 +844,9 @@ graph TD
   classDef isr fill:#1a1a0d,stroke:#ca8a04,color:#fde047
   classDef ppr fill:#0d1a2d,stroke:#2563eb,color:#93c5fd
   classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
+  classDef pkg fill:#0c1018,stroke:#475569,color:#cbd5e1
+  classDef muted fill:#0a0d14,stroke:#374151,color:#64748b,stroke-dasharray: 3 3
+  classDef hdr fill:#06080f,stroke:#1e3a5f,color:#7dd3fc
   route_src_router_tsx__["/ · CSR"]:::csr
   subgraph ABOUT_G["👤 /about"]
     route_src_router_tsx__about["/about · CSR"]:::csr
@@ -838,6 +868,9 @@ graph TB
   classDef isr fill:#1a1a0d,stroke:#ca8a04,color:#fde047
   classDef ppr fill:#0d1a2d,stroke:#2563eb,color:#93c5fd
   classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
+  classDef pkg fill:#0c1018,stroke:#475569,color:#cbd5e1
+  classDef muted fill:#0a0d14,stroke:#374151,color:#64748b,stroke-dasharray: 3 3
+  classDef hdr fill:#06080f,stroke:#1e3a5f,color:#7dd3fc
   route_src_router_tsx__["/ · CSR"]:::csr
   subgraph ABOUT_S["👤 /about"]
     route_src_router_tsx__about["/about · CSR"]:::csr
@@ -899,6 +932,9 @@ graph TD
   classDef isr fill:#1a1a0d,stroke:#ca8a04,color:#fde047
   classDef ppr fill:#0d1a2d,stroke:#2563eb,color:#93c5fd
   classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
+  classDef pkg fill:#0c1018,stroke:#475569,color:#cbd5e1
+  classDef muted fill:#0a0d14,stroke:#374151,color:#64748b,stroke-dasharray: 3 3
+  classDef hdr fill:#06080f,stroke:#1e3a5f,color:#7dd3fc
   route_app_routes__index_tsx_page["/ · SSR"]:::ssr
   subgraph ABOUT_G["👤 /about"]
     route_app_routes_about_tsx_page["/about · SSR"]:::ssr
@@ -917,6 +953,9 @@ graph TB
   classDef isr fill:#1a1a0d,stroke:#ca8a04,color:#fde047
   classDef ppr fill:#0d1a2d,stroke:#2563eb,color:#93c5fd
   classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
+  classDef pkg fill:#0c1018,stroke:#475569,color:#cbd5e1
+  classDef muted fill:#0a0d14,stroke:#374151,color:#64748b,stroke-dasharray: 3 3
+  classDef hdr fill:#06080f,stroke:#1e3a5f,color:#7dd3fc
   route_app_routes__index_tsx_page["/ · SSR"]:::ssr
   subgraph ABOUT_S["👤 /about"]
     route_app_routes_about_tsx_page["/about · SSR"]:::ssr
@@ -960,7 +999,11 @@ exports[`Phase XI — fixture baseline snapshots (P1) > mini-spring-app > IRGrap
 `;
 
 exports[`Phase XI — fixture baseline snapshots (P1) > mini-spring-app > Tab1 rendering diagram 1`] = `
-"%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0c1a30','primaryTextColor':'#7dd3fc','primaryBorderColor':'#0e3a6e','edgeLabelBackground':'#0c1a30','lineColor':'#334155','secondaryColor':'#0f172a','clusterBkg':'#060c18','clusterBorder':'#1e3a5f','fontFamily':'JetBrains Mono','fontSize':'14'}}}%%
+"---
+config:
+  layout: elk.mrtree
+---
+%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0c1a30','primaryTextColor':'#7dd3fc','primaryBorderColor':'#0e3a6e','edgeLabelBackground':'#0c1a30','lineColor':'#334155','secondaryColor':'#0f172a','clusterBkg':'#060c18','clusterBorder':'#1e3a5f','fontFamily':'JetBrains Mono','fontSize':'14'}}}%%
 graph TD
   classDef ssr fill:#0d1a0d,stroke:#16a34a,color:#86efac
   classDef csr fill:#2d1200,stroke:#c2410c,color:#fb923c
@@ -968,62 +1011,53 @@ graph TD
   classDef isr fill:#1a1a0d,stroke:#ca8a04,color:#fde047
   classDef ppr fill:#0d1a2d,stroke:#2563eb,color:#93c5fd
   classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
-  subgraph API_G["⚡ /api"]
-    subgraph API_POSTS_G["📄 /posts"]
-      route_src_main_java_com_example_controller_PostController_java__api_posts_GetMapping["GET /api/posts · SSR"]:::ssr
-      subgraph API_POSTS__POSTID_G["📄 /:postId"]
-        route_src_main_java_com_example_controller_PostController_java__api_posts__postId_GetMapping["GET /api/posts/:postId · SSR"]:::ssr
-      end
-      subgraph API_POSTS_FEATURED_G["📄 /featured"]
-        route_src_main_java_com_example_controller_PostController_java__api_posts_featured_GetMapping["GET /api/posts/featured · SSR"]:::ssr
-      end
-      subgraph API_POSTS_PINNED_G["📄 /pinned"]
-        route_src_main_java_com_example_controller_PostController_java__api_posts_pinned_GetMapping["GET /api/posts/pinned · SSR"]:::ssr
-      end
-    end
-    subgraph API_USERS_G["📄 /users"]
-      route_src_main_java_com_example_controller_UserController_java__api_users_GetMapping["GET /api/users · SSR"]:::ssr
-      route_src_main_java_com_example_controller_UserController_java__api_users_PostMapping["POST /api/users · SSR"]:::ssr
-      subgraph API_USERS__USERID_G["📄 /:userId"]
-        route_src_main_java_com_example_controller_UserController_java__api_users__userId_GetMapping["GET /api/users/:userId · SSR"]:::ssr
-        route_src_main_java_com_example_controller_UserController_java__api_users__userId_DeleteMapping["DELETE /api/users/:userId · SSR"]:::ssr
-      end
-    end
+  classDef pkg fill:#0c1018,stroke:#475569,color:#cbd5e1
+  classDef muted fill:#0a0d14,stroke:#374151,color:#64748b,stroke-dasharray: 3 3
+  classDef hdr fill:#06080f,stroke:#1e3a5f,color:#7dd3fc
+  HDR_PKG["📁 src/main/java/com.example.controller"]:::hdr
+  leaf_PostController["📄 PostController [/api/posts]"]:::ssr
+  subgraph endpoints_PostController["endpoints"]
+    direction TB
+    route_src_main_java_com_example_controller_PostController_java__api_posts_GetMapping["GET /"]:::ssr
+    route_src_main_java_com_example_controller_PostController_java__api_posts__postId_GetMapping["GET /:postId"]:::ssr
+    route_src_main_java_com_example_controller_PostController_java__api_posts_featured_GetMapping["GET /featured"]:::ssr
+    route_src_main_java_com_example_controller_PostController_java__api_posts_pinned_GetMapping["GET /pinned"]:::ssr
   end
-  subgraph DATALAYER["🔌 API LAYER"]
-    subgraph API_G["⚡ REST API · Backend"]
-      API_SVC[("Backend Service")]
-    end
-  end"
+  leaf_PostController --> endpoints_PostController
+  HDR_PKG --> leaf_PostController
+  leaf_UserController["📄 UserController [/api/users]"]:::ssr
+  subgraph endpoints_UserController["endpoints"]
+    direction TB
+    route_src_main_java_com_example_controller_UserController_java__api_users_GetMapping["GET /"]:::ssr
+    route_src_main_java_com_example_controller_UserController_java__api_users__userId_GetMapping["GET /:userId"]:::ssr
+    route_src_main_java_com_example_controller_UserController_java__api_users_PostMapping["POST /"]:::ssr
+    route_src_main_java_com_example_controller_UserController_java__api_users__userId_DeleteMapping["DELETE /:userId"]:::ssr
+  end
+  leaf_UserController --> endpoints_UserController
+  HDR_PKG --> leaf_UserController"
 `;
 
 exports[`Phase XI — fixture baseline snapshots (P1) > mini-spring-app > Tab2 screen-component diagram 1`] = `
-"%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0c1a30','primaryTextColor':'#7dd3fc','primaryBorderColor':'#0e3a6e','edgeLabelBackground':'#0c1a30','lineColor':'#334155','secondaryColor':'#0f172a','clusterBkg':'#060c18','clusterBorder':'#1e3a5f','fontFamily':'JetBrains Mono','fontSize':'14'}}}%%
-graph TB
+"---
+config:
+  layout: elk.mrtree
+---
+%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0c1a30','primaryTextColor':'#7dd3fc','primaryBorderColor':'#0e3a6e','edgeLabelBackground':'#0c1a30','lineColor':'#334155','secondaryColor':'#0f172a','clusterBkg':'#060c18','clusterBorder':'#1e3a5f','fontFamily':'JetBrains Mono','fontSize':'14'}}}%%
+graph TD
   classDef ssr fill:#0d1a0d,stroke:#16a34a,color:#86efac
   classDef csr fill:#2d1200,stroke:#c2410c,color:#fb923c
   classDef ssg fill:#1a0d1a,stroke:#7c3aed,color:#c4b5fd
   classDef isr fill:#1a1a0d,stroke:#ca8a04,color:#fde047
   classDef ppr fill:#0d1a2d,stroke:#2563eb,color:#93c5fd
   classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
-  subgraph API_POSTS_S["📄 /posts"]
-    route_src_main_java_com_example_controller_PostController_java__api_posts_GetMapping["/api/posts · SSR"]:::ssr
-    subgraph API_POSTS__POSTID_S["📄 /:postId"]
-      route_src_main_java_com_example_controller_PostController_java__api_posts__postId_GetMapping["/api/posts/:postId · SSR"]:::ssr
-    end
-    subgraph API_POSTS_FEATURED_S["📄 /featured"]
-      route_src_main_java_com_example_controller_PostController_java__api_posts_featured_GetMapping["/api/posts/featured · SSR"]:::ssr
-    end
-    subgraph API_POSTS_PINNED_S["📄 /pinned"]
-      route_src_main_java_com_example_controller_PostController_java__api_posts_pinned_GetMapping["/api/posts/pinned · SSR"]:::ssr
-    end
-  end
-  subgraph API_USERS_S["📄 /users"]
-    route_src_main_java_com_example_controller_UserController_java__api_users_PostMapping["/api/users · SSR"]:::ssr
-    subgraph API_USERS__USERID_S["📄 /:userId"]
-      route_src_main_java_com_example_controller_UserController_java__api_users__userId_DeleteMapping["/api/users/:userId · SSR"]:::ssr
-    end
-  end"
+  classDef pkg fill:#0c1018,stroke:#475569,color:#cbd5e1
+  classDef muted fill:#0a0d14,stroke:#374151,color:#64748b,stroke-dasharray: 3 3
+  classDef hdr fill:#06080f,stroke:#1e3a5f,color:#7dd3fc
+  HDR_PKG["📁 src/main/java/com.example.controller"]:::hdr
+  component_src_main_java_com_example_controller_PostController_java_PostController["📄 PostController"]:::ssr
+  HDR_PKG --> component_src_main_java_com_example_controller_PostController_java_PostController
+  component_src_main_java_com_example_controller_UserController_java_UserController["📄 UserController"]:::ssr
+  HDR_PKG --> component_src_main_java_com_example_controller_UserController_java_UserController"
 `;
 
 exports[`Phase XI — fixture baseline snapshots (P1) > mini-spring-app > Tab3 db-screen diagram 1`] = `
@@ -1047,6 +1081,1076 @@ erDiagram
     bigint id PK
     varchar title
     bigint user_id
+  }"
+`;
+
+exports[`Phase XI — fixture baseline snapshots (P1) > mini-spring-deep-pkg-app > IRGraph summary 1`] = `
+{
+  "edgeIds": [
+    "calls:component:src/main/java/com/wina/admin/controller/AdminController.java:AdminController:component:src/main/java/com/wina/admin/service/AdminService.java:AdminService",
+    "calls:component:src/main/java/com/wina/admin/service/AdminService.java:AdminService:component:src/main/java/com/wina/admin/repository/AdminRepository.java:AdminRepository",
+    "calls:component:src/main/java/com/wina/partner/matMgmt/decoSheet/controller/DecoSheetController.java:DecoSheetController:component:src/main/java/com/wina/partner/matMgmt/decoSheet/service/DecoSheetService.java:DecoSheetService",
+    "calls:component:src/main/java/com/wina/partner/matMgmt/decoSheet/service/DecoSheetService.java:DecoSheetService:component:src/main/java/com/wina/partner/matMgmt/decoSheet/repository/DecoSheetRepository.java:DecoSheetRepository",
+    "calls:component:src/main/java/com/wina/partner/order/controller/OrderController.java:OrderController:component:src/main/java/com/wina/partner/order/service/OrderService.java:OrderService",
+    "calls:component:src/main/java/com/wina/partner/order/service/OrderService.java:OrderService:component:src/main/java/com/wina/partner/order/repository/OrderRepository.java:OrderRepository",
+  ],
+  "edgesByKind": {
+    "calls": 6,
+  },
+  "nodeIds": [
+    "component:src/main/java/com/wina/admin/controller/AdminController.java:AdminController",
+    "component:src/main/java/com/wina/admin/repository/AdminRepository.java:AdminRepository",
+    "component:src/main/java/com/wina/admin/service/AdminService.java:AdminService",
+    "component:src/main/java/com/wina/partner/matMgmt/decoSheet/controller/DecoSheetController.java:DecoSheetController",
+    "component:src/main/java/com/wina/partner/matMgmt/decoSheet/repository/DecoSheetRepository.java:DecoSheetRepository",
+    "component:src/main/java/com/wina/partner/matMgmt/decoSheet/service/DecoSheetService.java:DecoSheetService",
+    "component:src/main/java/com/wina/partner/order/controller/OrderController.java:OrderController",
+    "component:src/main/java/com/wina/partner/order/repository/OrderRepository.java:OrderRepository",
+    "component:src/main/java/com/wina/partner/order/service/OrderService.java:OrderService",
+    "route:src/main/java/com/wina/admin/controller/AdminController.java:/api/admin/audit:PostMapping",
+    "route:src/main/java/com/wina/admin/controller/AdminController.java:/api/admin/users:GetMapping",
+    "route:src/main/java/com/wina/partner/matMgmt/decoSheet/controller/DecoSheetController.java:/api/partner/decoSheet/:id:GetMapping",
+    "route:src/main/java/com/wina/partner/matMgmt/decoSheet/controller/DecoSheetController.java:/api/partner/decoSheet:GetMapping",
+    "route:src/main/java/com/wina/partner/matMgmt/decoSheet/controller/DecoSheetController.java:/api/partner/decoSheet:PostMapping",
+    "route:src/main/java/com/wina/partner/order/controller/OrderController.java:/api/partner/orders/:id/cancel:PostMapping",
+    "route:src/main/java/com/wina/partner/order/controller/OrderController.java:/api/partner/orders:GetMapping",
+    "route:src/main/java/com/wina/partner/order/controller/OrderController.java:/api/partner/orders:PostMapping",
+    "table:src/main/java/com/wina/admin/domain/AuditLog.java:audit_logs",
+    "table:src/main/java/com/wina/partner/matMgmt/decoSheet/domain/DecoSheet.java:deco_sheets",
+    "table:src/main/java/com/wina/partner/order/domain/Order.java:orders",
+  ],
+  "nodesByKind": {
+    "component": 9,
+    "route": 8,
+    "table": 3,
+  },
+}
+`;
+
+exports[`Phase XI — fixture baseline snapshots (P1) > mini-spring-deep-pkg-app > Tab1 rendering diagram 1`] = `
+"%% chunk:1/2
+---
+config:
+  layout: elk.mrtree
+---
+%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0c1a30','primaryTextColor':'#7dd3fc','primaryBorderColor':'#0e3a6e','edgeLabelBackground':'#0c1a30','lineColor':'#334155','secondaryColor':'#0f172a','clusterBkg':'#060c18','clusterBorder':'#1e3a5f','fontFamily':'JetBrains Mono','fontSize':'14'}}}%%
+graph TD
+  classDef ssr fill:#0d1a0d,stroke:#16a34a,color:#86efac
+  classDef csr fill:#2d1200,stroke:#c2410c,color:#fb923c
+  classDef ssg fill:#1a0d1a,stroke:#7c3aed,color:#c4b5fd
+  classDef isr fill:#1a1a0d,stroke:#ca8a04,color:#fde047
+  classDef ppr fill:#0d1a2d,stroke:#2563eb,color:#93c5fd
+  classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
+  classDef pkg fill:#0c1018,stroke:#475569,color:#cbd5e1
+  classDef muted fill:#0a0d14,stroke:#374151,color:#64748b,stroke-dasharray: 3 3
+  classDef hdr fill:#06080f,stroke:#1e3a5f,color:#7dd3fc
+  HDR_PKG["📁 src/main/java/com.wina.admin"]:::hdr
+  leaf_AdminController["📄 AdminController [/api/admin]"]:::ssr
+  subgraph endpoints_AdminController["endpoints"]
+    direction TB
+    route_src_main_java_com_wina_admin_controller_AdminController_java__api_admin_users_GetMapping["GET /users"]:::ssr
+    route_src_main_java_com_wina_admin_controller_AdminController_java__api_admin_audit_PostMapping["POST /audit"]:::ssr
+  end
+  leaf_AdminController --> endpoints_AdminController
+  HDR_PKG --> leaf_AdminController
+%%--CHUNK--%%
+%% chunk:2/2
+---
+config:
+  layout: elk.mrtree
+---
+%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0c1a30','primaryTextColor':'#7dd3fc','primaryBorderColor':'#0e3a6e','edgeLabelBackground':'#0c1a30','lineColor':'#334155','secondaryColor':'#0f172a','clusterBkg':'#060c18','clusterBorder':'#1e3a5f','fontFamily':'JetBrains Mono','fontSize':'14'}}}%%
+graph TD
+  classDef ssr fill:#0d1a0d,stroke:#16a34a,color:#86efac
+  classDef csr fill:#2d1200,stroke:#c2410c,color:#fb923c
+  classDef ssg fill:#1a0d1a,stroke:#7c3aed,color:#c4b5fd
+  classDef isr fill:#1a1a0d,stroke:#ca8a04,color:#fde047
+  classDef ppr fill:#0d1a2d,stroke:#2563eb,color:#93c5fd
+  classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
+  classDef pkg fill:#0c1018,stroke:#475569,color:#cbd5e1
+  classDef muted fill:#0a0d14,stroke:#374151,color:#64748b,stroke-dasharray: 3 3
+  classDef hdr fill:#06080f,stroke:#1e3a5f,color:#7dd3fc
+  HDR_PKG["📁 src/main/java/com.wina.partner"]:::hdr
+  pkg_matMgmt["matMgmt"]:::pkg
+  HDR_PKG --> pkg_matMgmt
+  pkg_matMgmt__decoSheet["decoSheet"]:::pkg
+  pkg_matMgmt --> pkg_matMgmt__decoSheet
+  pkg_order["order"]:::pkg
+  HDR_PKG --> pkg_order
+  leaf_DecoSheetController["📄 DecoSheetController [/api/partner/decoSheet]"]:::ssr
+  subgraph endpoints_DecoSheetController["endpoints"]
+    direction TB
+    route_src_main_java_com_wina_partner_matMgmt_decoSheet_controller_DecoSheetController_java__api_partner_decoSheet_GetMapping["GET /"]:::ssr
+    route_src_main_java_com_wina_partner_matMgmt_decoSheet_controller_DecoSheetController_java__api_partner_decoSheet__id_GetMapping["GET /:id"]:::ssr
+    route_src_main_java_com_wina_partner_matMgmt_decoSheet_controller_DecoSheetController_java__api_partner_decoSheet_PostMapping["POST /"]:::ssr
+  end
+  leaf_DecoSheetController --> endpoints_DecoSheetController
+  pkg_matMgmt__decoSheet --> leaf_DecoSheetController
+  leaf_OrderController["📄 OrderController [/api/partner/orders]"]:::ssr
+  subgraph endpoints_OrderController["endpoints"]
+    direction TB
+    route_src_main_java_com_wina_partner_order_controller_OrderController_java__api_partner_orders_GetMapping["GET /"]:::ssr
+    route_src_main_java_com_wina_partner_order_controller_OrderController_java__api_partner_orders_PostMapping["POST /"]:::ssr
+    route_src_main_java_com_wina_partner_order_controller_OrderController_java__api_partner_orders__id_cancel_PostMapping["POST /:id/cancel"]:::ssr
+  end
+  leaf_OrderController --> endpoints_OrderController
+  pkg_order --> leaf_OrderController"
+`;
+
+exports[`Phase XI — fixture baseline snapshots (P1) > mini-spring-deep-pkg-app > Tab2 screen-component diagram 1`] = `
+"%% chunk:1/2
+---
+config:
+  layout: elk.mrtree
+---
+%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0c1a30','primaryTextColor':'#7dd3fc','primaryBorderColor':'#0e3a6e','edgeLabelBackground':'#0c1a30','lineColor':'#334155','secondaryColor':'#0f172a','clusterBkg':'#060c18','clusterBorder':'#1e3a5f','fontFamily':'JetBrains Mono','fontSize':'14'}}}%%
+graph TD
+  classDef ssr fill:#0d1a0d,stroke:#16a34a,color:#86efac
+  classDef csr fill:#2d1200,stroke:#c2410c,color:#fb923c
+  classDef ssg fill:#1a0d1a,stroke:#7c3aed,color:#c4b5fd
+  classDef isr fill:#1a1a0d,stroke:#ca8a04,color:#fde047
+  classDef ppr fill:#0d1a2d,stroke:#2563eb,color:#93c5fd
+  classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
+  classDef pkg fill:#0c1018,stroke:#475569,color:#cbd5e1
+  classDef muted fill:#0a0d14,stroke:#374151,color:#64748b,stroke-dasharray: 3 3
+  classDef hdr fill:#06080f,stroke:#1e3a5f,color:#7dd3fc
+  HDR_PKG["📁 src/main/java/com.wina.admin"]:::hdr
+  subgraph di_component_src_main_java_com_wina_admin_controller_AdminController_java_AdminController["[ DI ]"]
+    direction TB
+    component_src_main_java_com_wina_admin_controller_AdminController_java_AdminController["AdminController"]:::ssr
+    component_src_main_java_com_wina_admin_service_AdminService_java_AdminService["AdminService"]:::unk
+    component_src_main_java_com_wina_admin_controller_AdminController_java_AdminController -.-> component_src_main_java_com_wina_admin_service_AdminService_java_AdminService
+    component_src_main_java_com_wina_admin_repository_AdminRepository_java_AdminRepository["AdminRepository"]:::ssg
+    component_src_main_java_com_wina_admin_service_AdminService_java_AdminService -.-> component_src_main_java_com_wina_admin_repository_AdminRepository_java_AdminRepository
+  end
+  HDR_PKG --> di_component_src_main_java_com_wina_admin_controller_AdminController_java_AdminController
+%%--CHUNK--%%
+%% chunk:2/2
+---
+config:
+  layout: elk.mrtree
+---
+%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0c1a30','primaryTextColor':'#7dd3fc','primaryBorderColor':'#0e3a6e','edgeLabelBackground':'#0c1a30','lineColor':'#334155','secondaryColor':'#0f172a','clusterBkg':'#060c18','clusterBorder':'#1e3a5f','fontFamily':'JetBrains Mono','fontSize':'14'}}}%%
+graph TD
+  classDef ssr fill:#0d1a0d,stroke:#16a34a,color:#86efac
+  classDef csr fill:#2d1200,stroke:#c2410c,color:#fb923c
+  classDef ssg fill:#1a0d1a,stroke:#7c3aed,color:#c4b5fd
+  classDef isr fill:#1a1a0d,stroke:#ca8a04,color:#fde047
+  classDef ppr fill:#0d1a2d,stroke:#2563eb,color:#93c5fd
+  classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
+  classDef pkg fill:#0c1018,stroke:#475569,color:#cbd5e1
+  classDef muted fill:#0a0d14,stroke:#374151,color:#64748b,stroke-dasharray: 3 3
+  classDef hdr fill:#06080f,stroke:#1e3a5f,color:#7dd3fc
+  HDR_PKG["📁 src/main/java/com.wina.partner"]:::hdr
+  pkg_partner__matMgmt["matMgmt"]:::pkg
+  HDR_PKG --> pkg_partner__matMgmt
+  pkg_partner__matMgmt__decoSheet["decoSheet"]:::pkg
+  pkg_partner__matMgmt --> pkg_partner__matMgmt__decoSheet
+  pkg_partner__order["order"]:::pkg
+  HDR_PKG --> pkg_partner__order
+  subgraph di_component_src_main_java_com_wina_partner_matMgmt_decoSheet_controller_DecoSheetController_java_DecoSheetController["[ DI ]"]
+    direction TB
+    component_src_main_java_com_wina_partner_matMgmt_decoSheet_controller_DecoSheetController_java_DecoSheetController["DecoSheetController"]:::ssr
+    component_src_main_java_com_wina_partner_matMgmt_decoSheet_service_DecoSheetService_java_DecoSheetService["DecoSheetService"]:::unk
+    component_src_main_java_com_wina_partner_matMgmt_decoSheet_controller_DecoSheetController_java_DecoSheetController -.-> component_src_main_java_com_wina_partner_matMgmt_decoSheet_service_DecoSheetService_java_DecoSheetService
+    component_src_main_java_com_wina_partner_matMgmt_decoSheet_repository_DecoSheetRepository_java_DecoSheetRepository["DecoSheetRepository"]:::ssg
+    component_src_main_java_com_wina_partner_matMgmt_decoSheet_service_DecoSheetService_java_DecoSheetService -.-> component_src_main_java_com_wina_partner_matMgmt_decoSheet_repository_DecoSheetRepository_java_DecoSheetRepository
+  end
+  pkg_partner__matMgmt__decoSheet --> di_component_src_main_java_com_wina_partner_matMgmt_decoSheet_controller_DecoSheetController_java_DecoSheetController
+  subgraph di_component_src_main_java_com_wina_partner_order_controller_OrderController_java_OrderController["[ DI ]"]
+    direction TB
+    component_src_main_java_com_wina_partner_order_controller_OrderController_java_OrderController["OrderController"]:::ssr
+    component_src_main_java_com_wina_partner_order_service_OrderService_java_OrderService["OrderService"]:::unk
+    component_src_main_java_com_wina_partner_order_controller_OrderController_java_OrderController -.-> component_src_main_java_com_wina_partner_order_service_OrderService_java_OrderService
+    component_src_main_java_com_wina_partner_order_repository_OrderRepository_java_OrderRepository["OrderRepository"]:::ssg
+    component_src_main_java_com_wina_partner_order_service_OrderService_java_OrderService -.-> component_src_main_java_com_wina_partner_order_repository_OrderRepository_java_OrderRepository
+  end
+  pkg_partner__order --> di_component_src_main_java_com_wina_partner_order_controller_OrderController_java_OrderController"
+`;
+
+exports[`Phase XI — fixture baseline snapshots (P1) > mini-spring-deep-pkg-app > Tab3 db-screen diagram 1`] = `
+"%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#2a4055','primaryTextColor':'#f8fafc','primaryBorderColor':'#1e4060','lineColor':'#f59e0b','secondaryColor':'#0f172a','tertiaryColor':'#1a0a20','attributeBackgroundColorEven':'#ffffff','attributeBackgroundColorOdd':'#f1f5f9','textColor':'#1e293b','nodeBorder':'#1e4060','clusterBkg':'#0a0e1a','fontFamily':'JetBrains Mono','fontSize':'14'}}}%%
+erDiagram
+%% table:audit_logs path:src/main/java/com/wina/admin/domain/AuditLog.java
+%% table:deco_sheets path:src/main/java/com/wina/partner/matMgmt/decoSheet/domain/DecoSheet.java
+%% table:orders path:src/main/java/com/wina/partner/order/domain/Order.java
+  audit_logs {
+    Long id PK
+    String action
+    String detail
+  }
+  deco_sheets {
+    Long id PK
+    String name
+    String spec
+  }
+  orders {
+    Long id PK
+    Integer amount
+    String status
+  }
+  AdminRepository {
+    string name
+  }
+  DecoSheetRepository {
+    string name
+  }
+  OrderRepository {
+    string name
+  }"
+`;
+
+exports[`Phase XI — fixture baseline snapshots (P1) > mini-spring-wide-pkg-app > IRGraph summary 1`] = `
+{
+  "edgeIds": [
+    "calls:component:src/main/java/com/wina/agency/main/controller/MainController.java:MainController:component:src/main/java/com/wina/agency/main/service/MainService.java:MainService",
+    "calls:component:src/main/java/com/wina/agency/main/service/MainService.java:MainService:component:src/main/java/com/wina/agency/main/repository/MainRepository.java:MainRepository",
+    "calls:component:src/main/java/com/wina/partner/billing/controller/BillingController.java:BillingController:component:src/main/java/com/wina/partner/billing/service/BillingService.java:BillingService",
+    "calls:component:src/main/java/com/wina/partner/billing/service/BillingService.java:BillingService:component:src/main/java/com/wina/partner/billing/repository/BillingRepository.java:BillingRepository",
+    "calls:component:src/main/java/com/wina/partner/campaign/controller/CampaignController.java:CampaignController:component:src/main/java/com/wina/partner/campaign/service/CampaignService.java:CampaignService",
+    "calls:component:src/main/java/com/wina/partner/campaign/service/CampaignService.java:CampaignService:component:src/main/java/com/wina/partner/campaign/repository/CampaignRepository.java:CampaignRepository",
+    "calls:component:src/main/java/com/wina/partner/contract/controller/ContractController.java:ContractController:component:src/main/java/com/wina/partner/contract/service/ContractService.java:ContractService",
+    "calls:component:src/main/java/com/wina/partner/contract/service/ContractService.java:ContractService:component:src/main/java/com/wina/partner/contract/repository/ContractRepository.java:ContractRepository",
+    "calls:component:src/main/java/com/wina/partner/dashboard/controller/DashboardController.java:DashboardController:component:src/main/java/com/wina/partner/dashboard/service/DashboardService.java:DashboardService",
+    "calls:component:src/main/java/com/wina/partner/dashboard/service/DashboardService.java:DashboardService:component:src/main/java/com/wina/partner/dashboard/repository/DashboardRepository.java:DashboardRepository",
+    "calls:component:src/main/java/com/wina/partner/decoSheet/controller/DecosheetController.java:DecosheetController:component:src/main/java/com/wina/partner/decoSheet/service/DecosheetService.java:DecosheetService",
+    "calls:component:src/main/java/com/wina/partner/decoSheet/service/DecosheetService.java:DecosheetService:component:src/main/java/com/wina/partner/decoSheet/repository/DecosheetRepository.java:DecosheetRepository",
+    "calls:component:src/main/java/com/wina/partner/inv/controller/InvController.java:InvController:component:src/main/java/com/wina/partner/inv/service/InvService.java:InvService",
+    "calls:component:src/main/java/com/wina/partner/inv/service/InvService.java:InvService:component:src/main/java/com/wina/partner/inv/repository/InvRepository.java:InvRepository",
+    "calls:component:src/main/java/com/wina/partner/inventory/controller/InventoryController.java:InventoryController:component:src/main/java/com/wina/partner/inventory/service/InventoryService.java:InventoryService",
+    "calls:component:src/main/java/com/wina/partner/inventory/service/InventoryService.java:InventoryService:component:src/main/java/com/wina/partner/inventory/repository/InventoryRepository.java:InventoryRepository",
+    "calls:component:src/main/java/com/wina/partner/invoice/controller/InvoiceController.java:InvoiceController:component:src/main/java/com/wina/partner/invoice/service/InvoiceService.java:InvoiceService",
+    "calls:component:src/main/java/com/wina/partner/invoice/service/InvoiceService.java:InvoiceService:component:src/main/java/com/wina/partner/invoice/repository/InvoiceRepository.java:InvoiceRepository",
+    "calls:component:src/main/java/com/wina/partner/loyalty/controller/LoyaltyController.java:LoyaltyController:component:src/main/java/com/wina/partner/loyalty/service/LoyaltyService.java:LoyaltyService",
+    "calls:component:src/main/java/com/wina/partner/loyalty/service/LoyaltyService.java:LoyaltyService:component:src/main/java/com/wina/partner/loyalty/repository/LoyaltyRepository.java:LoyaltyRepository",
+    "calls:component:src/main/java/com/wina/partner/mat/controller/MatController.java:MatController:component:src/main/java/com/wina/partner/mat/service/MatService.java:MatService",
+    "calls:component:src/main/java/com/wina/partner/mat/service/MatService.java:MatService:component:src/main/java/com/wina/partner/mat/repository/MatRepository.java:MatRepository",
+    "calls:component:src/main/java/com/wina/partner/member/controller/MemberController.java:MemberController:component:src/main/java/com/wina/partner/member/service/MemberService.java:MemberService",
+    "calls:component:src/main/java/com/wina/partner/member/service/MemberService.java:MemberService:component:src/main/java/com/wina/partner/member/repository/MemberRepository.java:MemberRepository",
+    "calls:component:src/main/java/com/wina/partner/order/controller/OrderController.java:OrderController:component:src/main/java/com/wina/partner/order/service/OrderService.java:OrderService",
+    "calls:component:src/main/java/com/wina/partner/order/service/OrderService.java:OrderService:component:src/main/java/com/wina/partner/order/repository/OrderRepository.java:OrderRepository",
+    "calls:component:src/main/java/com/wina/partner/pricing/controller/PricingController.java:PricingController:component:src/main/java/com/wina/partner/pricing/service/PricingService.java:PricingService",
+    "calls:component:src/main/java/com/wina/partner/pricing/service/PricingService.java:PricingService:component:src/main/java/com/wina/partner/pricing/repository/PricingRepository.java:PricingRepository",
+    "calls:component:src/main/java/com/wina/partner/procurement/controller/ProcurementController.java:ProcurementController:component:src/main/java/com/wina/partner/procurement/service/ProcurementService.java:ProcurementService",
+    "calls:component:src/main/java/com/wina/partner/procurement/service/ProcurementService.java:ProcurementService:component:src/main/java/com/wina/partner/procurement/repository/ProcurementRepository.java:ProcurementRepository",
+    "calls:component:src/main/java/com/wina/partner/quality/controller/QualityController.java:QualityController:component:src/main/java/com/wina/partner/quality/service/QualityService.java:QualityService",
+    "calls:component:src/main/java/com/wina/partner/quality/service/QualityService.java:QualityService:component:src/main/java/com/wina/partner/quality/repository/QualityRepository.java:QualityRepository",
+    "calls:component:src/main/java/com/wina/partner/report/controller/ReportController.java:ReportController:component:src/main/java/com/wina/partner/report/service/ReportService.java:ReportService",
+    "calls:component:src/main/java/com/wina/partner/report/service/ReportService.java:ReportService:component:src/main/java/com/wina/partner/report/repository/ReportRepository.java:ReportRepository",
+    "calls:component:src/main/java/com/wina/partner/settings/controller/SettingsController.java:SettingsController:component:src/main/java/com/wina/partner/settings/service/SettingsService.java:SettingsService",
+    "calls:component:src/main/java/com/wina/partner/settings/service/SettingsService.java:SettingsService:component:src/main/java/com/wina/partner/settings/repository/SettingsRepository.java:SettingsRepository",
+    "calls:component:src/main/java/com/wina/partner/shipment/controller/ShipmentController.java:ShipmentController:component:src/main/java/com/wina/partner/shipment/service/ShipmentService.java:ShipmentService",
+    "calls:component:src/main/java/com/wina/partner/shipment/service/ShipmentService.java:ShipmentService:component:src/main/java/com/wina/partner/shipment/repository/ShipmentRepository.java:ShipmentRepository",
+    "calls:component:src/main/java/com/wina/partner/stock/controller/StockController.java:StockController:component:src/main/java/com/wina/partner/stock/service/StockService.java:StockService",
+    "calls:component:src/main/java/com/wina/partner/stock/service/StockService.java:StockService:component:src/main/java/com/wina/partner/stock/repository/StockRepository.java:StockRepository",
+    "calls:component:src/main/java/com/wina/partner/vendor/controller/VendorController.java:VendorController:component:src/main/java/com/wina/partner/vendor/service/VendorService.java:VendorService",
+    "calls:component:src/main/java/com/wina/partner/vendor/service/VendorService.java:VendorService:component:src/main/java/com/wina/partner/vendor/repository/VendorRepository.java:VendorRepository",
+  ],
+  "edgesByKind": {
+    "calls": 42,
+  },
+  "nodeIds": [
+    "component:src/main/java/com/wina/agency/main/controller/MainController.java:MainController",
+    "component:src/main/java/com/wina/agency/main/repository/MainRepository.java:MainRepository",
+    "component:src/main/java/com/wina/agency/main/service/MainService.java:MainService",
+    "component:src/main/java/com/wina/partner/billing/controller/BillingController.java:BillingController",
+    "component:src/main/java/com/wina/partner/billing/repository/BillingRepository.java:BillingRepository",
+    "component:src/main/java/com/wina/partner/billing/service/BillingService.java:BillingService",
+    "component:src/main/java/com/wina/partner/campaign/controller/CampaignController.java:CampaignController",
+    "component:src/main/java/com/wina/partner/campaign/repository/CampaignRepository.java:CampaignRepository",
+    "component:src/main/java/com/wina/partner/campaign/service/CampaignService.java:CampaignService",
+    "component:src/main/java/com/wina/partner/contract/controller/ContractController.java:ContractController",
+    "component:src/main/java/com/wina/partner/contract/repository/ContractRepository.java:ContractRepository",
+    "component:src/main/java/com/wina/partner/contract/service/ContractService.java:ContractService",
+    "component:src/main/java/com/wina/partner/dashboard/controller/DashboardController.java:DashboardController",
+    "component:src/main/java/com/wina/partner/dashboard/repository/DashboardRepository.java:DashboardRepository",
+    "component:src/main/java/com/wina/partner/dashboard/service/DashboardService.java:DashboardService",
+    "component:src/main/java/com/wina/partner/decoSheet/controller/DecosheetController.java:DecosheetController",
+    "component:src/main/java/com/wina/partner/decoSheet/repository/DecosheetRepository.java:DecosheetRepository",
+    "component:src/main/java/com/wina/partner/decoSheet/service/DecosheetService.java:DecosheetService",
+    "component:src/main/java/com/wina/partner/inv/controller/InvController.java:InvController",
+    "component:src/main/java/com/wina/partner/inv/repository/InvRepository.java:InvRepository",
+    "component:src/main/java/com/wina/partner/inv/service/InvService.java:InvService",
+    "component:src/main/java/com/wina/partner/inventory/controller/InventoryController.java:InventoryController",
+    "component:src/main/java/com/wina/partner/inventory/repository/InventoryRepository.java:InventoryRepository",
+    "component:src/main/java/com/wina/partner/inventory/service/InventoryService.java:InventoryService",
+    "component:src/main/java/com/wina/partner/invoice/controller/InvoiceController.java:InvoiceController",
+    "component:src/main/java/com/wina/partner/invoice/repository/InvoiceRepository.java:InvoiceRepository",
+    "component:src/main/java/com/wina/partner/invoice/service/InvoiceService.java:InvoiceService",
+    "component:src/main/java/com/wina/partner/loyalty/controller/LoyaltyController.java:LoyaltyController",
+    "component:src/main/java/com/wina/partner/loyalty/repository/LoyaltyRepository.java:LoyaltyRepository",
+    "component:src/main/java/com/wina/partner/loyalty/service/LoyaltyService.java:LoyaltyService",
+    "component:src/main/java/com/wina/partner/mat/controller/MatController.java:MatController",
+    "component:src/main/java/com/wina/partner/mat/repository/MatRepository.java:MatRepository",
+    "component:src/main/java/com/wina/partner/mat/service/MatService.java:MatService",
+    "component:src/main/java/com/wina/partner/member/controller/MemberController.java:MemberController",
+    "component:src/main/java/com/wina/partner/member/repository/MemberRepository.java:MemberRepository",
+    "component:src/main/java/com/wina/partner/member/service/MemberService.java:MemberService",
+    "component:src/main/java/com/wina/partner/order/controller/OrderController.java:OrderController",
+    "component:src/main/java/com/wina/partner/order/repository/OrderRepository.java:OrderRepository",
+    "component:src/main/java/com/wina/partner/order/service/OrderService.java:OrderService",
+    "component:src/main/java/com/wina/partner/pricing/controller/PricingController.java:PricingController",
+    "component:src/main/java/com/wina/partner/pricing/repository/PricingRepository.java:PricingRepository",
+    "component:src/main/java/com/wina/partner/pricing/service/PricingService.java:PricingService",
+    "component:src/main/java/com/wina/partner/procurement/controller/ProcurementController.java:ProcurementController",
+    "component:src/main/java/com/wina/partner/procurement/repository/ProcurementRepository.java:ProcurementRepository",
+    "component:src/main/java/com/wina/partner/procurement/service/ProcurementService.java:ProcurementService",
+    "component:src/main/java/com/wina/partner/quality/controller/QualityController.java:QualityController",
+    "component:src/main/java/com/wina/partner/quality/repository/QualityRepository.java:QualityRepository",
+    "component:src/main/java/com/wina/partner/quality/service/QualityService.java:QualityService",
+    "component:src/main/java/com/wina/partner/report/controller/ReportController.java:ReportController",
+    "component:src/main/java/com/wina/partner/report/repository/ReportRepository.java:ReportRepository",
+    "component:src/main/java/com/wina/partner/report/service/ReportService.java:ReportService",
+    "component:src/main/java/com/wina/partner/settings/controller/SettingsController.java:SettingsController",
+    "component:src/main/java/com/wina/partner/settings/repository/SettingsRepository.java:SettingsRepository",
+    "component:src/main/java/com/wina/partner/settings/service/SettingsService.java:SettingsService",
+    "component:src/main/java/com/wina/partner/shipment/controller/ShipmentController.java:ShipmentController",
+    "component:src/main/java/com/wina/partner/shipment/repository/ShipmentRepository.java:ShipmentRepository",
+    "component:src/main/java/com/wina/partner/shipment/service/ShipmentService.java:ShipmentService",
+    "component:src/main/java/com/wina/partner/stock/controller/StockController.java:StockController",
+    "component:src/main/java/com/wina/partner/stock/repository/StockRepository.java:StockRepository",
+    "component:src/main/java/com/wina/partner/stock/service/StockService.java:StockService",
+    "component:src/main/java/com/wina/partner/vendor/controller/VendorController.java:VendorController",
+    "component:src/main/java/com/wina/partner/vendor/repository/VendorRepository.java:VendorRepository",
+    "component:src/main/java/com/wina/partner/vendor/service/VendorService.java:VendorService",
+    "route:src/main/java/com/wina/agency/main/controller/MainController.java:/api/agency/main/create:PostMapping",
+    "route:src/main/java/com/wina/agency/main/controller/MainController.java:/api/agency/main/list:GetMapping",
+    "route:src/main/java/com/wina/partner/billing/controller/BillingController.java:/api/partner/billing/create:PostMapping",
+    "route:src/main/java/com/wina/partner/billing/controller/BillingController.java:/api/partner/billing/list:GetMapping",
+    "route:src/main/java/com/wina/partner/campaign/controller/CampaignController.java:/api/partner/campaign/create:PostMapping",
+    "route:src/main/java/com/wina/partner/campaign/controller/CampaignController.java:/api/partner/campaign/list:GetMapping",
+    "route:src/main/java/com/wina/partner/contract/controller/ContractController.java:/api/partner/contract/create:PostMapping",
+    "route:src/main/java/com/wina/partner/contract/controller/ContractController.java:/api/partner/contract/list:GetMapping",
+    "route:src/main/java/com/wina/partner/dashboard/controller/DashboardController.java:/api/partner/dashboard/create:PostMapping",
+    "route:src/main/java/com/wina/partner/dashboard/controller/DashboardController.java:/api/partner/dashboard/list:GetMapping",
+    "route:src/main/java/com/wina/partner/decoSheet/controller/DecosheetController.java:/api/partner/decoSheet/create:PostMapping",
+    "route:src/main/java/com/wina/partner/decoSheet/controller/DecosheetController.java:/api/partner/decoSheet/list:GetMapping",
+    "route:src/main/java/com/wina/partner/inv/controller/InvController.java:/api/partner/inv/create:PostMapping",
+    "route:src/main/java/com/wina/partner/inv/controller/InvController.java:/api/partner/inv/list:GetMapping",
+    "route:src/main/java/com/wina/partner/inventory/controller/InventoryController.java:/api/partner/inventory/create:PostMapping",
+    "route:src/main/java/com/wina/partner/inventory/controller/InventoryController.java:/api/partner/inventory/list:GetMapping",
+    "route:src/main/java/com/wina/partner/invoice/controller/InvoiceController.java:/api/partner/invoice/create:PostMapping",
+    "route:src/main/java/com/wina/partner/invoice/controller/InvoiceController.java:/api/partner/invoice/list:GetMapping",
+    "route:src/main/java/com/wina/partner/loyalty/controller/LoyaltyController.java:/api/partner/loyalty/create:PostMapping",
+    "route:src/main/java/com/wina/partner/loyalty/controller/LoyaltyController.java:/api/partner/loyalty/list:GetMapping",
+    "route:src/main/java/com/wina/partner/mat/controller/MatController.java:/api/partner/mat/create:PostMapping",
+    "route:src/main/java/com/wina/partner/mat/controller/MatController.java:/api/partner/mat/list:GetMapping",
+    "route:src/main/java/com/wina/partner/member/controller/MemberController.java:/api/partner/member/create:PostMapping",
+    "route:src/main/java/com/wina/partner/member/controller/MemberController.java:/api/partner/member/list:GetMapping",
+    "route:src/main/java/com/wina/partner/order/controller/OrderController.java:/api/partner/order/create:PostMapping",
+    "route:src/main/java/com/wina/partner/order/controller/OrderController.java:/api/partner/order/list:GetMapping",
+    "route:src/main/java/com/wina/partner/pricing/controller/PricingController.java:/api/partner/pricing/create:PostMapping",
+    "route:src/main/java/com/wina/partner/pricing/controller/PricingController.java:/api/partner/pricing/list:GetMapping",
+    "route:src/main/java/com/wina/partner/procurement/controller/ProcurementController.java:/api/partner/procurement/create:PostMapping",
+    "route:src/main/java/com/wina/partner/procurement/controller/ProcurementController.java:/api/partner/procurement/list:GetMapping",
+    "route:src/main/java/com/wina/partner/quality/controller/QualityController.java:/api/partner/quality/create:PostMapping",
+    "route:src/main/java/com/wina/partner/quality/controller/QualityController.java:/api/partner/quality/list:GetMapping",
+    "route:src/main/java/com/wina/partner/report/controller/ReportController.java:/api/partner/report/create:PostMapping",
+    "route:src/main/java/com/wina/partner/report/controller/ReportController.java:/api/partner/report/list:GetMapping",
+    "route:src/main/java/com/wina/partner/settings/controller/SettingsController.java:/api/partner/settings/create:PostMapping",
+    "route:src/main/java/com/wina/partner/settings/controller/SettingsController.java:/api/partner/settings/list:GetMapping",
+    "route:src/main/java/com/wina/partner/shipment/controller/ShipmentController.java:/api/partner/shipment/create:PostMapping",
+    "route:src/main/java/com/wina/partner/shipment/controller/ShipmentController.java:/api/partner/shipment/list:GetMapping",
+    "route:src/main/java/com/wina/partner/stock/controller/StockController.java:/api/partner/stock/create:PostMapping",
+    "route:src/main/java/com/wina/partner/stock/controller/StockController.java:/api/partner/stock/list:GetMapping",
+    "route:src/main/java/com/wina/partner/vendor/controller/VendorController.java:/api/partner/vendor/create:PostMapping",
+    "route:src/main/java/com/wina/partner/vendor/controller/VendorController.java:/api/partner/vendor/list:GetMapping",
+    "table:src/main/java/com/wina/agency/main/domain/Main.java:main",
+    "table:src/main/java/com/wina/partner/billing/domain/Billing.java:billing",
+    "table:src/main/java/com/wina/partner/campaign/domain/Campaign.java:campaign",
+    "table:src/main/java/com/wina/partner/contract/domain/Contract.java:contract",
+    "table:src/main/java/com/wina/partner/dashboard/domain/Dashboard.java:dashboard",
+    "table:src/main/java/com/wina/partner/decoSheet/domain/Decosheet.java:decoSheet",
+    "table:src/main/java/com/wina/partner/inv/domain/Inv.java:inv",
+    "table:src/main/java/com/wina/partner/inventory/domain/Inventory.java:inventory",
+    "table:src/main/java/com/wina/partner/invoice/domain/Invoice.java:invoice",
+    "table:src/main/java/com/wina/partner/loyalty/domain/Loyalty.java:loyalty",
+    "table:src/main/java/com/wina/partner/mat/domain/Mat.java:mat",
+    "table:src/main/java/com/wina/partner/member/domain/Member.java:member",
+    "table:src/main/java/com/wina/partner/order/domain/Order.java:order",
+    "table:src/main/java/com/wina/partner/pricing/domain/Pricing.java:pricing",
+    "table:src/main/java/com/wina/partner/procurement/domain/Procurement.java:procurement",
+    "table:src/main/java/com/wina/partner/quality/domain/Quality.java:quality",
+    "table:src/main/java/com/wina/partner/report/domain/Report.java:report",
+    "table:src/main/java/com/wina/partner/settings/domain/Settings.java:settings",
+    "table:src/main/java/com/wina/partner/shipment/domain/Shipment.java:shipment",
+    "table:src/main/java/com/wina/partner/stock/domain/Stock.java:stock",
+    "table:src/main/java/com/wina/partner/vendor/domain/Vendor.java:vendor",
+  ],
+  "nodesByKind": {
+    "component": 63,
+    "route": 42,
+    "table": 21,
+  },
+}
+`;
+
+exports[`Phase XI — fixture baseline snapshots (P1) > mini-spring-wide-pkg-app > Tab1 rendering diagram 1`] = `
+"%% chunk:1/2
+---
+config:
+  layout: elk.mrtree
+---
+%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0c1a30','primaryTextColor':'#7dd3fc','primaryBorderColor':'#0e3a6e','edgeLabelBackground':'#0c1a30','lineColor':'#334155','secondaryColor':'#0f172a','clusterBkg':'#060c18','clusterBorder':'#1e3a5f','fontFamily':'JetBrains Mono','fontSize':'14'}}}%%
+graph TD
+  classDef ssr fill:#0d1a0d,stroke:#16a34a,color:#86efac
+  classDef csr fill:#2d1200,stroke:#c2410c,color:#fb923c
+  classDef ssg fill:#1a0d1a,stroke:#7c3aed,color:#c4b5fd
+  classDef isr fill:#1a1a0d,stroke:#ca8a04,color:#fde047
+  classDef ppr fill:#0d1a2d,stroke:#2563eb,color:#93c5fd
+  classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
+  classDef pkg fill:#0c1018,stroke:#475569,color:#cbd5e1
+  classDef muted fill:#0a0d14,stroke:#374151,color:#64748b,stroke-dasharray: 3 3
+  classDef hdr fill:#06080f,stroke:#1e3a5f,color:#7dd3fc
+  HDR_PKG["📁 src/main/java/com.wina.agency"]:::hdr
+  pkg_main["main"]:::pkg
+  HDR_PKG --> pkg_main
+  leaf_MainController["📄 MainController [/api/agency/main]"]:::ssr
+  subgraph endpoints_MainController["endpoints"]
+    direction TB
+    route_src_main_java_com_wina_agency_main_controller_MainController_java__api_agency_main_list_GetMapping["GET /list"]:::ssr
+    route_src_main_java_com_wina_agency_main_controller_MainController_java__api_agency_main_create_PostMapping["POST /create"]:::ssr
+  end
+  leaf_MainController --> endpoints_MainController
+  pkg_main --> leaf_MainController
+%%--CHUNK--%%
+%% chunk:2/2
+---
+config:
+  layout: elk.mrtree
+---
+%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0c1a30','primaryTextColor':'#7dd3fc','primaryBorderColor':'#0e3a6e','edgeLabelBackground':'#0c1a30','lineColor':'#334155','secondaryColor':'#0f172a','clusterBkg':'#060c18','clusterBorder':'#1e3a5f','fontFamily':'JetBrains Mono','fontSize':'14'}}}%%
+graph TD
+  classDef ssr fill:#0d1a0d,stroke:#16a34a,color:#86efac
+  classDef csr fill:#2d1200,stroke:#c2410c,color:#fb923c
+  classDef ssg fill:#1a0d1a,stroke:#7c3aed,color:#c4b5fd
+  classDef isr fill:#1a1a0d,stroke:#ca8a04,color:#fde047
+  classDef ppr fill:#0d1a2d,stroke:#2563eb,color:#93c5fd
+  classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
+  classDef pkg fill:#0c1018,stroke:#475569,color:#cbd5e1
+  classDef muted fill:#0a0d14,stroke:#374151,color:#64748b,stroke-dasharray: 3 3
+  classDef hdr fill:#06080f,stroke:#1e3a5f,color:#7dd3fc
+  HDR_PKG["📁 src/main/java/com.wina.partner"]:::hdr
+  pkg_billing["billing"]:::pkg
+  HDR_PKG --> pkg_billing
+  pkg_campaign["campaign"]:::pkg
+  HDR_PKG --> pkg_campaign
+  pkg_contract["contract"]:::pkg
+  HDR_PKG --> pkg_contract
+  pkg_dashboard["dashboard"]:::pkg
+  HDR_PKG --> pkg_dashboard
+  pkg_decoSheet["decoSheet"]:::pkg
+  HDR_PKG --> pkg_decoSheet
+  pkg_inv["inv"]:::pkg
+  HDR_PKG --> pkg_inv
+  pkg_inventory["inventory"]:::pkg
+  HDR_PKG --> pkg_inventory
+  pkg_invoice["invoice"]:::pkg
+  HDR_PKG --> pkg_invoice
+  pkg_loyalty["loyalty"]:::pkg
+  HDR_PKG --> pkg_loyalty
+  pkg_mat["mat"]:::pkg
+  HDR_PKG --> pkg_mat
+  pkg_member["member"]:::pkg
+  HDR_PKG --> pkg_member
+  pkg_order["order"]:::pkg
+  HDR_PKG --> pkg_order
+  pkg_pricing["pricing"]:::pkg
+  HDR_PKG --> pkg_pricing
+  pkg_procurement["procurement"]:::pkg
+  HDR_PKG --> pkg_procurement
+  pkg_quality["quality"]:::pkg
+  HDR_PKG --> pkg_quality
+  pkg_report["report"]:::pkg
+  HDR_PKG --> pkg_report
+  pkg_settings["settings"]:::pkg
+  HDR_PKG --> pkg_settings
+  pkg_shipment["shipment"]:::pkg
+  HDR_PKG --> pkg_shipment
+  pkg_stock["stock"]:::pkg
+  HDR_PKG --> pkg_stock
+  pkg_vendor["vendor"]:::pkg
+  HDR_PKG --> pkg_vendor
+  leaf_BillingController["📄 BillingController [/api/partner/billing]"]:::ssr
+  subgraph endpoints_BillingController["endpoints"]
+    direction TB
+    route_src_main_java_com_wina_partner_billing_controller_BillingController_java__api_partner_billing_list_GetMapping["GET /list"]:::ssr
+    route_src_main_java_com_wina_partner_billing_controller_BillingController_java__api_partner_billing_create_PostMapping["POST /create"]:::ssr
+  end
+  leaf_BillingController --> endpoints_BillingController
+  pkg_billing --> leaf_BillingController
+  leaf_CampaignController["📄 CampaignController [/api/partner/campaign]"]:::ssr
+  subgraph endpoints_CampaignController["endpoints"]
+    direction TB
+    route_src_main_java_com_wina_partner_campaign_controller_CampaignController_java__api_partner_campaign_list_GetMapping["GET /list"]:::ssr
+    route_src_main_java_com_wina_partner_campaign_controller_CampaignController_java__api_partner_campaign_create_PostMapping["POST /create"]:::ssr
+  end
+  leaf_CampaignController --> endpoints_CampaignController
+  pkg_campaign --> leaf_CampaignController
+  leaf_ContractController["📄 ContractController [/api/partner/contract]"]:::ssr
+  subgraph endpoints_ContractController["endpoints"]
+    direction TB
+    route_src_main_java_com_wina_partner_contract_controller_ContractController_java__api_partner_contract_list_GetMapping["GET /list"]:::ssr
+    route_src_main_java_com_wina_partner_contract_controller_ContractController_java__api_partner_contract_create_PostMapping["POST /create"]:::ssr
+  end
+  leaf_ContractController --> endpoints_ContractController
+  pkg_contract --> leaf_ContractController
+  leaf_DashboardController["📄 DashboardController [/api/partner/dashboard]"]:::ssr
+  subgraph endpoints_DashboardController["endpoints"]
+    direction TB
+    route_src_main_java_com_wina_partner_dashboard_controller_DashboardController_java__api_partner_dashboard_list_GetMapping["GET /list"]:::ssr
+    route_src_main_java_com_wina_partner_dashboard_controller_DashboardController_java__api_partner_dashboard_create_PostMapping["POST /create"]:::ssr
+  end
+  leaf_DashboardController --> endpoints_DashboardController
+  pkg_dashboard --> leaf_DashboardController
+  leaf_DecosheetController["📄 DecosheetController [/api/partner/decoSheet]"]:::ssr
+  subgraph endpoints_DecosheetController["endpoints"]
+    direction TB
+    route_src_main_java_com_wina_partner_decoSheet_controller_DecosheetController_java__api_partner_decoSheet_list_GetMapping["GET /list"]:::ssr
+    route_src_main_java_com_wina_partner_decoSheet_controller_DecosheetController_java__api_partner_decoSheet_create_PostMapping["POST /create"]:::ssr
+  end
+  leaf_DecosheetController --> endpoints_DecosheetController
+  pkg_decoSheet --> leaf_DecosheetController
+  leaf_InvController["📄 InvController [/api/partner/inv]"]:::ssr
+  subgraph endpoints_InvController["endpoints"]
+    direction TB
+    route_src_main_java_com_wina_partner_inv_controller_InvController_java__api_partner_inv_list_GetMapping["GET /list"]:::ssr
+    route_src_main_java_com_wina_partner_inv_controller_InvController_java__api_partner_inv_create_PostMapping["POST /create"]:::ssr
+  end
+  leaf_InvController --> endpoints_InvController
+  pkg_inv --> leaf_InvController
+  leaf_InventoryController["📄 InventoryController [/api/partner/inventory]"]:::ssr
+  subgraph endpoints_InventoryController["endpoints"]
+    direction TB
+    route_src_main_java_com_wina_partner_inventory_controller_InventoryController_java__api_partner_inventory_list_GetMapping["GET /list"]:::ssr
+    route_src_main_java_com_wina_partner_inventory_controller_InventoryController_java__api_partner_inventory_create_PostMapping["POST /create"]:::ssr
+  end
+  leaf_InventoryController --> endpoints_InventoryController
+  pkg_inventory --> leaf_InventoryController
+  leaf_InvoiceController["📄 InvoiceController [/api/partner/invoice]"]:::ssr
+  subgraph endpoints_InvoiceController["endpoints"]
+    direction TB
+    route_src_main_java_com_wina_partner_invoice_controller_InvoiceController_java__api_partner_invoice_list_GetMapping["GET /list"]:::ssr
+    route_src_main_java_com_wina_partner_invoice_controller_InvoiceController_java__api_partner_invoice_create_PostMapping["POST /create"]:::ssr
+  end
+  leaf_InvoiceController --> endpoints_InvoiceController
+  pkg_invoice --> leaf_InvoiceController
+  leaf_LoyaltyController["📄 LoyaltyController [/api/partner/loyalty]"]:::ssr
+  subgraph endpoints_LoyaltyController["endpoints"]
+    direction TB
+    route_src_main_java_com_wina_partner_loyalty_controller_LoyaltyController_java__api_partner_loyalty_list_GetMapping["GET /list"]:::ssr
+    route_src_main_java_com_wina_partner_loyalty_controller_LoyaltyController_java__api_partner_loyalty_create_PostMapping["POST /create"]:::ssr
+  end
+  leaf_LoyaltyController --> endpoints_LoyaltyController
+  pkg_loyalty --> leaf_LoyaltyController
+  leaf_MatController["📄 MatController [/api/partner/mat]"]:::ssr
+  subgraph endpoints_MatController["endpoints"]
+    direction TB
+    route_src_main_java_com_wina_partner_mat_controller_MatController_java__api_partner_mat_list_GetMapping["GET /list"]:::ssr
+    route_src_main_java_com_wina_partner_mat_controller_MatController_java__api_partner_mat_create_PostMapping["POST /create"]:::ssr
+  end
+  leaf_MatController --> endpoints_MatController
+  pkg_mat --> leaf_MatController
+  leaf_MemberController["📄 MemberController [/api/partner/member]"]:::ssr
+  subgraph endpoints_MemberController["endpoints"]
+    direction TB
+    route_src_main_java_com_wina_partner_member_controller_MemberController_java__api_partner_member_list_GetMapping["GET /list"]:::ssr
+    route_src_main_java_com_wina_partner_member_controller_MemberController_java__api_partner_member_create_PostMapping["POST /create"]:::ssr
+  end
+  leaf_MemberController --> endpoints_MemberController
+  pkg_member --> leaf_MemberController
+  leaf_OrderController["📄 OrderController [/api/partner/order]"]:::ssr
+  subgraph endpoints_OrderController["endpoints"]
+    direction TB
+    route_src_main_java_com_wina_partner_order_controller_OrderController_java__api_partner_order_list_GetMapping["GET /list"]:::ssr
+    route_src_main_java_com_wina_partner_order_controller_OrderController_java__api_partner_order_create_PostMapping["POST /create"]:::ssr
+  end
+  leaf_OrderController --> endpoints_OrderController
+  pkg_order --> leaf_OrderController
+  leaf_PricingController["📄 PricingController [/api/partner/pricing]"]:::ssr
+  subgraph endpoints_PricingController["endpoints"]
+    direction TB
+    route_src_main_java_com_wina_partner_pricing_controller_PricingController_java__api_partner_pricing_list_GetMapping["GET /list"]:::ssr
+    route_src_main_java_com_wina_partner_pricing_controller_PricingController_java__api_partner_pricing_create_PostMapping["POST /create"]:::ssr
+  end
+  leaf_PricingController --> endpoints_PricingController
+  pkg_pricing --> leaf_PricingController
+  leaf_ProcurementController["📄 ProcurementController [/api/partner/procurement]"]:::ssr
+  subgraph endpoints_ProcurementController["endpoints"]
+    direction TB
+    route_src_main_java_com_wina_partner_procurement_controller_ProcurementController_java__api_partner_procurement_list_GetMapping["GET /list"]:::ssr
+    route_src_main_java_com_wina_partner_procurement_controller_ProcurementController_java__api_partner_procurement_create_PostMapping["POST /create"]:::ssr
+  end
+  leaf_ProcurementController --> endpoints_ProcurementController
+  pkg_procurement --> leaf_ProcurementController
+  leaf_QualityController["📄 QualityController [/api/partner/quality]"]:::ssr
+  subgraph endpoints_QualityController["endpoints"]
+    direction TB
+    route_src_main_java_com_wina_partner_quality_controller_QualityController_java__api_partner_quality_list_GetMapping["GET /list"]:::ssr
+    route_src_main_java_com_wina_partner_quality_controller_QualityController_java__api_partner_quality_create_PostMapping["POST /create"]:::ssr
+  end
+  leaf_QualityController --> endpoints_QualityController
+  pkg_quality --> leaf_QualityController
+  leaf_ReportController["📄 ReportController [/api/partner/report]"]:::ssr
+  subgraph endpoints_ReportController["endpoints"]
+    direction TB
+    route_src_main_java_com_wina_partner_report_controller_ReportController_java__api_partner_report_list_GetMapping["GET /list"]:::ssr
+    route_src_main_java_com_wina_partner_report_controller_ReportController_java__api_partner_report_create_PostMapping["POST /create"]:::ssr
+  end
+  leaf_ReportController --> endpoints_ReportController
+  pkg_report --> leaf_ReportController
+  leaf_SettingsController["📄 SettingsController [/api/partner/settings]"]:::ssr
+  subgraph endpoints_SettingsController["endpoints"]
+    direction TB
+    route_src_main_java_com_wina_partner_settings_controller_SettingsController_java__api_partner_settings_list_GetMapping["GET /list"]:::ssr
+    route_src_main_java_com_wina_partner_settings_controller_SettingsController_java__api_partner_settings_create_PostMapping["POST /create"]:::ssr
+  end
+  leaf_SettingsController --> endpoints_SettingsController
+  pkg_settings --> leaf_SettingsController
+  leaf_ShipmentController["📄 ShipmentController [/api/partner/shipment]"]:::ssr
+  subgraph endpoints_ShipmentController["endpoints"]
+    direction TB
+    route_src_main_java_com_wina_partner_shipment_controller_ShipmentController_java__api_partner_shipment_list_GetMapping["GET /list"]:::ssr
+    route_src_main_java_com_wina_partner_shipment_controller_ShipmentController_java__api_partner_shipment_create_PostMapping["POST /create"]:::ssr
+  end
+  leaf_ShipmentController --> endpoints_ShipmentController
+  pkg_shipment --> leaf_ShipmentController
+  leaf_StockController["📄 StockController [/api/partner/stock]"]:::ssr
+  subgraph endpoints_StockController["endpoints"]
+    direction TB
+    route_src_main_java_com_wina_partner_stock_controller_StockController_java__api_partner_stock_list_GetMapping["GET /list"]:::ssr
+    route_src_main_java_com_wina_partner_stock_controller_StockController_java__api_partner_stock_create_PostMapping["POST /create"]:::ssr
+  end
+  leaf_StockController --> endpoints_StockController
+  pkg_stock --> leaf_StockController
+  leaf_VendorController["📄 VendorController [/api/partner/vendor]"]:::ssr
+  subgraph endpoints_VendorController["endpoints"]
+    direction TB
+    route_src_main_java_com_wina_partner_vendor_controller_VendorController_java__api_partner_vendor_list_GetMapping["GET /list"]:::ssr
+    route_src_main_java_com_wina_partner_vendor_controller_VendorController_java__api_partner_vendor_create_PostMapping["POST /create"]:::ssr
+  end
+  leaf_VendorController --> endpoints_VendorController
+  pkg_vendor --> leaf_VendorController"
+`;
+
+exports[`Phase XI — fixture baseline snapshots (P1) > mini-spring-wide-pkg-app > Tab2 screen-component diagram 1`] = `
+"%% chunk:1/2
+---
+config:
+  layout: elk.mrtree
+---
+%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0c1a30','primaryTextColor':'#7dd3fc','primaryBorderColor':'#0e3a6e','edgeLabelBackground':'#0c1a30','lineColor':'#334155','secondaryColor':'#0f172a','clusterBkg':'#060c18','clusterBorder':'#1e3a5f','fontFamily':'JetBrains Mono','fontSize':'14'}}}%%
+graph TD
+  classDef ssr fill:#0d1a0d,stroke:#16a34a,color:#86efac
+  classDef csr fill:#2d1200,stroke:#c2410c,color:#fb923c
+  classDef ssg fill:#1a0d1a,stroke:#7c3aed,color:#c4b5fd
+  classDef isr fill:#1a1a0d,stroke:#ca8a04,color:#fde047
+  classDef ppr fill:#0d1a2d,stroke:#2563eb,color:#93c5fd
+  classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
+  classDef pkg fill:#0c1018,stroke:#475569,color:#cbd5e1
+  classDef muted fill:#0a0d14,stroke:#374151,color:#64748b,stroke-dasharray: 3 3
+  classDef hdr fill:#06080f,stroke:#1e3a5f,color:#7dd3fc
+  HDR_PKG["📁 src/main/java/com.wina.agency"]:::hdr
+  pkg_agency__main["main"]:::pkg
+  HDR_PKG --> pkg_agency__main
+  subgraph di_component_src_main_java_com_wina_agency_main_controller_MainController_java_MainController["[ DI ]"]
+    direction TB
+    component_src_main_java_com_wina_agency_main_controller_MainController_java_MainController["MainController"]:::ssr
+    component_src_main_java_com_wina_agency_main_service_MainService_java_MainService["MainService"]:::unk
+    component_src_main_java_com_wina_agency_main_controller_MainController_java_MainController -.-> component_src_main_java_com_wina_agency_main_service_MainService_java_MainService
+    component_src_main_java_com_wina_agency_main_repository_MainRepository_java_MainRepository["MainRepository"]:::ssg
+    component_src_main_java_com_wina_agency_main_service_MainService_java_MainService -.-> component_src_main_java_com_wina_agency_main_repository_MainRepository_java_MainRepository
+  end
+  pkg_agency__main --> di_component_src_main_java_com_wina_agency_main_controller_MainController_java_MainController
+%%--CHUNK--%%
+%% chunk:2/2
+---
+config:
+  layout: elk.mrtree
+---
+%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0c1a30','primaryTextColor':'#7dd3fc','primaryBorderColor':'#0e3a6e','edgeLabelBackground':'#0c1a30','lineColor':'#334155','secondaryColor':'#0f172a','clusterBkg':'#060c18','clusterBorder':'#1e3a5f','fontFamily':'JetBrains Mono','fontSize':'14'}}}%%
+graph TD
+  classDef ssr fill:#0d1a0d,stroke:#16a34a,color:#86efac
+  classDef csr fill:#2d1200,stroke:#c2410c,color:#fb923c
+  classDef ssg fill:#1a0d1a,stroke:#7c3aed,color:#c4b5fd
+  classDef isr fill:#1a1a0d,stroke:#ca8a04,color:#fde047
+  classDef ppr fill:#0d1a2d,stroke:#2563eb,color:#93c5fd
+  classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
+  classDef pkg fill:#0c1018,stroke:#475569,color:#cbd5e1
+  classDef muted fill:#0a0d14,stroke:#374151,color:#64748b,stroke-dasharray: 3 3
+  classDef hdr fill:#06080f,stroke:#1e3a5f,color:#7dd3fc
+  HDR_PKG["📁 src/main/java/com.wina.partner"]:::hdr
+  pkg_partner__billing["billing"]:::pkg
+  HDR_PKG --> pkg_partner__billing
+  pkg_partner__campaign["campaign"]:::pkg
+  HDR_PKG --> pkg_partner__campaign
+  pkg_partner__contract["contract"]:::pkg
+  HDR_PKG --> pkg_partner__contract
+  pkg_partner__dashboard["dashboard"]:::pkg
+  HDR_PKG --> pkg_partner__dashboard
+  pkg_partner__decoSheet["decoSheet"]:::pkg
+  HDR_PKG --> pkg_partner__decoSheet
+  pkg_partner__inv["inv"]:::pkg
+  HDR_PKG --> pkg_partner__inv
+  pkg_partner__inventory["inventory"]:::pkg
+  HDR_PKG --> pkg_partner__inventory
+  pkg_partner__invoice["invoice"]:::pkg
+  HDR_PKG --> pkg_partner__invoice
+  pkg_partner__loyalty["loyalty"]:::pkg
+  HDR_PKG --> pkg_partner__loyalty
+  pkg_partner__mat["mat"]:::pkg
+  HDR_PKG --> pkg_partner__mat
+  pkg_partner__member["member"]:::pkg
+  HDR_PKG --> pkg_partner__member
+  pkg_partner__order["order"]:::pkg
+  HDR_PKG --> pkg_partner__order
+  pkg_partner__pricing["pricing"]:::pkg
+  HDR_PKG --> pkg_partner__pricing
+  pkg_partner__procurement["procurement"]:::pkg
+  HDR_PKG --> pkg_partner__procurement
+  pkg_partner__quality["quality"]:::pkg
+  HDR_PKG --> pkg_partner__quality
+  pkg_partner__report["report"]:::pkg
+  HDR_PKG --> pkg_partner__report
+  pkg_partner__settings["settings"]:::pkg
+  HDR_PKG --> pkg_partner__settings
+  pkg_partner__shipment["shipment"]:::pkg
+  HDR_PKG --> pkg_partner__shipment
+  pkg_partner__stock["stock"]:::pkg
+  HDR_PKG --> pkg_partner__stock
+  pkg_partner__vendor["vendor"]:::pkg
+  HDR_PKG --> pkg_partner__vendor
+  subgraph di_component_src_main_java_com_wina_partner_billing_controller_BillingController_java_BillingController["[ DI ]"]
+    direction TB
+    component_src_main_java_com_wina_partner_billing_controller_BillingController_java_BillingController["BillingController"]:::ssr
+    component_src_main_java_com_wina_partner_billing_service_BillingService_java_BillingService["BillingService"]:::unk
+    component_src_main_java_com_wina_partner_billing_controller_BillingController_java_BillingController -.-> component_src_main_java_com_wina_partner_billing_service_BillingService_java_BillingService
+    component_src_main_java_com_wina_partner_billing_repository_BillingRepository_java_BillingRepository["BillingRepository"]:::ssg
+    component_src_main_java_com_wina_partner_billing_service_BillingService_java_BillingService -.-> component_src_main_java_com_wina_partner_billing_repository_BillingRepository_java_BillingRepository
+  end
+  pkg_partner__billing --> di_component_src_main_java_com_wina_partner_billing_controller_BillingController_java_BillingController
+  subgraph di_component_src_main_java_com_wina_partner_campaign_controller_CampaignController_java_CampaignController["[ DI ]"]
+    direction TB
+    component_src_main_java_com_wina_partner_campaign_controller_CampaignController_java_CampaignController["CampaignController"]:::ssr
+    component_src_main_java_com_wina_partner_campaign_service_CampaignService_java_CampaignService["CampaignService"]:::unk
+    component_src_main_java_com_wina_partner_campaign_controller_CampaignController_java_CampaignController -.-> component_src_main_java_com_wina_partner_campaign_service_CampaignService_java_CampaignService
+    component_src_main_java_com_wina_partner_campaign_repository_CampaignRepository_java_CampaignRepository["CampaignRepository"]:::ssg
+    component_src_main_java_com_wina_partner_campaign_service_CampaignService_java_CampaignService -.-> component_src_main_java_com_wina_partner_campaign_repository_CampaignRepository_java_CampaignRepository
+  end
+  pkg_partner__campaign --> di_component_src_main_java_com_wina_partner_campaign_controller_CampaignController_java_CampaignController
+  subgraph di_component_src_main_java_com_wina_partner_contract_controller_ContractController_java_ContractController["[ DI ]"]
+    direction TB
+    component_src_main_java_com_wina_partner_contract_controller_ContractController_java_ContractController["ContractController"]:::ssr
+    component_src_main_java_com_wina_partner_contract_service_ContractService_java_ContractService["ContractService"]:::unk
+    component_src_main_java_com_wina_partner_contract_controller_ContractController_java_ContractController -.-> component_src_main_java_com_wina_partner_contract_service_ContractService_java_ContractService
+    component_src_main_java_com_wina_partner_contract_repository_ContractRepository_java_ContractRepository["ContractRepository"]:::ssg
+    component_src_main_java_com_wina_partner_contract_service_ContractService_java_ContractService -.-> component_src_main_java_com_wina_partner_contract_repository_ContractRepository_java_ContractRepository
+  end
+  pkg_partner__contract --> di_component_src_main_java_com_wina_partner_contract_controller_ContractController_java_ContractController
+  subgraph di_component_src_main_java_com_wina_partner_dashboard_controller_DashboardController_java_DashboardController["[ DI ]"]
+    direction TB
+    component_src_main_java_com_wina_partner_dashboard_controller_DashboardController_java_DashboardController["DashboardController"]:::ssr
+    component_src_main_java_com_wina_partner_dashboard_service_DashboardService_java_DashboardService["DashboardService"]:::unk
+    component_src_main_java_com_wina_partner_dashboard_controller_DashboardController_java_DashboardController -.-> component_src_main_java_com_wina_partner_dashboard_service_DashboardService_java_DashboardService
+    component_src_main_java_com_wina_partner_dashboard_repository_DashboardRepository_java_DashboardRepository["DashboardRepository"]:::ssg
+    component_src_main_java_com_wina_partner_dashboard_service_DashboardService_java_DashboardService -.-> component_src_main_java_com_wina_partner_dashboard_repository_DashboardRepository_java_DashboardRepository
+  end
+  pkg_partner__dashboard --> di_component_src_main_java_com_wina_partner_dashboard_controller_DashboardController_java_DashboardController
+  subgraph di_component_src_main_java_com_wina_partner_decoSheet_controller_DecosheetController_java_DecosheetController["[ DI ]"]
+    direction TB
+    component_src_main_java_com_wina_partner_decoSheet_controller_DecosheetController_java_DecosheetController["DecosheetController"]:::ssr
+    component_src_main_java_com_wina_partner_decoSheet_service_DecosheetService_java_DecosheetService["DecosheetService"]:::unk
+    component_src_main_java_com_wina_partner_decoSheet_controller_DecosheetController_java_DecosheetController -.-> component_src_main_java_com_wina_partner_decoSheet_service_DecosheetService_java_DecosheetService
+    component_src_main_java_com_wina_partner_decoSheet_repository_DecosheetRepository_java_DecosheetRepository["DecosheetRepository"]:::ssg
+    component_src_main_java_com_wina_partner_decoSheet_service_DecosheetService_java_DecosheetService -.-> component_src_main_java_com_wina_partner_decoSheet_repository_DecosheetRepository_java_DecosheetRepository
+  end
+  pkg_partner__decoSheet --> di_component_src_main_java_com_wina_partner_decoSheet_controller_DecosheetController_java_DecosheetController
+  subgraph di_component_src_main_java_com_wina_partner_inv_controller_InvController_java_InvController["[ DI ]"]
+    direction TB
+    component_src_main_java_com_wina_partner_inv_controller_InvController_java_InvController["InvController"]:::ssr
+    component_src_main_java_com_wina_partner_inv_service_InvService_java_InvService["InvService"]:::unk
+    component_src_main_java_com_wina_partner_inv_controller_InvController_java_InvController -.-> component_src_main_java_com_wina_partner_inv_service_InvService_java_InvService
+    component_src_main_java_com_wina_partner_inv_repository_InvRepository_java_InvRepository["InvRepository"]:::ssg
+    component_src_main_java_com_wina_partner_inv_service_InvService_java_InvService -.-> component_src_main_java_com_wina_partner_inv_repository_InvRepository_java_InvRepository
+  end
+  pkg_partner__inv --> di_component_src_main_java_com_wina_partner_inv_controller_InvController_java_InvController
+  subgraph di_component_src_main_java_com_wina_partner_inventory_controller_InventoryController_java_InventoryController["[ DI ]"]
+    direction TB
+    component_src_main_java_com_wina_partner_inventory_controller_InventoryController_java_InventoryController["InventoryController"]:::ssr
+    component_src_main_java_com_wina_partner_inventory_service_InventoryService_java_InventoryService["InventoryService"]:::unk
+    component_src_main_java_com_wina_partner_inventory_controller_InventoryController_java_InventoryController -.-> component_src_main_java_com_wina_partner_inventory_service_InventoryService_java_InventoryService
+    component_src_main_java_com_wina_partner_inventory_repository_InventoryRepository_java_InventoryRepository["InventoryRepository"]:::ssg
+    component_src_main_java_com_wina_partner_inventory_service_InventoryService_java_InventoryService -.-> component_src_main_java_com_wina_partner_inventory_repository_InventoryRepository_java_InventoryRepository
+  end
+  pkg_partner__inventory --> di_component_src_main_java_com_wina_partner_inventory_controller_InventoryController_java_InventoryController
+  subgraph di_component_src_main_java_com_wina_partner_invoice_controller_InvoiceController_java_InvoiceController["[ DI ]"]
+    direction TB
+    component_src_main_java_com_wina_partner_invoice_controller_InvoiceController_java_InvoiceController["InvoiceController"]:::ssr
+    component_src_main_java_com_wina_partner_invoice_service_InvoiceService_java_InvoiceService["InvoiceService"]:::unk
+    component_src_main_java_com_wina_partner_invoice_controller_InvoiceController_java_InvoiceController -.-> component_src_main_java_com_wina_partner_invoice_service_InvoiceService_java_InvoiceService
+    component_src_main_java_com_wina_partner_invoice_repository_InvoiceRepository_java_InvoiceRepository["InvoiceRepository"]:::ssg
+    component_src_main_java_com_wina_partner_invoice_service_InvoiceService_java_InvoiceService -.-> component_src_main_java_com_wina_partner_invoice_repository_InvoiceRepository_java_InvoiceRepository
+  end
+  pkg_partner__invoice --> di_component_src_main_java_com_wina_partner_invoice_controller_InvoiceController_java_InvoiceController
+  subgraph di_component_src_main_java_com_wina_partner_loyalty_controller_LoyaltyController_java_LoyaltyController["[ DI ]"]
+    direction TB
+    component_src_main_java_com_wina_partner_loyalty_controller_LoyaltyController_java_LoyaltyController["LoyaltyController"]:::ssr
+    component_src_main_java_com_wina_partner_loyalty_service_LoyaltyService_java_LoyaltyService["LoyaltyService"]:::unk
+    component_src_main_java_com_wina_partner_loyalty_controller_LoyaltyController_java_LoyaltyController -.-> component_src_main_java_com_wina_partner_loyalty_service_LoyaltyService_java_LoyaltyService
+    component_src_main_java_com_wina_partner_loyalty_repository_LoyaltyRepository_java_LoyaltyRepository["LoyaltyRepository"]:::ssg
+    component_src_main_java_com_wina_partner_loyalty_service_LoyaltyService_java_LoyaltyService -.-> component_src_main_java_com_wina_partner_loyalty_repository_LoyaltyRepository_java_LoyaltyRepository
+  end
+  pkg_partner__loyalty --> di_component_src_main_java_com_wina_partner_loyalty_controller_LoyaltyController_java_LoyaltyController
+  subgraph di_component_src_main_java_com_wina_partner_mat_controller_MatController_java_MatController["[ DI ]"]
+    direction TB
+    component_src_main_java_com_wina_partner_mat_controller_MatController_java_MatController["MatController"]:::ssr
+    component_src_main_java_com_wina_partner_mat_service_MatService_java_MatService["MatService"]:::unk
+    component_src_main_java_com_wina_partner_mat_controller_MatController_java_MatController -.-> component_src_main_java_com_wina_partner_mat_service_MatService_java_MatService
+    component_src_main_java_com_wina_partner_mat_repository_MatRepository_java_MatRepository["MatRepository"]:::ssg
+    component_src_main_java_com_wina_partner_mat_service_MatService_java_MatService -.-> component_src_main_java_com_wina_partner_mat_repository_MatRepository_java_MatRepository
+  end
+  pkg_partner__mat --> di_component_src_main_java_com_wina_partner_mat_controller_MatController_java_MatController
+  subgraph di_component_src_main_java_com_wina_partner_member_controller_MemberController_java_MemberController["[ DI ]"]
+    direction TB
+    component_src_main_java_com_wina_partner_member_controller_MemberController_java_MemberController["MemberController"]:::ssr
+    component_src_main_java_com_wina_partner_member_service_MemberService_java_MemberService["MemberService"]:::unk
+    component_src_main_java_com_wina_partner_member_controller_MemberController_java_MemberController -.-> component_src_main_java_com_wina_partner_member_service_MemberService_java_MemberService
+    component_src_main_java_com_wina_partner_member_repository_MemberRepository_java_MemberRepository["MemberRepository"]:::ssg
+    component_src_main_java_com_wina_partner_member_service_MemberService_java_MemberService -.-> component_src_main_java_com_wina_partner_member_repository_MemberRepository_java_MemberRepository
+  end
+  pkg_partner__member --> di_component_src_main_java_com_wina_partner_member_controller_MemberController_java_MemberController
+  subgraph di_component_src_main_java_com_wina_partner_order_controller_OrderController_java_OrderController["[ DI ]"]
+    direction TB
+    component_src_main_java_com_wina_partner_order_controller_OrderController_java_OrderController["OrderController"]:::ssr
+    component_src_main_java_com_wina_partner_order_service_OrderService_java_OrderService["OrderService"]:::unk
+    component_src_main_java_com_wina_partner_order_controller_OrderController_java_OrderController -.-> component_src_main_java_com_wina_partner_order_service_OrderService_java_OrderService
+    component_src_main_java_com_wina_partner_order_repository_OrderRepository_java_OrderRepository["OrderRepository"]:::ssg
+    component_src_main_java_com_wina_partner_order_service_OrderService_java_OrderService -.-> component_src_main_java_com_wina_partner_order_repository_OrderRepository_java_OrderRepository
+  end
+  pkg_partner__order --> di_component_src_main_java_com_wina_partner_order_controller_OrderController_java_OrderController
+  subgraph di_component_src_main_java_com_wina_partner_pricing_controller_PricingController_java_PricingController["[ DI ]"]
+    direction TB
+    component_src_main_java_com_wina_partner_pricing_controller_PricingController_java_PricingController["PricingController"]:::ssr
+    component_src_main_java_com_wina_partner_pricing_service_PricingService_java_PricingService["PricingService"]:::unk
+    component_src_main_java_com_wina_partner_pricing_controller_PricingController_java_PricingController -.-> component_src_main_java_com_wina_partner_pricing_service_PricingService_java_PricingService
+    component_src_main_java_com_wina_partner_pricing_repository_PricingRepository_java_PricingRepository["PricingRepository"]:::ssg
+    component_src_main_java_com_wina_partner_pricing_service_PricingService_java_PricingService -.-> component_src_main_java_com_wina_partner_pricing_repository_PricingRepository_java_PricingRepository
+  end
+  pkg_partner__pricing --> di_component_src_main_java_com_wina_partner_pricing_controller_PricingController_java_PricingController
+  subgraph di_component_src_main_java_com_wina_partner_procurement_controller_ProcurementController_java_ProcurementController["[ DI ]"]
+    direction TB
+    component_src_main_java_com_wina_partner_procurement_controller_ProcurementController_java_ProcurementController["ProcurementController"]:::ssr
+    component_src_main_java_com_wina_partner_procurement_service_ProcurementService_java_ProcurementService["ProcurementService"]:::unk
+    component_src_main_java_com_wina_partner_procurement_controller_ProcurementController_java_ProcurementController -.-> component_src_main_java_com_wina_partner_procurement_service_ProcurementService_java_ProcurementService
+    component_src_main_java_com_wina_partner_procurement_repository_ProcurementRepository_java_ProcurementRepository["ProcurementRepository"]:::ssg
+    component_src_main_java_com_wina_partner_procurement_service_ProcurementService_java_ProcurementService -.-> component_src_main_java_com_wina_partner_procurement_repository_ProcurementRepository_java_ProcurementRepository
+  end
+  pkg_partner__procurement --> di_component_src_main_java_com_wina_partner_procurement_controller_ProcurementController_java_ProcurementController
+  subgraph di_component_src_main_java_com_wina_partner_quality_controller_QualityController_java_QualityController["[ DI ]"]
+    direction TB
+    component_src_main_java_com_wina_partner_quality_controller_QualityController_java_QualityController["QualityController"]:::ssr
+    component_src_main_java_com_wina_partner_quality_service_QualityService_java_QualityService["QualityService"]:::unk
+    component_src_main_java_com_wina_partner_quality_controller_QualityController_java_QualityController -.-> component_src_main_java_com_wina_partner_quality_service_QualityService_java_QualityService
+    component_src_main_java_com_wina_partner_quality_repository_QualityRepository_java_QualityRepository["QualityRepository"]:::ssg
+    component_src_main_java_com_wina_partner_quality_service_QualityService_java_QualityService -.-> component_src_main_java_com_wina_partner_quality_repository_QualityRepository_java_QualityRepository
+  end
+  pkg_partner__quality --> di_component_src_main_java_com_wina_partner_quality_controller_QualityController_java_QualityController
+  subgraph di_component_src_main_java_com_wina_partner_report_controller_ReportController_java_ReportController["[ DI ]"]
+    direction TB
+    component_src_main_java_com_wina_partner_report_controller_ReportController_java_ReportController["ReportController"]:::ssr
+    component_src_main_java_com_wina_partner_report_service_ReportService_java_ReportService["ReportService"]:::unk
+    component_src_main_java_com_wina_partner_report_controller_ReportController_java_ReportController -.-> component_src_main_java_com_wina_partner_report_service_ReportService_java_ReportService
+    component_src_main_java_com_wina_partner_report_repository_ReportRepository_java_ReportRepository["ReportRepository"]:::ssg
+    component_src_main_java_com_wina_partner_report_service_ReportService_java_ReportService -.-> component_src_main_java_com_wina_partner_report_repository_ReportRepository_java_ReportRepository
+  end
+  pkg_partner__report --> di_component_src_main_java_com_wina_partner_report_controller_ReportController_java_ReportController
+  subgraph di_component_src_main_java_com_wina_partner_settings_controller_SettingsController_java_SettingsController["[ DI ]"]
+    direction TB
+    component_src_main_java_com_wina_partner_settings_controller_SettingsController_java_SettingsController["SettingsController"]:::ssr
+    component_src_main_java_com_wina_partner_settings_service_SettingsService_java_SettingsService["SettingsService"]:::unk
+    component_src_main_java_com_wina_partner_settings_controller_SettingsController_java_SettingsController -.-> component_src_main_java_com_wina_partner_settings_service_SettingsService_java_SettingsService
+    component_src_main_java_com_wina_partner_settings_repository_SettingsRepository_java_SettingsRepository["SettingsRepository"]:::ssg
+    component_src_main_java_com_wina_partner_settings_service_SettingsService_java_SettingsService -.-> component_src_main_java_com_wina_partner_settings_repository_SettingsRepository_java_SettingsRepository
+  end
+  pkg_partner__settings --> di_component_src_main_java_com_wina_partner_settings_controller_SettingsController_java_SettingsController
+  subgraph di_component_src_main_java_com_wina_partner_shipment_controller_ShipmentController_java_ShipmentController["[ DI ]"]
+    direction TB
+    component_src_main_java_com_wina_partner_shipment_controller_ShipmentController_java_ShipmentController["ShipmentController"]:::ssr
+    component_src_main_java_com_wina_partner_shipment_service_ShipmentService_java_ShipmentService["ShipmentService"]:::unk
+    component_src_main_java_com_wina_partner_shipment_controller_ShipmentController_java_ShipmentController -.-> component_src_main_java_com_wina_partner_shipment_service_ShipmentService_java_ShipmentService
+    component_src_main_java_com_wina_partner_shipment_repository_ShipmentRepository_java_ShipmentRepository["ShipmentRepository"]:::ssg
+    component_src_main_java_com_wina_partner_shipment_service_ShipmentService_java_ShipmentService -.-> component_src_main_java_com_wina_partner_shipment_repository_ShipmentRepository_java_ShipmentRepository
+  end
+  pkg_partner__shipment --> di_component_src_main_java_com_wina_partner_shipment_controller_ShipmentController_java_ShipmentController
+  subgraph di_component_src_main_java_com_wina_partner_stock_controller_StockController_java_StockController["[ DI ]"]
+    direction TB
+    component_src_main_java_com_wina_partner_stock_controller_StockController_java_StockController["StockController"]:::ssr
+    component_src_main_java_com_wina_partner_stock_service_StockService_java_StockService["StockService"]:::unk
+    component_src_main_java_com_wina_partner_stock_controller_StockController_java_StockController -.-> component_src_main_java_com_wina_partner_stock_service_StockService_java_StockService
+    component_src_main_java_com_wina_partner_stock_repository_StockRepository_java_StockRepository["StockRepository"]:::ssg
+    component_src_main_java_com_wina_partner_stock_service_StockService_java_StockService -.-> component_src_main_java_com_wina_partner_stock_repository_StockRepository_java_StockRepository
+  end
+  pkg_partner__stock --> di_component_src_main_java_com_wina_partner_stock_controller_StockController_java_StockController
+  subgraph di_component_src_main_java_com_wina_partner_vendor_controller_VendorController_java_VendorController["[ DI ]"]
+    direction TB
+    component_src_main_java_com_wina_partner_vendor_controller_VendorController_java_VendorController["VendorController"]:::ssr
+    component_src_main_java_com_wina_partner_vendor_service_VendorService_java_VendorService["VendorService"]:::unk
+    component_src_main_java_com_wina_partner_vendor_controller_VendorController_java_VendorController -.-> component_src_main_java_com_wina_partner_vendor_service_VendorService_java_VendorService
+    component_src_main_java_com_wina_partner_vendor_repository_VendorRepository_java_VendorRepository["VendorRepository"]:::ssg
+    component_src_main_java_com_wina_partner_vendor_service_VendorService_java_VendorService -.-> component_src_main_java_com_wina_partner_vendor_repository_VendorRepository_java_VendorRepository
+  end
+  pkg_partner__vendor --> di_component_src_main_java_com_wina_partner_vendor_controller_VendorController_java_VendorController"
+`;
+
+exports[`Phase XI — fixture baseline snapshots (P1) > mini-spring-wide-pkg-app > Tab3 db-screen diagram 1`] = `
+"%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#2a4055','primaryTextColor':'#f8fafc','primaryBorderColor':'#1e4060','lineColor':'#f59e0b','secondaryColor':'#0f172a','tertiaryColor':'#1a0a20','attributeBackgroundColorEven':'#ffffff','attributeBackgroundColorOdd':'#f1f5f9','textColor':'#1e293b','nodeBorder':'#1e4060','clusterBkg':'#0a0e1a','fontFamily':'JetBrains Mono','fontSize':'14'}}}%%
+erDiagram
+%% table:main path:src/main/java/com/wina/agency/main/domain/Main.java
+%% table:billing path:src/main/java/com/wina/partner/billing/domain/Billing.java
+%% table:campaign path:src/main/java/com/wina/partner/campaign/domain/Campaign.java
+%% table:contract path:src/main/java/com/wina/partner/contract/domain/Contract.java
+%% table:dashboard path:src/main/java/com/wina/partner/dashboard/domain/Dashboard.java
+%% table:decoSheet path:src/main/java/com/wina/partner/decoSheet/domain/Decosheet.java
+%% table:inv path:src/main/java/com/wina/partner/inv/domain/Inv.java
+%% table:inventory path:src/main/java/com/wina/partner/inventory/domain/Inventory.java
+%% table:invoice path:src/main/java/com/wina/partner/invoice/domain/Invoice.java
+%% table:loyalty path:src/main/java/com/wina/partner/loyalty/domain/Loyalty.java
+%% table:mat path:src/main/java/com/wina/partner/mat/domain/Mat.java
+%% table:member path:src/main/java/com/wina/partner/member/domain/Member.java
+%% table:order path:src/main/java/com/wina/partner/order/domain/Order.java
+%% table:pricing path:src/main/java/com/wina/partner/pricing/domain/Pricing.java
+%% table:procurement path:src/main/java/com/wina/partner/procurement/domain/Procurement.java
+%% table:quality path:src/main/java/com/wina/partner/quality/domain/Quality.java
+%% table:report path:src/main/java/com/wina/partner/report/domain/Report.java
+%% table:settings path:src/main/java/com/wina/partner/settings/domain/Settings.java
+%% table:shipment path:src/main/java/com/wina/partner/shipment/domain/Shipment.java
+%% table:stock path:src/main/java/com/wina/partner/stock/domain/Stock.java
+%% table:vendor path:src/main/java/com/wina/partner/vendor/domain/Vendor.java
+  main {
+    Long id PK
+  }
+  billing {
+    Long id PK
+  }
+  campaign {
+    Long id PK
+  }
+  contract {
+    Long id PK
+  }
+  dashboard {
+    Long id PK
+  }
+  decoSheet {
+    Long id PK
+  }
+  inv {
+    Long id PK
+  }
+  inventory {
+    Long id PK
+  }
+  invoice {
+    Long id PK
+  }
+  loyalty {
+    Long id PK
+  }
+  mat {
+    Long id PK
+  }
+  member {
+    Long id PK
+  }
+  order {
+    Long id PK
+  }
+  pricing {
+    Long id PK
+  }
+  procurement {
+    Long id PK
+  }
+  quality {
+    Long id PK
+  }
+  report {
+    Long id PK
+  }
+  settings {
+    Long id PK
+  }
+  shipment {
+    Long id PK
+  }
+  stock {
+    Long id PK
+  }
+  vendor {
+    Long id PK
+  }
+  MainRepository {
+    string name
+  }
+  BillingRepository {
+    string name
+  }
+  CampaignRepository {
+    string name
+  }
+  ContractRepository {
+    string name
+  }
+  DashboardRepository {
+    string name
+  }
+  DecosheetRepository {
+    string name
+  }
+  InvRepository {
+    string name
+  }
+  InventoryRepository {
+    string name
+  }
+  InvoiceRepository {
+    string name
+  }
+  LoyaltyRepository {
+    string name
+  }
+  MatRepository {
+    string name
+  }
+  MemberRepository {
+    string name
+  }
+  OrderRepository {
+    string name
+  }
+  PricingRepository {
+    string name
+  }
+  ProcurementRepository {
+    string name
+  }
+  QualityRepository {
+    string name
+  }
+  ReportRepository {
+    string name
+  }
+  SettingsRepository {
+    string name
+  }
+  ShipmentRepository {
+    string name
+  }
+  StockRepository {
+    string name
+  }
+  VendorRepository {
+    string name
   }"
 `;
 
@@ -1083,6 +2187,9 @@ graph TD
   classDef isr fill:#1a1a0d,stroke:#ca8a04,color:#fde047
   classDef ppr fill:#0d1a2d,stroke:#2563eb,color:#93c5fd
   classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
+  classDef pkg fill:#0c1018,stroke:#475569,color:#cbd5e1
+  classDef muted fill:#0a0d14,stroke:#374151,color:#64748b,stroke-dasharray: 3 3
+  classDef hdr fill:#06080f,stroke:#1e3a5f,color:#7dd3fc
   route_src_routes_page["/ · SSR"]:::ssr
   subgraph ABOUT_G["👤 /about"]
     route_src_routes_about_page["/about · SSR"]:::ssr
@@ -1101,6 +2208,9 @@ graph TB
   classDef isr fill:#1a1a0d,stroke:#ca8a04,color:#fde047
   classDef ppr fill:#0d1a2d,stroke:#2563eb,color:#93c5fd
   classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
+  classDef pkg fill:#0c1018,stroke:#475569,color:#cbd5e1
+  classDef muted fill:#0a0d14,stroke:#374151,color:#64748b,stroke-dasharray: 3 3
+  classDef hdr fill:#06080f,stroke:#1e3a5f,color:#7dd3fc
   route_src_routes_page["/ · SSR"]:::ssr
   subgraph ABOUT_S["👤 /about"]
     route_src_routes_about_page["/about · SSR"]:::ssr
@@ -1153,6 +2263,9 @@ graph TD
   classDef isr fill:#1a1a0d,stroke:#ca8a04,color:#fde047
   classDef ppr fill:#0d1a2d,stroke:#2563eb,color:#93c5fd
   classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
+  classDef pkg fill:#0c1018,stroke:#475569,color:#cbd5e1
+  classDef muted fill:#0a0d14,stroke:#374151,color:#64748b,stroke-dasharray: 3 3
+  classDef hdr fill:#06080f,stroke:#1e3a5f,color:#7dd3fc
   route_src_router_index_ts__["/ · CSR"]:::csr
   subgraph ABOUT_G["👤 /about"]
     route_src_router_index_ts__about["/about · CSR"]:::csr
@@ -1174,6 +2287,9 @@ graph TB
   classDef isr fill:#1a1a0d,stroke:#ca8a04,color:#fde047
   classDef ppr fill:#0d1a2d,stroke:#2563eb,color:#93c5fd
   classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
+  classDef pkg fill:#0c1018,stroke:#475569,color:#cbd5e1
+  classDef muted fill:#0a0d14,stroke:#374151,color:#64748b,stroke-dasharray: 3 3
+  classDef hdr fill:#06080f,stroke:#1e3a5f,color:#7dd3fc
   route_src_router_index_ts__["/ · CSR"]:::csr
   subgraph ABOUT_S["👤 /about"]
     route_src_router_index_ts__about["/about · CSR"]:::csr

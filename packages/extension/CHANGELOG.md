@@ -1,5 +1,54 @@
 # Changelog
 
+## [1.2.40] — 2026-05-19
+
+### Changed — BE Tab1/Tab2 다이어그램 트리 표준화
+
+대규모 Spring Boot 프로젝트(985+ routes, 30+ 도메인) 분석에서 드러난 두 가지 한계를 해소:
+- **Tab2 단순 X축 나열** (Controller 30+ 도메인이 한 줄로 펼쳐져 X축 폭발, 패키지 계층·연관관계 미표현)
+- **Tab1 nested subgraph** (깊은 패키지 컨테이너 중첩의 트리 직관성 부족)
+
+표준 단일진실: `docs/design/BE-DIAGRAM-STANDARD.md` (R-T1.1~9 / R-T2.1~6).
+
+#### Tab1 (Rendering Architecture, BE)
+
+- **트리 레이아웃**: `graph TD` + 패키지 segment = `pkg_*` 노드 + 부모→자식 `-->` 엣지 (R-T1.4). 이전 nested subgraph 폐기.
+- **헤더 annotation**: `📁 src/main/java/<공통 prefix>` 단일 헤더 노드 (R-T1.2). 모든 Controller가 공유하는 LCP 자동 strip.
+- **suffix strip**: 마지막 segment가 `controller(s)`이면 자동 strip (R-T1.3).
+- **leaf**: `📄 <ControllerName> [<URL prefix>]` (R-T1.5) — path-segment LCP로 자동 추출.
+- **endpoints subgraph**: leaf 옆 `endpoints_<Ctrl>` subgraph, `METHOD /suffix`만 표시 (R-T1.6).
+
+#### Tab2 (Screen–Component, BE)
+
+- **베이스 트리**: Tab1과 동일한 패키지 트리 + 동일 chunking 정책 (R-T2.1).
+- **leaf DI 수직 체인**: Controller leaf 자리에 `di_<Ctrl>` subgraph로 Controller→Service→Repository 수직 체인 (R-T2.2). 단계별 verified `-->` / inferred `-.->`.
+- **(none) placeholder**: DI edge가 ≥1개 있는 Controller에서만 누락 슬롯에 `(no Service)`/`(no Repository)` 표시 (R-T2.5 Less is More — 순수 non-DI Controller는 leaf만).
+- **cross-package DI**: Service가 다른 도메인 Repository를 주입받는 경우 leaf 외부 dashed edge `-.->|"cross-pkg"|` (R-T2.4). 도메인 패키지 분류는 `controller`/`service`/`repository` 컨벤션 폴더 strip 기준.
+- **색상**: Controller=`:::ssr`(green), Service=`:::unk`(grey), Repository=`:::ssg`(purple) (R-T2.6 기존 색 체계 유지).
+
+#### X축 폭발 방지
+
+- **top-level 패키지 단위 chunking** (R-T1.8): 공통 prefix strip 후 첫 depth 노드별로 별도 다이어그램 chunk 분할. viewer row-mode가 chunk별 zoom/pan 독립 지원.
+- **ELK mrtree per-diagram opt-in** (R-T1.9): `@mermaid-js/layout-elk@0.2.1` 동적 로드 + `mermaid.registerLayoutLoaders` 등록. BE Tab1/Tab2 diagram text에 `---\nconfig:\n  layout: elk.mrtree\n---` pragma prepend. 등록 실패 시 silent dagre fallback. vsix 실측 4.18MB→4.67MB (+0.49MB, minified ESM 번들 1.6MB가 vsce zip 압축으로 70% 축소). chunk 내부 leaf 자식(endpoints subgraph 등)의 가로 폭발 추가 완화.
+
+### Added
+
+- 신규 클래스 `:::pkg` (중립 회색 패키지 노드) · `:::muted` (점선 placeholder) · `:::hdr` (헤더 annotation).
+- Fixture `fixtures/mini-spring-wide-pkg-app/` (21 controllers, 2 top-level chunks) — X축 폭발 회귀 보호.
+- Fixture `fixtures/mini-spring-deep-pkg-app/` 스냅샷 추가 (deep nested 회귀).
+- `all-fixtures-snapshot.test.ts`에 `adapterCategory` 메타 전파 (BE 어댑터 분기가 fixture 스냅샷에 반영되도록).
+
+### Removed
+
+- `buildPkgTree` 기반 nested subgraph 렌더링 (`emitPkgTreeSubgraphs`, `emitControllerFileSubgraph`).
+- `buildBeArchitectureDiagram`의 단순 `CTRL_G`/`SVC_G`/`REPO_G` 단일 컬럼 그룹.
+- outer `BE_ROOT` wrapper subgraph.
+
+### Compatibility
+
+- BE 분기(`adapterCategory==='BE'`) 한정 변경. FE 어댑터(`'FE'`/`'Fullstack'`) 회귀 0.
+- 26개 FE fixture snapshot은 CLASS_DEFS에 3개 신규 classDef 추가 영향만 받음 (의도된 cosmetic 갱신).
+
 ## [1.1.54] — 2026-05-16
 
 ### Improved — React Router 분석기 (T1)
