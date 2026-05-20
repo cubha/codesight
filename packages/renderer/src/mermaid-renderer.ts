@@ -221,14 +221,15 @@ function metadataToInfra(meta?: IRGraphMetadata): InfraInfo {
 
 // v1.2.43 ST2: file-based 라우팅 어댑터(파일 경로 = URL 또는 파일 위치에 URL 의미 인코딩)
 // Tab2에 라우트 → 디렉터리·파일명 노드 패턴을 적용할 수 있는 어댑터 화이트리스트.
-// config-based(react-router/vue-spa/angular)는 라우트=명시 매핑이라 디렉터리 정보 가치가 다르나
-// react-router는 v1.2.42에서 동일 패턴 채택(파일경로 시각 노출 가치 입증), 본 함수에 포함.
-// vue-spa·angular는 v1.2.44+로 보존.
+// config-based(react-router/vue-spa/angular)는 라우트=명시 매핑이지만
+// v1.2.42 react-router → v1.2.44 vue-spa·angular에서 component 참조 추적으로 filePath를
+// 컴포넌트 파일로 치환하여 동일 패턴 적용 (각 어댑터 route-parser.ts A1-1·A1-2 변경).
 function isFileTreeTab2Eligible(meta?: IRGraphMetadata): boolean {
   if (meta === undefined) return false
   const fw = meta.framework.toLowerCase()
   return fw === 'nextjs-app-router' || fw === 'nextjs-pages' || fw === 'nuxt' ||
-    fw === 'sveltekit' || fw === 'remix' || fw === 'react-router'
+    fw === 'sveltekit' || fw === 'remix' || fw === 'react-router' ||
+    fw === 'vue-spa' || fw === 'angular'
 }
 
 function buildRouteSectionLines(sections: Map<string, RouteNode[]>, indent: string): string[] {
@@ -1166,7 +1167,7 @@ function buildScreenComponentDiagram(graph: IRGraph): string {
   // 라우트 → 디렉터리 트리 → 파일 leaf 표현으로 분기. Vue SPA·Angular(config-based)는 현행 유지.
   // BE 어댑터는 위에서 별도 분기 (회귀 0).
   if (isFileTreeTab2Eligible(graph.metadata)) {
-    return buildFeFileTreeScreenDiagram(branchingGroups, rendersEdges, componentNodes)
+    return buildFeFileTreeScreenDiagram(branchingGroups, rendersEdges, importsEdges, componentNodes)
   }
 
   return renderScreenSection(branchingGroups, rendersEdges, importsEdges, componentNodes)
@@ -1181,6 +1182,7 @@ function buildScreenComponentDiagram(graph: IRGraph): string {
 function buildFeFileTreeScreenDiagram(
   routeGroups: NestedGroup[],
   rendersEdges: IREdge[],
+  importsEdges: IREdge[],
   componentNodes: ComponentNode[],
 ): string {
   const compById = new Map(componentNodes.map(c => [c.id, c]))
@@ -1188,7 +1190,7 @@ function buildFeFileTreeScreenDiagram(
   const edges: string[] = []
   const fileNodeRendered = new Set<string>()
 
-  emitFeFileTreeLines(routeGroups, '  ', compById, rendersEdges, lines, edges, fileNodeRendered)
+  emitFeFileTreeLines(routeGroups, '  ', compById, rendersEdges, importsEdges, lines, edges, fileNodeRendered)
   lines.push(...edges)
   return lines.join('\n')
 }
@@ -1198,6 +1200,7 @@ function emitFeFileTreeLines(
   indent: string,
   compById: Map<string, ComponentNode>,
   rendersEdges: IREdge[],
+  importsEdges: IREdge[],
   lines: string[],
   edges: string[],
   fileNodeRendered: Set<string>,
@@ -1207,30 +1210,36 @@ function emitFeFileTreeLines(
     const leafSeg = group.groupKey.split('/').filter(Boolean).pop()
     if (leafSeg === undefined) {
       for (const r of group.routes) {
-        emitRouteAndFileLeaf(r, indent, compById, rendersEdges, lines, edges, fileNodeRendered)
+        emitRouteAndFileLeaf(r, indent, compById, rendersEdges, importsEdges, lines, edges, fileNodeRendered)
       }
       if (group.children.length > 0) {
-        emitFeFileTreeLines(group.children, indent, compById, rendersEdges, lines, edges, fileNodeRendered)
+        emitFeFileTreeLines(group.children, indent, compById, rendersEdges, importsEdges, lines, edges, fileNodeRendered)
       }
       continue
     }
     const sgId = groupSubgraphId(group.groupKey).replace(/_G$/, '_T')
     lines.push(`${indent}subgraph ${sgId}["${sectionLabel(leafSeg)}"]`)
     for (const r of group.routes) {
-      emitRouteAndFileLeaf(r, i2, compById, rendersEdges, lines, edges, fileNodeRendered)
+      emitRouteAndFileLeaf(r, i2, compById, rendersEdges, importsEdges, lines, edges, fileNodeRendered)
     }
     if (group.children.length > 0) {
-      emitFeFileTreeLines(group.children, i2, compById, rendersEdges, lines, edges, fileNodeRendered)
+      emitFeFileTreeLines(group.children, i2, compById, rendersEdges, importsEdges, lines, edges, fileNodeRendered)
     }
     lines.push(`${indent}end`)
   }
 }
 
+// v1.2.44 A5-B-1·A5-B-2: 1-depth import child component leaf + Y축 edge.
+// Sub-1 (shared component): 단일 노드 + fan-in edges (fileNodeRendered Set 가드 활용).
+// Sub-2 (page → page import): 표현 포함 (1-hop import edge 동일 처리).
+// from 가드: routeFileKind === 'page' Route의 renders target ComponentNode만 (layout/loading 차단).
+// 내부 lib(IR componentNodes 미등록)은 자동 필터 (compById.get → undefined).
 function emitRouteAndFileLeaf(
   r: RouteNode,
   indent: string,
   compById: Map<string, ComponentNode>,
   rendersEdges: IREdge[],
+  importsEdges: IREdge[],
   lines: string[],
   edges: string[],
   fileNodeRendered: Set<string>,
@@ -1254,6 +1263,25 @@ function emitRouteAndFileLeaf(
     lines.push(`${indent}${fileId}["${label}"]:::pkg`)
   }
   edges.push(`  ${sanitizeId(r.id)} --> ${fileId}`)
+
+  // v1.2.44 A5-B-2: page 컴포넌트의 1-depth imports child component leaf + Y축 edge
+  // routeFileKind === 'page' 가드 (layout/loading 차단)
+  if (r.routeFileKind !== 'page') return
+  const childImports = importsEdges.filter(e => e.from === comp.id && e.importDepth === 1)
+  for (const childEdge of childImports) {
+    const childComp = compById.get(childEdge.to)
+    if (childComp === undefined) continue  // 외부 lib 자동 필터
+    const childFileId = `file_${sanitizeId(childComp.id)}`
+    if (!fileNodeRendered.has(childFileId)) {
+      fileNodeRendered.add(childFileId)
+      const parts = childComp.filePath.split('/')
+      const fileName = parts.pop() ?? childComp.filePath
+      const dir = parts.join('/')
+      const label = dir.length > 0 ? `📂 ${dir}<br/>📄 ${fileName}` : `📄 ${fileName}`
+      lines.push(`${indent}${childFileId}["${label}"]:::pkg`)
+    }
+    edges.push(`  ${fileId} --> ${childFileId}`)
+  }
 }
 
 // MySQL Workbench 스타일 — th(테이블명 헤더): 어두운 청회색 배경 + 밝은 텍스트
@@ -1494,7 +1522,7 @@ export async function renderMermaid(graph: IRGraph, outputDir: string): Promise<
 
   await fs.writeFile(
     path.join(outputDir, 'db-screen.md'),
-    `# DB–Screen Mapping\n\n${wrapMermaid(dbScreenDiagram)}\n`,
+    `# Data Flow (Screen ↔ Data Source)\n\n${wrapMermaid(dbScreenDiagram)}\n`,
     'utf8',
   )
 }

@@ -56,7 +56,10 @@ interface FlatRouteItem {
   lazyModuleSpec?: string
 }
 
-function extractRoutesFromArray(arrayNode: import('ts-morph').Node): RouteEntry[] {
+// v1.2.44 A0-4 (F-Route-3): callback `<paramName.propName/>` 패턴에서 추출한 propName을
+// entries 키로 사용하여 동적으로 elementComponent를 매핑한다.
+// extraComponentKey === 'component'면 A0-3 분기와 중복되지만 결과는 idempotent.
+function extractRoutesFromArray(arrayNode: import('ts-morph').Node, extraComponentKey?: string): RouteEntry[] {
   const entries: RouteEntry[] = []
   if (!arrayNode.isKind(SyntaxKind.ArrayLiteralExpression)) return entries
 
@@ -118,10 +121,40 @@ function extractRoutesFromArray(arrayNode: import('ts-morph').Node): RouteEntry[
       }
     }
 
+    // v1.2.44 A0-3 (F-Route-2): lowercase `component: PageComponent` Identifier 인식
+    // React Router 공식 키(element/Component/lazy)는 아니지만 사용자 커스텀 컨벤션으로 흔함.
+    // 첫 글자 대문자 가드로 일반 string/숫자/객체 prop 오인식 차단.
+    if (entry.elementComponent === undefined) {
+      const componentLowerProp = obj.getProperty('component')
+      if (componentLowerProp?.isKind(SyntaxKind.PropertyAssignment)) {
+        const init = componentLowerProp.asKindOrThrow(SyntaxKind.PropertyAssignment).getInitializer()
+        if (init?.isKind(SyntaxKind.Identifier)) {
+          const name = init.getText()
+          if (name[0] !== undefined && name[0] !== name[0].toLowerCase()) {
+            entry.elementComponent = name
+          }
+        }
+      }
+    }
+
+    // v1.2.44 A0-4 (F-Route-3): callback이 알려준 임의 propName으로 추가 lookup
+    if (entry.elementComponent === undefined && extraComponentKey !== undefined && extraComponentKey !== 'component' && extraComponentKey !== 'Component' && extraComponentKey !== 'lazy' && extraComponentKey !== 'element') {
+      const extraProp = obj.getProperty(extraComponentKey)
+      if (extraProp?.isKind(SyntaxKind.PropertyAssignment)) {
+        const init = extraProp.asKindOrThrow(SyntaxKind.PropertyAssignment).getInitializer()
+        if (init?.isKind(SyntaxKind.Identifier)) {
+          const name = init.getText()
+          if (name[0] !== undefined && name[0] !== name[0].toLowerCase()) {
+            entry.elementComponent = name
+          }
+        }
+      }
+    }
+
     const childrenProp = obj.getProperty('children')
     if (childrenProp?.isKind(SyntaxKind.PropertyAssignment)) {
       const childInit = childrenProp.asKindOrThrow(SyntaxKind.PropertyAssignment).getInitializer()
-      if (childInit !== undefined) entry.children = extractRoutesFromArray(childInit)
+      if (childInit !== undefined) entry.children = extractRoutesFromArray(childInit, extraComponentKey)
     }
 
     entries.push(entry)
@@ -209,6 +242,10 @@ function extractJsxElementComponent(
 interface JsxRouteRaw {
   routePath: string
   elementComponent: string | undefined
+  // v1.2.44 A0-2: 외부 import 1-hop 추적 시 elementComponent가 외부 sourceFile에서 import된 경우,
+  // 그 sourceFile의 importMap에서 resolve된 abs base(확장자 미포함) 경로.
+  // parseReactRouterFull JSX 분기는 이 필드가 있으면 현재 sourceFile importMap 대신 이것을 우선 사용한다.
+  elementComponentAbsBase?: string
   line: number
   inferenceChain?: string[]
 }
@@ -226,6 +263,30 @@ interface ResolverCtx {
 // .map() 콜백 JSX의 <Route path={...}> 속성에서 정적 prefix 추출.
 // 지원: BinaryExpression('prefix' + id) / TemplateLiteral(`prefix${id}`).
 // 추출 실패 시 '' 반환.
+// v1.2.44 A0-4 (F-Route-3): map callback의 element={<paramName.propName />} 패턴에서
+// propName 추출. propName을 entries 키로 사용하여 elementComponent를 매핑한다.
+// 미발견 시 undefined 반환 (callback이 정적 JSX 태그면 entries 단계에서 이미 매핑됨).
+function extractMapElementPropName(callback: import('ts-morph').Node): string | undefined {
+  const jsxAttrs = callback.getDescendantsOfKind(SyntaxKind.JsxAttribute)
+    .filter(a => a.getNameNode().getText() === 'element')
+  for (const attr of jsxAttrs) {
+    const init = attr.getInitializer()
+    if (!init?.isKind(SyntaxKind.JsxExpression)) continue
+    const expr = init.asKindOrThrow(SyntaxKind.JsxExpression).getExpression()
+    let tagNode: import('ts-morph').Node | undefined
+    if (expr?.isKind(SyntaxKind.JsxSelfClosingElement)) {
+      tagNode = expr.asKindOrThrow(SyntaxKind.JsxSelfClosingElement).getTagNameNode()
+    } else if (expr?.isKind(SyntaxKind.JsxElement)) {
+      tagNode = expr.asKindOrThrow(SyntaxKind.JsxElement).getOpeningElement().getTagNameNode()
+    }
+    if (tagNode === undefined) continue
+    if (tagNode.isKind(SyntaxKind.PropertyAccessExpression)) {
+      return tagNode.asKindOrThrow(SyntaxKind.PropertyAccessExpression).getName()
+    }
+  }
+  return undefined
+}
+
 function extractMapPathPrefix(callback: import('ts-morph').Node): string {
   const jsxAttrs = callback.getDescendantsOfKind(SyntaxKind.JsxAttribute)
     .filter(a => a.getNameNode().getText() === 'path')
@@ -249,6 +310,71 @@ function extractMapPathPrefix(callback: import('ts-morph').Node): string {
   return ''
 }
 
+// v1.2.44 A0-2 (F-Route-1): 식별자를 ArrayLiteralExpression으로 resolve.
+// 1) 동일 파일 const 변수 우선 (회귀 가드)
+// 2) fallback: import 1-hop으로 외부 모듈의 export const X = [...] 탐색
+// 반환: 발견된 ArrayLiteralExpression + 그 정의가 위치한 sourceFile(elementComponent import lookup용).
+interface ArrayLiteralResolveResult {
+  arrayNode: import('ts-morph').Node
+  external: boolean
+  sourceFile: import('ts-morph').SourceFile
+}
+function resolveArrayLiteralFromIdentifier(
+  identifierName: string,
+  ctx: ResolverCtx,
+): ArrayLiteralResolveResult | undefined {
+  const sameFileVar = ctx.sourceFile.getVariableDeclarations().find(v => v.getName() === identifierName)
+  const sameFileInit = sameFileVar?.getInitializer()
+  if (sameFileInit !== undefined && sameFileInit.isKind(SyntaxKind.ArrayLiteralExpression)) {
+    return { arrayNode: sameFileInit, external: false, sourceFile: ctx.sourceFile }
+  }
+  const moduleSpec = ctx.importMap.get(identifierName)
+  if (moduleSpec === undefined || !moduleSpec.startsWith('.')) return undefined
+  const absBase = path.resolve(ctx.routerDir, moduleSpec)
+  let importedSf: import('ts-morph').SourceFile | undefined
+  for (const ext of ['.tsx', '.ts', '.jsx', '.js']) {
+    const candidate = absBase + ext
+    importedSf = ctx.project.getSourceFile(candidate)
+    if (importedSf === undefined) {
+      try { importedSf = ctx.project.addSourceFileAtPath(candidate) } catch { continue }
+    }
+    if (importedSf !== undefined) break
+  }
+  if (importedSf === undefined) return undefined
+  for (const exportedDecl of importedSf.getVariableDeclarations()) {
+    if (exportedDecl.getName() !== identifierName) continue
+    if (!exportedDecl.isExported()) continue
+    const initRaw = exportedDecl.getInitializer()
+    if (initRaw !== undefined && initRaw.isKind(SyntaxKind.ArrayLiteralExpression)) {
+      return { arrayNode: initRaw, external: true, sourceFile: importedSf }
+    }
+  }
+  return undefined
+}
+
+// v1.2.44 A0-2: 식별자(예: 'Home')를 sourceFile의 importMap에서 resolve하여 abs base(확장자 미포함) 반환.
+// elementComponent가 외부 파일에서 import된 경우 parseReactRouterFull이 abs base에 4개 ext 후보로 검증.
+function resolveElementComponentAbsBase(
+  componentName: string,
+  sf: import('ts-morph').SourceFile,
+): string | undefined {
+  const sfDir = path.dirname(sf.getFilePath())
+  for (const decl of sf.getImportDeclarations()) {
+    const di = decl.getDefaultImport()
+    if (di !== undefined && di.getText() === componentName) {
+      const spec = decl.getModuleSpecifierValue()
+      if (spec.startsWith('.')) return path.resolve(sfDir, spec)
+    }
+    for (const ni of decl.getNamedImports()) {
+      if (ni.getName() === componentName) {
+        const spec = decl.getModuleSpecifierValue()
+        if (spec.startsWith('.')) return path.resolve(sfDir, spec)
+      }
+    }
+  }
+  return undefined
+}
+
 // Case A: 동일 파일 const 변수 (array literal of JSX 또는 .map() 결과)
 // Case B: named/default import → 모듈 파일 추가 후 export default/named의 array literal 또는 fragment
 // 재귀 불가 (depth=1 hard limit, Less is More).
@@ -270,6 +396,7 @@ function resolveIdentifierToJsxChildren(
         return extractJsxRouteChildren(jsxChildren, parentPath, ctx)
       }
       // A-2: .map() call → RouteEntry 배열 → JsxRouteRaw 변환 (inferred)
+      // v1.2.44 A0-2 (F-Route-1): 동일 파일 const 실패 시 import 1-hop fallback
       if (init.isKind(SyntaxKind.CallExpression)) {
         const call = init.asKindOrThrow(SyntaxKind.CallExpression)
         const callee = call.getExpression()
@@ -278,20 +405,28 @@ function resolveIdentifierToJsxChildren(
           if (propAccess.getName() === 'map') {
             const target = propAccess.getExpression()
             if (target.isKind(SyntaxKind.Identifier)) {
-              const dataVar = varDecls.find(v => v.getName() === target.getText())
-              const dataInit = dataVar?.getInitializer()
-              if (dataInit !== undefined && dataInit.isKind(SyntaxKind.ArrayLiteralExpression)) {
-                const entries = extractRoutesFromArray(dataInit)
+              const resolved = resolveArrayLiteralFromIdentifier(target.getText(), ctx)
+              if (resolved !== undefined) {
                 const callback = call.getArguments()[0]
                 const pathPrefix = callback !== undefined ? extractMapPathPrefix(callback) : ''
-                return entries.map(e => ({
-                  routePath: pathPrefix + e.path,
-                  elementComponent: e.elementComponent,
-                  line: call.getStartLineNumber(),
-                  inferenceChain: pathPrefix
-                    ? [`${target.getText()} 배열의 path 프로퍼티를 정적 평가, prefix '${pathPrefix}' 추출`]
-                    : [`${target.getText()} 배열의 path 프로퍼티를 정적 평가`],
-                }))
+                const propName = callback !== undefined ? extractMapElementPropName(callback) : undefined
+                const entries = extractRoutesFromArray(resolved.arrayNode, propName)
+                const sourceTag = resolved.external ? ` (외부 모듈 import 1-hop)` : ''
+                return entries.map(e => {
+                  const raw: JsxRouteRaw = {
+                    routePath: pathPrefix + e.path,
+                    elementComponent: e.elementComponent,
+                    line: call.getStartLineNumber(),
+                    inferenceChain: pathPrefix
+                      ? [`${target.getText()}${sourceTag} 배열의 path 프로퍼티를 정적 평가, prefix '${pathPrefix}' 추출`]
+                      : [`${target.getText()}${sourceTag} 배열의 path 프로퍼티를 정적 평가`],
+                  }
+                  if (e.elementComponent !== undefined) {
+                    const absBase = resolveElementComponentAbsBase(e.elementComponent, resolved.sourceFile)
+                    if (absBase !== undefined) raw.elementComponentAbsBase = absBase
+                  }
+                  return raw
+                })
               }
             }
           }
@@ -320,6 +455,20 @@ function resolveIdentifierToJsxChildren(
     return []
   }
   const importedSf = ctx.project.getSourceFile(importedAbsPath)!
+  // v1.2.44 A0-2: 외부 파일 ctx — 외부 모듈 내부의 X.map(...) 추적을 위해 importMap을 새로 build
+  const importedImportMap = new Map<string, string>()
+  for (const decl of importedSf.getImportDeclarations()) {
+    const di = decl.getDefaultImport()
+    if (di !== undefined) importedImportMap.set(di.getText(), decl.getModuleSpecifierValue())
+    for (const ni of decl.getNamedImports()) importedImportMap.set(ni.getName(), decl.getModuleSpecifierValue())
+  }
+  const importedCtx: ResolverCtx = {
+    sourceFile: importedSf,
+    project: ctx.project,
+    importMap: importedImportMap,
+    routerDir: path.dirname(importedAbsPath),
+    unresolved: ctx.unresolved,
+  }
   // export const X = <>...</> 또는 export const X = [<Route../>, ...] 패턴 검색.
   // `export const X = ( <>...</> )` 같이 ParenthesizedExpression으로 감싸진 경우도 unwrap.
   const unwrapParen = (n: import('ts-morph').Node): import('ts-morph').Node => {
@@ -350,6 +499,43 @@ function resolveIdentifierToJsxChildren(
       const jsxChildren = init.asKindOrThrow(SyntaxKind.ArrayLiteralExpression).getElements()
         .filter(el => el.isKind(SyntaxKind.JsxElement) || el.isKind(SyntaxKind.JsxSelfClosingElement)) as import('ts-morph').JsxChild[]
       return extractJsxRouteChildren(jsxChildren, parentPath, ctx)
+    }
+    // v1.2.44 A0-2 (F-Route-1): 외부 export가 X.map((p) => <Route .../>) 패턴인 경우
+    // importedCtx로 swap하여 X(외부 파일 또는 그 다음 hop의 import)를 resolve
+    if (init.isKind(SyntaxKind.CallExpression)) {
+      const call = init.asKindOrThrow(SyntaxKind.CallExpression)
+      const callee = call.getExpression()
+      if (callee.isKind(SyntaxKind.PropertyAccessExpression)) {
+        const propAccess = callee.asKindOrThrow(SyntaxKind.PropertyAccessExpression)
+        if (propAccess.getName() === 'map') {
+          const target = propAccess.getExpression()
+          if (target.isKind(SyntaxKind.Identifier)) {
+            const resolved = resolveArrayLiteralFromIdentifier(target.getText(), importedCtx)
+            if (resolved !== undefined) {
+              const callback = call.getArguments()[0]
+              const pathPrefix = callback !== undefined ? extractMapPathPrefix(callback) : ''
+              const propName = callback !== undefined ? extractMapElementPropName(callback) : undefined
+              const entries = extractRoutesFromArray(resolved.arrayNode, propName)
+              const sourceTag = resolved.external ? ` (외부 모듈 import 1-hop)` : ` (모듈 ${moduleSpec})`
+              return entries.map(e => {
+                const raw: JsxRouteRaw = {
+                  routePath: pathPrefix + e.path,
+                  elementComponent: e.elementComponent,
+                  line: call.getStartLineNumber(),
+                  inferenceChain: pathPrefix
+                    ? [`${target.getText()}${sourceTag} 배열의 path 프로퍼티를 정적 평가, prefix '${pathPrefix}' 추출`]
+                    : [`${target.getText()}${sourceTag} 배열의 path 프로퍼티를 정적 평가`],
+                }
+                if (e.elementComponent !== undefined) {
+                  const absBase = resolveElementComponentAbsBase(e.elementComponent, resolved.sourceFile)
+                  if (absBase !== undefined) raw.elementComponentAbsBase = absBase
+                }
+                return raw
+              })
+            }
+          }
+        }
+      }
     }
   }
   // export default <>...</>
@@ -694,9 +880,18 @@ export async function parseReactRouterFull(
           routeNodes.push(routeNode)
 
           if (item.elementComponent !== undefined) {
-            const moduleSpec = importMap.get(item.elementComponent)
-            if (moduleSpec !== undefined && moduleSpec.startsWith('.')) {
-              const absBase = path.resolve(routerDir, moduleSpec)
+            // v1.2.44 A0-2: elementComponentAbsBase가 있으면 외부 import 1-hop으로 미리 resolve된 abs base 사용.
+            // 없으면 현재 파일 importMap에서 lookup (기존 동작).
+            let absBase: string | undefined
+            if (item.elementComponentAbsBase !== undefined) {
+              absBase = item.elementComponentAbsBase
+            } else {
+              const moduleSpec = importMap.get(item.elementComponent)
+              if (moduleSpec !== undefined && moduleSpec.startsWith('.')) {
+                absBase = path.resolve(routerDir, moduleSpec)
+              }
+            }
+            if (absBase !== undefined) {
               let compAbsPath: string | undefined
               for (const ext of ['.tsx', '.ts', '.jsx', '.js']) {
                 try {

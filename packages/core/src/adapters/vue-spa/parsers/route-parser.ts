@@ -29,17 +29,27 @@ async function findTsFiles(repoRoot: string): Promise<string[]> {
   return results
 }
 
-function extractPathsFromRoutesArray(
+// v1.2.44 A1-1: path + componentSpec 추출.
+// componentSpec: () => import('./Foo.vue') 패턴의 spec 문자열, 또는 Identifier(sync import).
+// filePath 치환은 호출자(parseVueRoutes)에서 routerDir 기준으로 resolve.
+interface VueRouteEntry {
+  urlPath: string
+  componentSpec?: string  // dynamic import spec ('./Foo.vue') 또는 sync import 식별자명
+  componentIsIdentifier?: boolean  // true면 componentSpec은 식별자명, false/undefined면 dynamic import path
+}
+
+function extractRoutesFromArray(
   arrayNode: import('ts-morph').Node,
   parentPath = '',
-): string[] {
-  const paths: string[] = []
-  if (!arrayNode.isKind(SyntaxKind.ArrayLiteralExpression)) return paths
+): VueRouteEntry[] {
+  const entries: VueRouteEntry[] = []
+  if (!arrayNode.isKind(SyntaxKind.ArrayLiteralExpression)) return entries
 
   for (const el of arrayNode.asKindOrThrow(SyntaxKind.ArrayLiteralExpression).getElements()) {
     if (!el.isKind(SyntaxKind.ObjectLiteralExpression)) continue
+    const obj = el.asKindOrThrow(SyntaxKind.ObjectLiteralExpression)
 
-    const pathProp = el.asKindOrThrow(SyntaxKind.ObjectLiteralExpression).getProperty('path')
+    const pathProp = obj.getProperty('path')
     let rawSegment = ''
     if (pathProp?.isKind(SyntaxKind.PropertyAssignment)) {
       const init = pathProp.asKindOrThrow(SyntaxKind.PropertyAssignment).getInitializer()
@@ -48,24 +58,40 @@ function extractPathsFromRoutesArray(
       }
     }
 
-    // 절대 경로는 그대로, 상대 경로는 부모와 결합 (Vue Router nested route 규약)
     const combined = rawSegment.startsWith('/')
       ? rawSegment
       : parentPath
         ? (parentPath + '/' + rawSegment).replace('//', '/')
         : rawSegment
     const normalized = combined || '/'
-    paths.push(normalized)
 
-    // Handle children: [] for nested routes
-    const childrenProp = el.asKindOrThrow(SyntaxKind.ObjectLiteralExpression).getProperty('children')
+    const entry: VueRouteEntry = { urlPath: normalized }
+
+    // component: () => import('./Foo.vue') 또는 component: FooComponent
+    const componentProp = obj.getProperty('component')
+    if (componentProp?.isKind(SyntaxKind.PropertyAssignment)) {
+      const init = componentProp.asKindOrThrow(SyntaxKind.PropertyAssignment).getInitializer()
+      if (init !== undefined) {
+        const m = init.getText().match(/import\(['"`]([^'"`]+)['"`]\)/)
+        if (m !== null) {
+          entry.componentSpec = m[1]!
+        } else if (init.isKind(SyntaxKind.Identifier)) {
+          entry.componentSpec = init.getText()
+          entry.componentIsIdentifier = true
+        }
+      }
+    }
+
+    entries.push(entry)
+
+    const childrenProp = obj.getProperty('children')
     if (childrenProp?.isKind(SyntaxKind.PropertyAssignment)) {
       const childInit = childrenProp.asKindOrThrow(SyntaxKind.PropertyAssignment).getInitializer()
-      if (childInit !== undefined) paths.push(...extractPathsFromRoutesArray(childInit, normalized))
+      if (childInit !== undefined) entries.push(...extractRoutesFromArray(childInit, normalized))
     }
   }
 
-  return paths
+  return entries
 }
 
 function normalizePath(rawPath: string): { urlPath: string; dynamicSegmentType: DynamicSegmentType } {
@@ -152,10 +178,23 @@ export async function parseVueRoutes(
 
       if (routesArray === undefined) continue
 
-      const extractedPaths = extractPathsFromRoutesArray(routesArray)
+      // v1.2.44 A1-1: routesArray가 외부 파일 import인 경우 routerDir은 그 외부 파일 디렉토리
+      // (componentSpec은 외부 파일 기준 상대 경로). 그렇지 않으면 현재 sourceFile 디렉토리.
+      const routerDir = path.dirname(routesArray.getSourceFile().getFilePath())
 
-      for (const rawPath of extractedPaths) {
-        const { urlPath, dynamicSegmentType } = normalizePath(rawPath)
+      const extractedEntries = extractRoutesFromArray(routesArray)
+
+      // sourceFile importMap (sync component Identifier resolve용)
+      const sourceFileForImports = routesArray.getSourceFile()
+      const importMap = new Map<string, string>()
+      for (const decl of sourceFileForImports.getImportDeclarations()) {
+        const di = decl.getDefaultImport()
+        if (di !== undefined) importMap.set(di.getText(), decl.getModuleSpecifierValue())
+        for (const ni of decl.getNamedImports()) importMap.set(ni.getName(), decl.getModuleSpecifierValue())
+      }
+
+      for (const entry of extractedEntries) {
+        const { urlPath, dynamicSegmentType } = normalizePath(entry.urlPath)
         const provenance: Provenance = {
           file: relPath,
           line: callExpr.getStartLineNumber(),
@@ -163,17 +202,56 @@ export async function parseVueRoutes(
           analyzerVersion,
         }
 
+        // v1.2.44 A1-1: componentSpec resolve → 컴포넌트 abs path → relPath 치환
+        // dynamic import: spec은 이미 상대 경로
+        // sync Identifier: importMap에서 lookup하여 모듈 spec 획득
+        let routeFilePath = relPath  // fallback: 라우터 정의 파일 (기존 동작)
+        let routeConfidence: 'verified' | 'inferred' = 'verified'
+        let routeInferenceChain: string[] | undefined
+        if (entry.componentSpec !== undefined) {
+          let moduleSpec: string | undefined
+          if (entry.componentIsIdentifier === true) {
+            moduleSpec = importMap.get(entry.componentSpec)
+          } else {
+            moduleSpec = entry.componentSpec
+          }
+          if (moduleSpec !== undefined && moduleSpec.startsWith('.')) {
+            const absBase = path.resolve(routerDir, moduleSpec)
+            let compAbsPath: string | undefined
+            // .vue 우선, .ts/.tsx/.js/.jsx fallback
+            const exts = absBase.endsWith('.vue') || absBase.endsWith('.ts') || absBase.endsWith('.tsx') || absBase.endsWith('.js') || absBase.endsWith('.jsx')
+              ? ['']  // spec에 이미 확장자 포함
+              : ['.vue', '.ts', '.tsx', '.js', '.jsx']
+            for (const ext of exts) {
+              try {
+                await fs.access(absBase + ext)
+                compAbsPath = absBase + ext
+                break
+              } catch { /* try next */ }
+            }
+            if (compAbsPath !== undefined) {
+              routeFilePath = path.relative(repoRoot, compAbsPath).replace(/\\/g, '/')
+              routeInferenceChain = [`라우트 정의의 component spec '${entry.componentSpec}' → 컴포넌트 파일로 매핑`]
+              routeConfidence = 'inferred'
+            }
+          }
+        }
+
+        const confField = routeConfidence === 'inferred' && routeInferenceChain !== undefined
+          ? { confidence: 'inferred' as const, inferenceChain: routeInferenceChain }
+          : { confidence: 'verified' as const }
+
         routes.push(
           createRouteNode({
-            id: makeNodeId('route', relPath, urlPath),
+            id: makeNodeId('route', routeFilePath, urlPath),
             path: urlPath,
-            filePath: relPath,
+            filePath: routeFilePath,
             routeFileKind: 'page',
             dynamicSegmentType,
             isGroupRoute: false,
             renderingMode: 'CSR',
             provenance,
-            confidence: 'verified',
+            ...confField,
           }),
         )
       }

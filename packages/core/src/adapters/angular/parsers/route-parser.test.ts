@@ -75,6 +75,28 @@ describe('parseAngularRoutes — mini-angular-app fixture', () => {
     // The forChild { path: '' } creates an additional '/' route
     expect(routes.length).toBeGreaterThanOrEqual(4)
   })
+
+  // v1.2.44 A1-2: filePath 컴포넌트 파일 치환
+  it('A1-2: 각 라우트 filePath는 component Identifier가 가리키는 .ts 파일로 치환됨', async () => {
+    const FIXTURE = path.resolve(process.cwd(), 'fixtures/mini-angular-app')
+    const { routes } = await parseAngularRoutes(FIXTURE, 'test@0.1')
+    const home = routes.find(r => r.path === '/' && r.filePath.endsWith('home.component.ts'))
+    const about = routes.find(r => r.path === '/about')
+    const users = routes.find(r => r.path === '/users')
+    expect(home).toBeDefined()
+    expect(about?.filePath).toMatch(/about\.component\.ts$/)
+    expect(users?.filePath).toMatch(/users\.component\.ts$/)
+    // 라우터 정의 파일과 달라야 함
+    expect(about?.filePath).not.toMatch(/app\.routes\.ts$/)
+  })
+
+  it('A1-2: loadChildren 라우트는 라우터 정의 파일 fallback (loadChildren은 자체 모듈)', async () => {
+    const FIXTURE = path.resolve(process.cwd(), 'fixtures/mini-angular-app')
+    const { routes } = await parseAngularRoutes(FIXTURE, 'test@0.1')
+    const detail = routes.find(r => r.path === '/users/:id')
+    // loadChildren은 component spec이 없으므로 라우터 정의 파일 유지
+    expect(detail?.filePath).toMatch(/app\.routes\.ts$/)
+  })
 })
 
 describe('parseAngularRoutes — nested children path prefix (III-A-2)', () => {

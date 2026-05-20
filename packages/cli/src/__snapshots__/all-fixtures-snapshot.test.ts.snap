@@ -5,10 +5,14 @@ exports[`Phase XI — fixture baseline snapshots (P1) > mini-angular-app > IRGra
   "edgeIds": [
     "imports:component:src/app/home.component.ts:HomeComponent:component:src/app/users.component.ts:UsersComponent",
     "renders:component:src/app/home.component.ts:HomeComponent:component:src/app/users.component.ts:UsersComponent",
+    "renders:route:src/app/about.component.ts:/about:component:src/app/about.component.ts:AboutComponent",
+    "renders:route:src/app/home.component.ts:/:component:src/app/home.component.ts:HomeComponent",
+    "renders:route:src/app/user-detail/user-detail.component.ts:/:component:src/app/user-detail/user-detail.component.ts:UserDetailComponent",
+    "renders:route:src/app/users.component.ts:/users:component:src/app/users.component.ts:UsersComponent",
   ],
   "edgesByKind": {
     "imports": 1,
-    "renders": 1,
+    "renders": 5,
   },
   "nodeIds": [
     "component:src/app/about.component.ts:AboutComponent",
@@ -16,11 +20,11 @@ exports[`Phase XI — fixture baseline snapshots (P1) > mini-angular-app > IRGra
     "component:src/app/home.component.ts:HomeComponent",
     "component:src/app/user-detail/user-detail.component.ts:UserDetailComponent",
     "component:src/app/users.component.ts:UsersComponent",
-    "route:src/app/app.config.ts:/",
-    "route:src/app/app.config.ts:/about",
-    "route:src/app/app.config.ts:/users",
-    "route:src/app/app.config.ts:/users/:id",
-    "route:src/app/user-detail/user-detail.module.ts:/",
+    "route:src/app/about.component.ts:/about",
+    "route:src/app/app.routes.ts:/users/:id",
+    "route:src/app/home.component.ts:/",
+    "route:src/app/user-detail/user-detail.component.ts:/",
+    "route:src/app/users.component.ts:/users",
   ],
   "nodesByKind": {
     "component": 5,
@@ -44,15 +48,15 @@ graph TD
   subgraph BROWSER["🌐 Browser · Client-Side App"]
     subgraph ROUTER["🧭 Angular Router · SPA"]
       subgraph ANGULAR["🅰 Angular · CSR Engine"]
-        route_src_app_app_config_ts__["/ · CSR"]:::csr
-        route_src_app_user_detail_user_detail_module_ts__["/ · CSR"]:::csr
+        route_src_app_home_component_ts__["/ · CSR"]:::csr
+        route_src_app_user_detail_user_detail_component_ts__["/ · CSR"]:::csr
         subgraph ABOUT_G["👤 /about"]
-          route_src_app_app_config_ts__about["/about · CSR"]:::csr
+          route_src_app_about_component_ts__about["/about · CSR"]:::csr
         end
         subgraph USERS_G["📄 /users"]
-          route_src_app_app_config_ts__users["/users · CSR"]:::csr
+          route_src_app_users_component_ts__users["/users · CSR"]:::csr
           subgraph USERS__ID_G["📄 /:id"]
-            route_src_app_app_config_ts__users__id["/users/:id · CSR"]:::csr
+            route_src_app_app_routes_ts__users__id["/users/:id · CSR"]:::csr
           end
         end
       end
@@ -72,16 +76,23 @@ graph TB
   classDef pkg fill:#0c1018,stroke:#475569,color:#cbd5e1
   classDef muted fill:#0a0d14,stroke:#374151,color:#64748b,stroke-dasharray: 3 3
   classDef hdr fill:#06080f,stroke:#1e3a5f,color:#7dd3fc
-  route_src_app_user_detail_user_detail_module_ts__["/ · CSR"]:::csr
-  subgraph ABOUT_S["👤 /about"]
-    route_src_app_app_config_ts__about["/about · CSR"]:::csr
+  route_src_app_home_component_ts__["/ · CSR"]:::csr
+  file_component_src_app_home_component_ts_HomeComponent["📂 src/app<br/>📄 home.component.ts"]:::pkg
+  file_component_src_app_users_component_ts_UsersComponent["📂 src/app<br/>📄 users.component.ts"]:::pkg
+  subgraph ABOUT_T["👤 /about"]
+    route_src_app_about_component_ts__about["about · CSR"]:::csr
+    file_component_src_app_about_component_ts_AboutComponent["📂 src/app<br/>📄 about.component.ts"]:::pkg
   end
-  subgraph USERS_S["📄 /users"]
-    route_src_app_app_config_ts__users["/users · CSR"]:::csr
-    subgraph USERS__ID_S["📄 /:id"]
-      route_src_app_app_config_ts__users__id["/users/:id · CSR"]:::csr
+  subgraph USERS_T["📄 /users"]
+    route_src_app_users_component_ts__users["users · CSR"]:::csr
+    subgraph USERS__ID_T["📄 /:id"]
+      route_src_app_app_routes_ts__users__id[":id · CSR"]:::csr
     end
-  end"
+  end
+  route_src_app_home_component_ts__ --> file_component_src_app_home_component_ts_HomeComponent
+  file_component_src_app_home_component_ts_HomeComponent --> file_component_src_app_users_component_ts_UsersComponent
+  route_src_app_about_component_ts__about --> file_component_src_app_about_component_ts_AboutComponent
+  route_src_app_users_component_ts__users --> file_component_src_app_users_component_ts_UsersComponent"
 `;
 
 exports[`Phase XI — fixture baseline snapshots (P1) > mini-angular-app > Tab3 db-screen diagram 1`] = `
@@ -590,9 +601,11 @@ graph TB
   end
   route_app_page["/ · SSR"]:::ssr
   file_component_app_page_tsx_page["📂 app<br/>📄 page.tsx"]:::pkg
+  file_component_components_Header_tsx_Header["📂 components<br/>📄 Header.tsx"]:::pkg
   route_app__marketing__about_page --> file_component_app__marketing__about_page_tsx_page
   route_app_blog__slug__page --> file_component_app_blog__slug__page_tsx_page
-  route_app_page --> file_component_app_page_tsx_page"
+  route_app_page --> file_component_app_page_tsx_page
+  file_component_app_page_tsx_page --> file_component_components_Header_tsx_Header"
 `;
 
 exports[`Phase XI — fixture baseline snapshots (P1) > mini-next-app > Tab3 db-screen diagram 1`] = `
@@ -2830,10 +2843,14 @@ exports[`Phase XI — fixture baseline snapshots (P1) > mini-vue-spa-app > IRGra
     "imports:component:src/views/Home.vue:Home:component:src/views/NavBar.vue:NavBar",
     "imports:component:src/views/Users.vue:Users:component:src/views/UserDetail.vue:UserDetail",
     "renders:component:src/views/Users.vue:Users:component:src/views/UserDetail.vue:UserDetail",
+    "renders:route:src/views/About.vue:/about:component:src/views/About.vue:About",
+    "renders:route:src/views/Home.vue:/:component:src/views/Home.vue:Home",
+    "renders:route:src/views/UserDetail.vue:/users/:id:component:src/views/UserDetail.vue:UserDetail",
+    "renders:route:src/views/Users.vue:/users:component:src/views/Users.vue:Users",
   ],
   "edgesByKind": {
     "imports": 2,
-    "renders": 1,
+    "renders": 5,
   },
   "nodeIds": [
     "component:src/views/About.vue:About",
@@ -2841,10 +2858,10 @@ exports[`Phase XI — fixture baseline snapshots (P1) > mini-vue-spa-app > IRGra
     "component:src/views/NavBar.vue:NavBar",
     "component:src/views/UserDetail.vue:UserDetail",
     "component:src/views/Users.vue:Users",
-    "route:src/router/index.ts:/",
-    "route:src/router/index.ts:/about",
-    "route:src/router/index.ts:/users",
-    "route:src/router/index.ts:/users/:id",
+    "route:src/views/About.vue:/about",
+    "route:src/views/Home.vue:/",
+    "route:src/views/UserDetail.vue:/users/:id",
+    "route:src/views/Users.vue:/users",
   ],
   "nodesByKind": {
     "component": 5,
@@ -2868,14 +2885,14 @@ graph TD
   subgraph BROWSER["🌐 Browser · Client-Side App"]
     subgraph ROUTER["🧭 Vue Router · SPA"]
       subgraph VUE["💚 Vue · CSR Engine"]
-        route_src_router_index_ts__["/ · CSR"]:::csr
+        route_src_views_Home_vue__["/ · CSR"]:::csr
         subgraph ABOUT_G["👤 /about"]
-          route_src_router_index_ts__about["/about · CSR"]:::csr
+          route_src_views_About_vue__about["/about · CSR"]:::csr
         end
         subgraph USERS_G["📄 /users"]
-          route_src_router_index_ts__users["/users · CSR"]:::csr
+          route_src_views_Users_vue__users["/users · CSR"]:::csr
           subgraph USERS__ID_G["📄 /:id"]
-            route_src_router_index_ts__users__id["/users/:id · CSR"]:::csr
+            route_src_views_UserDetail_vue__users__id["/users/:id · CSR"]:::csr
           end
         end
       end
@@ -2895,16 +2912,27 @@ graph TB
   classDef pkg fill:#0c1018,stroke:#475569,color:#cbd5e1
   classDef muted fill:#0a0d14,stroke:#374151,color:#64748b,stroke-dasharray: 3 3
   classDef hdr fill:#06080f,stroke:#1e3a5f,color:#7dd3fc
-  route_src_router_index_ts__["/ · CSR"]:::csr
-  subgraph ABOUT_S["👤 /about"]
-    route_src_router_index_ts__about["/about · CSR"]:::csr
+  route_src_views_Home_vue__["/ · CSR"]:::csr
+  file_component_src_views_Home_vue_Home["📂 src/views<br/>📄 Home.vue"]:::pkg
+  file_component_src_views_NavBar_vue_NavBar["📂 src/views<br/>📄 NavBar.vue"]:::pkg
+  subgraph ABOUT_T["👤 /about"]
+    route_src_views_About_vue__about["about · CSR"]:::csr
+    file_component_src_views_About_vue_About["📂 src/views<br/>📄 About.vue"]:::pkg
   end
-  subgraph USERS_S["📄 /users"]
-    route_src_router_index_ts__users["/users · CSR"]:::csr
-    subgraph USERS__ID_S["📄 /:id"]
-      route_src_router_index_ts__users__id["/users/:id · CSR"]:::csr
+  subgraph USERS_T["📄 /users"]
+    route_src_views_Users_vue__users["users · CSR"]:::csr
+    file_component_src_views_Users_vue_Users["📂 src/views<br/>📄 Users.vue"]:::pkg
+    file_component_src_views_UserDetail_vue_UserDetail["📂 src/views<br/>📄 UserDetail.vue"]:::pkg
+    subgraph USERS__ID_T["📄 /:id"]
+      route_src_views_UserDetail_vue__users__id[":id · CSR"]:::csr
     end
-  end"
+  end
+  route_src_views_Home_vue__ --> file_component_src_views_Home_vue_Home
+  file_component_src_views_Home_vue_Home --> file_component_src_views_NavBar_vue_NavBar
+  route_src_views_About_vue__about --> file_component_src_views_About_vue_About
+  route_src_views_Users_vue__users --> file_component_src_views_Users_vue_Users
+  file_component_src_views_Users_vue_Users --> file_component_src_views_UserDetail_vue_UserDetail
+  route_src_views_UserDetail_vue__users__id --> file_component_src_views_UserDetail_vue_UserDetail"
 `;
 
 exports[`Phase XI — fixture baseline snapshots (P1) > mini-vue-spa-app > Tab3 db-screen diagram 1`] = `

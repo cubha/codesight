@@ -231,7 +231,7 @@ svg{max-width:100%;}
 <div class="tabs">
   <div class="tab active" onclick="switchTab(0)">Rendering Architecture</div>
   <div class="tab" onclick="switchTab(1)">Screen–Component</div>
-  <div class="tab" onclick="switchTab(2)">DB–Screen</div>
+  <div class="tab" onclick="switchTab(2)">Data Flow</div>
 </div>
 <div class="panels">
   <div class="panel active" id="p0"><div id="d0">Rendering...</div></div>

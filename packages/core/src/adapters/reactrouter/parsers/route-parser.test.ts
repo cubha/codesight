@@ -227,3 +227,110 @@ describe('parseReactRouterFull — JSX <Routes> renders 엣지 (A3)', () => {
     expect(edge).toBeDefined()
   })
 })
+
+// v1.2.44 Track A0 — React Router map() 패턴 외부 import 추적 회귀 해소
+// 사용자 케이스: appRoutes.map() + 외부 import + lowercase `component` + `<route.component />`
+const MAP_IMPORT_FIXTURE = path.resolve(process.cwd(), 'fixtures/mini-react-router-map-import-app')
+
+describe('parseReactRoutes — F-Route-1·2·3 통합 (mini-react-router-map-import-app)', () => {
+  it('F-Route-1: 외부 import 데이터 배열 추적으로 5개 라우트 추출', async () => {
+    const routes = await parseReactRoutes(MAP_IMPORT_FIXTURE, 'test@0.1')
+    const paths = routes.map(r => r.path).sort()
+    expect(paths).toContain('/home')
+    expect(paths).toContain('/code')
+    expect(paths).toContain('/message')
+    expect(paths).toContain('/profile')
+    expect(paths).toContain('/settings')
+  })
+
+  it('catch-all 라우트도 추출된다', async () => {
+    const routes = await parseReactRoutes(MAP_IMPORT_FIXTURE, 'test@0.1')
+    const paths = routes.map(r => r.path)
+    expect(paths).toContain('/*')
+  })
+
+  it('renderingMode는 CSR', async () => {
+    const routes = await parseReactRoutes(MAP_IMPORT_FIXTURE, 'test@0.1')
+    for (const r of routes) expect(r.renderingMode).toBe('CSR')
+  })
+
+  it('F-Route-1 추출 라우트는 inferred + inferenceChain 보유', async () => {
+    const routes = await parseReactRoutes(MAP_IMPORT_FIXTURE, 'test@0.1')
+    const home = routes.find(r => r.path === '/home')
+    expect(home).toBeDefined()
+    expect(home?.confidence).toBe('inferred')
+    if (home?.confidence === 'inferred') {
+      expect(home.inferenceChain[0]).toMatch(/외부 모듈 import 1-hop/)
+    }
+  })
+})
+
+describe('parseReactRouterFull — F-Route-2·3 renders 엣지 매핑 (mini-react-router-map-import-app)', () => {
+  it('F-Route-2/3: 5개 페이지 ComponentNode 생성', async () => {
+    const { componentNodes } = await parseReactRouterFull(MAP_IMPORT_FIXTURE, 'test@0.1')
+    const names = componentNodes.map(n => n.name)
+    expect(names).toContain('Home')
+    expect(names).toContain('Code')
+    expect(names).toContain('Message')
+    expect(names).toContain('Profile')
+    expect(names).toContain('Settings')
+  })
+
+  it('각 라우트 → 매칭되는 페이지 컴포넌트로 renders 엣지', async () => {
+    const { routeNodes, rendersEdges, componentNodes } = await parseReactRouterFull(MAP_IMPORT_FIXTURE, 'test@0.1')
+    for (const pageName of ['Home', 'Code', 'Message', 'Profile', 'Settings']) {
+      const route = routeNodes.find(r => r.path === '/' + pageName.toLowerCase())
+      const comp = componentNodes.find(c => c.name === pageName)
+      expect(route, `route /${pageName.toLowerCase()}`).toBeDefined()
+      expect(comp, `component ${pageName}`).toBeDefined()
+      const edge = rendersEdges.find(e => e.from === route?.id && e.to === comp?.id)
+      expect(edge, `renders edge ${pageName}`).toBeDefined()
+    }
+  })
+})
+
+describe('extractRoutesFromArray — F-Route-2 단위 검증', () => {
+  it('lowercase `component` Identifier (대문자 시작)를 인식', async () => {
+    const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'cv-rr-froute2-'))
+    try {
+      await fs.mkdir(path.join(tmpDir, 'src'), { recursive: true })
+      await fs.writeFile(
+        path.join(tmpDir, 'src', 'Foo.tsx'),
+        `export default function Foo() { return <div/> }`,
+      )
+      await fs.writeFile(
+        path.join(tmpDir, 'src', 'router.tsx'),
+        `import { createBrowserRouter } from 'react-router-dom'
+import Foo from './Foo'
+export const router = createBrowserRouter([
+  { path: '/foo', component: Foo },
+])`,
+      )
+      const { componentNodes, rendersEdges } = await parseReactRouterFull(tmpDir, 'test@0.1')
+      const fooComp = componentNodes.find(c => c.name === 'Foo')
+      expect(fooComp).toBeDefined()
+      expect(rendersEdges.some(e => e.to === fooComp?.id)).toBe(true)
+    } finally {
+      await fs.rm(tmpDir, { recursive: true, force: true })
+    }
+  })
+
+  it('lowercase 시작 Identifier는 component 키여도 무시 (오인식 차단)', async () => {
+    const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'cv-rr-froute2-guard-'))
+    try {
+      await fs.mkdir(path.join(tmpDir, 'src'), { recursive: true })
+      await fs.writeFile(
+        path.join(tmpDir, 'src', 'router.tsx'),
+        `import { createBrowserRouter } from 'react-router-dom'
+const someValue = 'not-a-component'
+export const router = createBrowserRouter([
+  { path: '/foo', component: someValue },
+])`,
+      )
+      const { componentNodes } = await parseReactRouterFull(tmpDir, 'test@0.1')
+      expect(componentNodes.find(c => c.name === 'someValue')).toBeUndefined()
+    } finally {
+      await fs.rm(tmpDir, { recursive: true, force: true })
+    }
+  })
+})
