@@ -574,22 +574,19 @@ graph TB
   classDef pkg fill:#0c1018,stroke:#475569,color:#cbd5e1
   classDef muted fill:#0a0d14,stroke:#374151,color:#64748b,stroke-dasharray: 3 3
   classDef hdr fill:#06080f,stroke:#1e3a5f,color:#7dd3fc
-  subgraph ABOUT_S["👤 /about"]
-    route_app__marketing__about_page["/about · SSR"]:::ssr
-    subgraph ABOUT_S_C
-      component_app__marketing__about_page_tsx_page["page"]
-    end
+  subgraph ABOUT_T["👤 /about"]
+    route_app__marketing__about_page["about · SSR"]:::ssr
+    file_component_app__marketing__about_page_tsx_page["📂 app/(marketing)/about<br/>📄 page.tsx"]:::pkg
   end
-  subgraph BLOG_S["📝 /blog"]
+  subgraph BLOG_T["📝 /blog"]
     route_app_blog__slug__page[":slug · SSR"]:::ssr
-    subgraph BLOG_S_C
-      component_app_blog__slug__page_tsx_page["page"]
-    end
+    file_component_app_blog__slug__page_tsx_page["📂 app/blog/[slug]<br/>📄 page.tsx"]:::pkg
   end
   route_app_page["/ · SSR"]:::ssr
-  route_app__marketing__about_page --> component_app__marketing__about_page_tsx_page
-  route_app_blog__slug__page --> component_app_blog__slug__page_tsx_page
-  component_app_page_tsx_page --> component_components_Header_tsx_Header"
+  file_component_app_page_tsx_page["📂 app<br/>📄 page.tsx"]:::pkg
+  route_app__marketing__about_page --> file_component_app__marketing__about_page_tsx_page
+  route_app_blog__slug__page --> file_component_app_blog__slug__page_tsx_page
+  route_app_page --> file_component_app_page_tsx_page"
 `;
 
 exports[`Phase XI — fixture baseline snapshots (P1) > mini-next-app > Tab3 db-screen diagram 1`] = `
@@ -693,19 +690,19 @@ graph TB
   classDef pkg fill:#0c1018,stroke:#475569,color:#cbd5e1
   classDef muted fill:#0a0d14,stroke:#374151,color:#64748b,stroke-dasharray: 3 3
   classDef hdr fill:#06080f,stroke:#1e3a5f,color:#7dd3fc
-  subgraph _COMPONENTS_S["📄 /_components"]
-    subgraph _COMPONENTS_USERBADGE_S["📄 /UserBadge"]
-      route_pages__components_UserBadge_tsx_page["/_components/UserBadge · SSR"]:::ssr
+  subgraph _COMPONENTS_T["📄 /_components"]
+    subgraph _COMPONENTS_USERBADGE_T["📄 /UserBadge"]
+      route_pages__components_UserBadge_tsx_page["UserBadge · SSR"]:::ssr
     end
-    subgraph _COMPONENTS_USERCARD_S["📄 /UserCard"]
-      route_pages__components_UserCard_tsx_page["/_components/UserCard · SSR"]:::ssr
+    subgraph _COMPONENTS_USERCARD_T["📄 /UserCard"]
+      route_pages__components_UserCard_tsx_page["UserCard · SSR"]:::ssr
     end
   end
-  subgraph ABOUT_S["👤 /about"]
-    route_pages_about_tsx_page["/about · SSR"]:::ssr
+  subgraph ABOUT_T["👤 /about"]
+    route_pages_about_tsx_page["about · SSR"]:::ssr
   end
   route_pages_index_tsx_page["/ · SSR"]:::ssr
-  subgraph USERS_S["📄 /users"]
+  subgraph USERS_T["📄 /users"]
     route_pages_users__id__tsx_page[":id · SSR"]:::ssr
   end"
 `;
@@ -777,14 +774,14 @@ graph TB
   classDef pkg fill:#0c1018,stroke:#475569,color:#cbd5e1
   classDef muted fill:#0a0d14,stroke:#374151,color:#64748b,stroke-dasharray: 3 3
   classDef hdr fill:#06080f,stroke:#1e3a5f,color:#7dd3fc
-  subgraph ABOUT_S["👤 /about"]
-    route_pages_about_vue["/about · SSR"]:::ssr
+  subgraph ABOUT_T["👤 /about"]
+    route_pages_about_vue["about · SSR"]:::ssr
   end
-  subgraph CLIENT_ONLY_S["📄 /client-only"]
-    route_pages_client_only_vue["/client-only · CSR"]:::csr
+  subgraph CLIENT_ONLY_T["📄 /client-only"]
+    route_pages_client_only_vue["client-only · CSR"]:::csr
   end
   route_pages_index_vue["/ · SSR"]:::ssr
-  subgraph USERS_S["📄 /users"]
+  subgraph USERS_T["📄 /users"]
     route_pages_users__id__vue[":id · SSR"]:::ssr
   end"
 `;
@@ -797,6 +794,15 @@ erDiagram"
 exports[`Phase XI — fixture baseline snapshots (P1) > mini-react-partner-mock-app > IRGraph summary 1`] = `
 {
   "edgeIds": [
+    "api-call:component:src/pages/agency/contractMgmt/ContractMgmtPage.tsx:ContractMgmtPage:endpoint:virtual:DELETE:/api/agency/contractMgmt/\${…}",
+    "api-call:component:src/pages/agency/userMgmt/UserMgmtPage.tsx:UserMgmtPage:endpoint:virtual:GET:/api/agency/userMgmt/list",
+    "api-call:component:src/pages/headoffice/materialMgmt/cuttingPlanInfoMgmt/CuttingPlanMgmtPage.tsx:CuttingPlanMgmtPage:endpoint:virtual:GET:/api/headOffice/materialMgmt/cuttingPlanInfoMgmt/list",
+    "api-call:component:src/pages/headoffice/materialMgmt/cuttingPlanInfoMgmt/CuttingPlanMgmtPage.tsx:CuttingPlanMgmtPage:endpoint:virtual:POST:/api/headOffice/materialMgmt/cuttingPlanInfoMgmt/create",
+    "api-call:component:src/pages/headoffice/partnerBaseInfo/procCodeMgmt/ProcCodeMgmtPage.tsx:ProcCodeMgmtPage:endpoint:virtual:GET:/api/headOffice/partnerBaseInfo/procCodeMgmt/list",
+    "api-call:component:src/pages/headoffice/partnerBaseInfo/procCodeMgmt/ProcCodeMgmtPage.tsx:ProcCodeMgmtPage:endpoint:virtual:PUT:/api/headOffice/partnerBaseInfo/procCodeMgmt/update",
+    "api-call:component:src/pages/partner/matMgmt/decoSheet/DecoSheetPage.tsx:DecoSheetPage:endpoint:virtual:POST:/api/partner/matMgmt/decoSheet/save",
+    "api-call:component:src/pages/partner/ordProdPlanMgmt/prodOrdSpec/OrdSpecPrintPage.tsx:OrdSpecPrintPage:endpoint:virtual:GET:/api/partner/ordProdPlanMgmt/prodOrdSpec/list",
+    "api-call:component:src/pages/partner/perfMgmt/transStmt/TrnStmtSchPage.tsx:TrnStmtSchPage:endpoint:virtual:POST:/api/partner/perfMgmt/transStmt/search",
     "renders:route:src/router.tsx:/agency/contractMgmt:component:src/pages/agency/contractMgmt/ContractMgmtPage.tsx:ContractMgmtPage",
     "renders:route:src/router.tsx:/agency/userMgmt:component:src/pages/agency/userMgmt/UserMgmtPage.tsx:UserMgmtPage",
     "renders:route:src/router.tsx:/headOffice/materialMgmt/cuttingPlanInfoMgmt:component:src/pages/headoffice/materialMgmt/cuttingPlanInfoMgmt/CuttingPlanMgmtPage.tsx:CuttingPlanMgmtPage",
@@ -806,6 +812,7 @@ exports[`Phase XI — fixture baseline snapshots (P1) > mini-react-partner-mock-
     "renders:route:src/router.tsx:/partner/perfMgmt/transStmt:component:src/pages/partner/perfMgmt/transStmt/TrnStmtSchPage.tsx:TrnStmtSchPage",
   ],
   "edgesByKind": {
+    "api-call": 9,
     "renders": 7,
   },
   "nodeIds": [
@@ -843,33 +850,45 @@ graph TD
   classDef pkg fill:#0c1018,stroke:#475569,color:#cbd5e1
   classDef muted fill:#0a0d14,stroke:#374151,color:#64748b,stroke-dasharray: 3 3
   classDef hdr fill:#06080f,stroke:#1e3a5f,color:#7dd3fc
-  subgraph PARTNER_G["📄 /partner"]
-    subgraph PARTNER_ORDPRODPLANMGMT_G["📄 /ordProdPlanMgmt"]
-      route_src_router_tsx__partner_ordProdPlanMgmt_prodOrdSpec["prodOrdSpec · CSR"]:::csr
-    end
-    subgraph PARTNER_MATMGMT_G["📄 /matMgmt"]
-      route_src_router_tsx__partner_matMgmt_decoSheet["decoSheet · CSR"]:::csr
-    end
-    subgraph PARTNER_PERFMGMT_G["📄 /perfMgmt"]
-      route_src_router_tsx__partner_perfMgmt_transStmt["transStmt · CSR"]:::csr
+  subgraph BROWSER["🌐 Browser · Client-Side App"]
+    subgraph ROUTER["🧭 React Router · SPA"]
+      subgraph REACT["⚛ React · CSR Engine"]
+        subgraph PARTNER_G["📄 /partner"]
+          subgraph PARTNER_ORDPRODPLANMGMT_G["📄 /ordProdPlanMgmt"]
+            route_src_router_tsx__partner_ordProdPlanMgmt_prodOrdSpec["prodOrdSpec · CSR"]:::csr
+          end
+          subgraph PARTNER_MATMGMT_G["📄 /matMgmt"]
+            route_src_router_tsx__partner_matMgmt_decoSheet["decoSheet · CSR"]:::csr
+          end
+          subgraph PARTNER_PERFMGMT_G["📄 /perfMgmt"]
+            route_src_router_tsx__partner_perfMgmt_transStmt["transStmt · CSR"]:::csr
+          end
+        end
+        subgraph AGENCY_G["📄 /agency"]
+          subgraph AGENCY_USERMGMT_G["📄 /userMgmt"]
+            route_src_router_tsx__agency_userMgmt["/agency/userMgmt · CSR"]:::csr
+          end
+          subgraph AGENCY_CONTRACTMGMT_G["📄 /contractMgmt"]
+            route_src_router_tsx__agency_contractMgmt["/agency/contractMgmt · CSR"]:::csr
+          end
+        end
+        subgraph HEADOFFICE_G["📄 /headOffice"]
+          subgraph HEADOFFICE_PARTNERBASEINFO_G["📄 /partnerBaseInfo"]
+            route_src_router_tsx__headOffice_partnerBaseInfo_procCodeMgmt["procCodeMgmt · CSR"]:::csr
+          end
+          subgraph HEADOFFICE_MATERIALMGMT_G["📄 /materialMgmt"]
+            route_src_router_tsx__headOffice_materialMgmt_cuttingPlanInfoMgmt["cuttingPlanInfoMgmt · CSR"]:::csr
+          end
+        end
+      end
     end
   end
-  subgraph AGENCY_G["📄 /agency"]
-    subgraph AGENCY_USERMGMT_G["📄 /userMgmt"]
-      route_src_router_tsx__agency_userMgmt["/agency/userMgmt · CSR"]:::csr
-    end
-    subgraph AGENCY_CONTRACTMGMT_G["📄 /contractMgmt"]
-      route_src_router_tsx__agency_contractMgmt["/agency/contractMgmt · CSR"]:::csr
+  subgraph DATALAYER["🔌 API LAYER"]
+    subgraph API_G["⚡ External REST API"]
+      API_GATEWAY[("Backend Service")]
     end
   end
-  subgraph HEADOFFICE_G["📄 /headOffice"]
-    subgraph HEADOFFICE_PARTNERBASEINFO_G["📄 /partnerBaseInfo"]
-      route_src_router_tsx__headOffice_partnerBaseInfo_procCodeMgmt["procCodeMgmt · CSR"]:::csr
-    end
-    subgraph HEADOFFICE_MATERIALMGMT_G["📄 /materialMgmt"]
-      route_src_router_tsx__headOffice_materialMgmt_cuttingPlanInfoMgmt["cuttingPlanInfoMgmt · CSR"]:::csr
-    end
-  end"
+  REACT -.->|"axios · fetch"| API_GATEWAY"
 `;
 
 exports[`Phase XI — fixture baseline snapshots (P1) > mini-react-partner-mock-app > Tab2 screen-component diagram 1`] = `
@@ -884,66 +903,109 @@ graph TB
   classDef pkg fill:#0c1018,stroke:#475569,color:#cbd5e1
   classDef muted fill:#0a0d14,stroke:#374151,color:#64748b,stroke-dasharray: 3 3
   classDef hdr fill:#06080f,stroke:#1e3a5f,color:#7dd3fc
-  subgraph PARTNER_S["📄 /partner"]
-    subgraph PARTNER_ORDPRODPLANMGMT_S["📄 /ordProdPlanMgmt"]
+  subgraph PARTNER_T["📄 /partner"]
+    subgraph PARTNER_ORDPRODPLANMGMT_T["📄 /ordProdPlanMgmt"]
       route_src_router_tsx__partner_ordProdPlanMgmt_prodOrdSpec["prodOrdSpec · CSR"]:::csr
-      subgraph PARTNER_ORDPRODPLANMGMT_S_C
-        component_src_pages_partner_ordProdPlanMgmt_prodOrdSpec_OrdSpecPrintPage_tsx_OrdSpecPrintPage["OrdSpecPrintPage [CSR]"]
-      end
+      file_component_src_pages_partner_ordProdPlanMgmt_prodOrdSpec_OrdSpecPrintPage_tsx_OrdSpecPrintPage["📂 src/pages/partner/ordProdPlanMgmt/prodOrdSpec<br/>📄 OrdSpecPrintPage.tsx"]:::pkg
     end
-    subgraph PARTNER_MATMGMT_S["📄 /matMgmt"]
+    subgraph PARTNER_MATMGMT_T["📄 /matMgmt"]
       route_src_router_tsx__partner_matMgmt_decoSheet["decoSheet · CSR"]:::csr
-      subgraph PARTNER_MATMGMT_S_C
-        component_src_pages_partner_matMgmt_decoSheet_DecoSheetPage_tsx_DecoSheetPage["DecoSheetPage [CSR]"]
-      end
+      file_component_src_pages_partner_matMgmt_decoSheet_DecoSheetPage_tsx_DecoSheetPage["📂 src/pages/partner/matMgmt/decoSheet<br/>📄 DecoSheetPage.tsx"]:::pkg
     end
-    subgraph PARTNER_PERFMGMT_S["📄 /perfMgmt"]
+    subgraph PARTNER_PERFMGMT_T["📄 /perfMgmt"]
       route_src_router_tsx__partner_perfMgmt_transStmt["transStmt · CSR"]:::csr
-      subgraph PARTNER_PERFMGMT_S_C
-        component_src_pages_partner_perfMgmt_transStmt_TrnStmtSchPage_tsx_TrnStmtSchPage["TrnStmtSchPage [CSR]"]
-      end
+      file_component_src_pages_partner_perfMgmt_transStmt_TrnStmtSchPage_tsx_TrnStmtSchPage["📂 src/pages/partner/perfMgmt/transStmt<br/>📄 TrnStmtSchPage.tsx"]:::pkg
     end
   end
-  subgraph AGENCY_S["📄 /agency"]
-    subgraph AGENCY_USERMGMT_S["📄 /userMgmt"]
-      route_src_router_tsx__agency_userMgmt["/agency/userMgmt · CSR"]:::csr
-      subgraph AGENCY_USERMGMT_S_C
-        component_src_pages_agency_userMgmt_UserMgmtPage_tsx_UserMgmtPage["UserMgmtPage [CSR]"]
-      end
+  subgraph AGENCY_T["📄 /agency"]
+    subgraph AGENCY_USERMGMT_T["📄 /userMgmt"]
+      route_src_router_tsx__agency_userMgmt["userMgmt · CSR"]:::csr
+      file_component_src_pages_agency_userMgmt_UserMgmtPage_tsx_UserMgmtPage["📂 src/pages/agency/userMgmt<br/>📄 UserMgmtPage.tsx"]:::pkg
     end
-    subgraph AGENCY_CONTRACTMGMT_S["📄 /contractMgmt"]
-      route_src_router_tsx__agency_contractMgmt["/agency/contractMgmt · CSR"]:::csr
-      subgraph AGENCY_CONTRACTMGMT_S_C
-        component_src_pages_agency_contractMgmt_ContractMgmtPage_tsx_ContractMgmtPage["ContractMgmtPage [CSR]"]
-      end
+    subgraph AGENCY_CONTRACTMGMT_T["📄 /contractMgmt"]
+      route_src_router_tsx__agency_contractMgmt["contractMgmt · CSR"]:::csr
+      file_component_src_pages_agency_contractMgmt_ContractMgmtPage_tsx_ContractMgmtPage["📂 src/pages/agency/contractMgmt<br/>📄 ContractMgmtPage.tsx"]:::pkg
     end
   end
-  subgraph HEADOFFICE_S["📄 /headOffice"]
-    subgraph HEADOFFICE_PARTNERBASEINFO_S["📄 /partnerBaseInfo"]
+  subgraph HEADOFFICE_T["📄 /headOffice"]
+    subgraph HEADOFFICE_PARTNERBASEINFO_T["📄 /partnerBaseInfo"]
       route_src_router_tsx__headOffice_partnerBaseInfo_procCodeMgmt["procCodeMgmt · CSR"]:::csr
-      subgraph HEADOFFICE_PARTNERBASEINFO_S_C
-        component_src_pages_headoffice_partnerBaseInfo_procCodeMgmt_ProcCodeMgmtPage_tsx_ProcCodeMgmtPage["ProcCodeMgmtPage [CSR]"]
-      end
+      file_component_src_pages_headoffice_partnerBaseInfo_procCodeMgmt_ProcCodeMgmtPage_tsx_ProcCodeMgmtPage["📂 src/pages/headoffice/partnerBaseInfo/procCodeMgmt<br/>📄 ProcCodeMgmtPage.tsx"]:::pkg
     end
-    subgraph HEADOFFICE_MATERIALMGMT_S["📄 /materialMgmt"]
+    subgraph HEADOFFICE_MATERIALMGMT_T["📄 /materialMgmt"]
       route_src_router_tsx__headOffice_materialMgmt_cuttingPlanInfoMgmt["cuttingPlanInfoMgmt · CSR"]:::csr
-      subgraph HEADOFFICE_MATERIALMGMT_S_C
-        component_src_pages_headoffice_materialMgmt_cuttingPlanInfoMgmt_CuttingPlanMgmtPage_tsx_CuttingPlanMgmtPage["CuttingPlanMgmtPage [CSR]"]
-      end
+      file_component_src_pages_headoffice_materialMgmt_cuttingPlanInfoMgmt_CuttingPlanMgmtPage_tsx_CuttingPlanMgmtPage["📂 src/pages/headoffice/materialMgmt/cuttingPlanInfoMgmt<br/>📄 CuttingPlanMgmtPage.tsx"]:::pkg
     end
   end
-  route_src_router_tsx__partner_ordProdPlanMgmt_prodOrdSpec --> component_src_pages_partner_ordProdPlanMgmt_prodOrdSpec_OrdSpecPrintPage_tsx_OrdSpecPrintPage
-  route_src_router_tsx__partner_matMgmt_decoSheet --> component_src_pages_partner_matMgmt_decoSheet_DecoSheetPage_tsx_DecoSheetPage
-  route_src_router_tsx__partner_perfMgmt_transStmt --> component_src_pages_partner_perfMgmt_transStmt_TrnStmtSchPage_tsx_TrnStmtSchPage
-  route_src_router_tsx__agency_userMgmt --> component_src_pages_agency_userMgmt_UserMgmtPage_tsx_UserMgmtPage
-  route_src_router_tsx__agency_contractMgmt --> component_src_pages_agency_contractMgmt_ContractMgmtPage_tsx_ContractMgmtPage
-  route_src_router_tsx__headOffice_partnerBaseInfo_procCodeMgmt --> component_src_pages_headoffice_partnerBaseInfo_procCodeMgmt_ProcCodeMgmtPage_tsx_ProcCodeMgmtPage
-  route_src_router_tsx__headOffice_materialMgmt_cuttingPlanInfoMgmt --> component_src_pages_headoffice_materialMgmt_cuttingPlanInfoMgmt_CuttingPlanMgmtPage_tsx_CuttingPlanMgmtPage"
+  route_src_router_tsx__partner_ordProdPlanMgmt_prodOrdSpec --> file_component_src_pages_partner_ordProdPlanMgmt_prodOrdSpec_OrdSpecPrintPage_tsx_OrdSpecPrintPage
+  route_src_router_tsx__partner_matMgmt_decoSheet --> file_component_src_pages_partner_matMgmt_decoSheet_DecoSheetPage_tsx_DecoSheetPage
+  route_src_router_tsx__partner_perfMgmt_transStmt --> file_component_src_pages_partner_perfMgmt_transStmt_TrnStmtSchPage_tsx_TrnStmtSchPage
+  route_src_router_tsx__agency_userMgmt --> file_component_src_pages_agency_userMgmt_UserMgmtPage_tsx_UserMgmtPage
+  route_src_router_tsx__agency_contractMgmt --> file_component_src_pages_agency_contractMgmt_ContractMgmtPage_tsx_ContractMgmtPage
+  route_src_router_tsx__headOffice_partnerBaseInfo_procCodeMgmt --> file_component_src_pages_headoffice_partnerBaseInfo_procCodeMgmt_ProcCodeMgmtPage_tsx_ProcCodeMgmtPage
+  route_src_router_tsx__headOffice_materialMgmt_cuttingPlanInfoMgmt --> file_component_src_pages_headoffice_materialMgmt_cuttingPlanInfoMgmt_CuttingPlanMgmtPage_tsx_CuttingPlanMgmtPage"
 `;
 
 exports[`Phase XI — fixture baseline snapshots (P1) > mini-react-partner-mock-app > Tab3 db-screen diagram 1`] = `
-"%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#2a4055','primaryTextColor':'#f8fafc','primaryBorderColor':'#1e4060','lineColor':'#f59e0b','secondaryColor':'#0f172a','tertiaryColor':'#1a0a20','attributeBackgroundColorEven':'#ffffff','attributeBackgroundColorOdd':'#f1f5f9','textColor':'#1e293b','nodeBorder':'#1e4060','clusterBkg':'#0a0e1a','fontFamily':'JetBrains Mono','fontSize':'14'}}}%%
-erDiagram"
+"%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0c1a30','primaryTextColor':'#7dd3fc','primaryBorderColor':'#0e3a6e','edgeLabelBackground':'#0c1a30','lineColor':'#334155','secondaryColor':'#0f172a','clusterBkg':'#060c18','clusterBorder':'#1e3a5f','fontFamily':'JetBrains Mono','fontSize':'14'}}}%%
+graph LR
+  classDef ssr fill:#0d1a0d,stroke:#16a34a,color:#86efac
+  classDef csr fill:#2d1200,stroke:#c2410c,color:#fb923c
+  classDef ssg fill:#1a0d1a,stroke:#7c3aed,color:#c4b5fd
+  classDef isr fill:#1a1a0d,stroke:#ca8a04,color:#fde047
+  classDef ppr fill:#0d1a2d,stroke:#2563eb,color:#93c5fd
+  classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
+  classDef pkg fill:#0c1018,stroke:#475569,color:#cbd5e1
+  classDef muted fill:#0a0d14,stroke:#374151,color:#64748b,stroke-dasharray: 3 3
+  classDef hdr fill:#06080f,stroke:#1e3a5f,color:#7dd3fc
+  classDef apiAxios fill:#1a0d1a,stroke:#a855f7,color:#e9d5ff
+  classDef apiFetch fill:#0d1a1a,stroke:#06b6d4,color:#a5f3fc
+  classDef apiQuery fill:#1a0d0d,stroke:#f43f5e,color:#fecdd3
+  subgraph PARTNER_API["📄 /partner"]
+    subgraph PARTNER_ORDPRODPLANMGMT_API["📄 /ordProdPlanMgmt"]
+      route_src_router_tsx__partner_ordProdPlanMgmt_prodOrdSpec["prodOrdSpec · CSR"]:::csr
+      ep_GET__api_partner_ordProdPlanMgmt_prodOrdSpec_list["GET /api/partner/ordProdPlanMgmt/prodOrdSpec/list → axios"]:::apiAxios
+    end
+    subgraph PARTNER_MATMGMT_API["📄 /matMgmt"]
+      route_src_router_tsx__partner_matMgmt_decoSheet["decoSheet · CSR"]:::csr
+      ep_POST__api_partner_matMgmt_decoSheet_save["POST /api/partner/matMgmt/decoSheet/save → axios"]:::apiAxios
+    end
+    subgraph PARTNER_PERFMGMT_API["📄 /perfMgmt"]
+      route_src_router_tsx__partner_perfMgmt_transStmt["transStmt · CSR"]:::csr
+      ep_POST__api_partner_perfMgmt_transStmt_search["POST /api/partner/perfMgmt/transStmt/search → fetch"]:::apiFetch
+    end
+  end
+  subgraph AGENCY_API["📄 /agency"]
+    subgraph AGENCY_USERMGMT_API["📄 /userMgmt"]
+      route_src_router_tsx__agency_userMgmt["userMgmt · CSR"]:::csr
+      ep_GET__api_agency_userMgmt_list["GET /api/agency/userMgmt/list → axios"]:::apiAxios
+    end
+    subgraph AGENCY_CONTRACTMGMT_API["📄 /contractMgmt"]
+      route_src_router_tsx__agency_contractMgmt["contractMgmt · CSR"]:::csr
+      ep_DELETE__api_agency_contractMgmt_____["DELETE /api/agency/contractMgmt/\${…} ⟿ axios"]:::apiAxios
+    end
+  end
+  subgraph HEADOFFICE_API["📄 /headOffice"]
+    subgraph HEADOFFICE_PARTNERBASEINFO_API["📄 /partnerBaseInfo"]
+      route_src_router_tsx__headOffice_partnerBaseInfo_procCodeMgmt["procCodeMgmt · CSR"]:::csr
+      ep_GET__api_headOffice_partnerBaseInfo_procCodeMgmt_list["GET /api/headOffice/partnerBaseInfo/procCodeMgmt/list → axios"]:::apiAxios
+      ep_PUT__api_headOffice_partnerBaseInfo_procCodeMgmt_update["PUT /api/headOffice/partnerBaseInfo/procCodeMgmt/update → axios"]:::apiAxios
+    end
+    subgraph HEADOFFICE_MATERIALMGMT_API["📄 /materialMgmt"]
+      route_src_router_tsx__headOffice_materialMgmt_cuttingPlanInfoMgmt["cuttingPlanInfoMgmt · CSR"]:::csr
+      ep_GET__api_headOffice_materialMgmt_cuttingPlanInfoMgmt_list["GET /api/headOffice/materialMgmt/cuttingPlanInfoMgmt/list → axios"]:::apiAxios
+      ep_POST__api_headOffice_materialMgmt_cuttingPlanInfoMgmt_create["POST /api/headOffice/materialMgmt/cuttingPlanInfoMgmt/create → axios"]:::apiAxios
+    end
+  end
+  route_src_router_tsx__partner_ordProdPlanMgmt_prodOrdSpec --> ep_GET__api_partner_ordProdPlanMgmt_prodOrdSpec_list
+  route_src_router_tsx__partner_matMgmt_decoSheet --> ep_POST__api_partner_matMgmt_decoSheet_save
+  route_src_router_tsx__partner_perfMgmt_transStmt --> ep_POST__api_partner_perfMgmt_transStmt_search
+  route_src_router_tsx__agency_userMgmt --> ep_GET__api_agency_userMgmt_list
+  route_src_router_tsx__agency_contractMgmt -.-> ep_DELETE__api_agency_contractMgmt_____
+  route_src_router_tsx__headOffice_partnerBaseInfo_procCodeMgmt --> ep_GET__api_headOffice_partnerBaseInfo_procCodeMgmt_list
+  route_src_router_tsx__headOffice_partnerBaseInfo_procCodeMgmt --> ep_PUT__api_headOffice_partnerBaseInfo_procCodeMgmt_update
+  route_src_router_tsx__headOffice_materialMgmt_cuttingPlanInfoMgmt --> ep_GET__api_headOffice_materialMgmt_cuttingPlanInfoMgmt_list
+  route_src_router_tsx__headOffice_materialMgmt_cuttingPlanInfoMgmt --> ep_POST__api_headOffice_materialMgmt_cuttingPlanInfoMgmt_create"
 `;
 
 exports[`Phase XI — fixture baseline snapshots (P1) > mini-react-router-app > IRGraph summary 1`] = `
@@ -988,14 +1050,20 @@ graph TD
   classDef pkg fill:#0c1018,stroke:#475569,color:#cbd5e1
   classDef muted fill:#0a0d14,stroke:#374151,color:#64748b,stroke-dasharray: 3 3
   classDef hdr fill:#06080f,stroke:#1e3a5f,color:#7dd3fc
-  route_src_router_tsx__["/ · CSR"]:::csr
-  subgraph ABOUT_G["👤 /about"]
-    route_src_router_tsx__about["/about · CSR"]:::csr
-  end
-  subgraph USERS_G["📄 /users"]
-    route_src_router_tsx__users["/users · CSR"]:::csr
-    subgraph USERS__ID_G["📄 /:id"]
-      route_src_router_tsx__users__id["/users/:id · CSR"]:::csr
+  subgraph BROWSER["🌐 Browser · Client-Side App"]
+    subgraph ROUTER["🧭 React Router · SPA"]
+      subgraph REACT["⚛ React · CSR Engine"]
+        route_src_router_tsx__["/ · CSR"]:::csr
+        subgraph ABOUT_G["👤 /about"]
+          route_src_router_tsx__about["/about · CSR"]:::csr
+        end
+        subgraph USERS_G["📄 /users"]
+          route_src_router_tsx__users["/users · CSR"]:::csr
+          subgraph USERS__ID_G["📄 /:id"]
+            route_src_router_tsx__users__id["/users/:id · CSR"]:::csr
+          end
+        end
+      end
     end
   end"
 `;
@@ -1013,32 +1081,28 @@ graph TB
   classDef muted fill:#0a0d14,stroke:#374151,color:#64748b,stroke-dasharray: 3 3
   classDef hdr fill:#06080f,stroke:#1e3a5f,color:#7dd3fc
   route_src_router_tsx__["/ · CSR"]:::csr
-  subgraph ABOUT_S["👤 /about"]
-    route_src_router_tsx__about["/about · CSR"]:::csr
-    subgraph ABOUT_S_C
-      component_src_pages_AboutPage_tsx_AboutPage["AboutPage [CSR]"]
+  file_component_src_pages_HomePage_tsx_HomePage["📂 src/pages<br/>📄 HomePage.tsx"]:::pkg
+  subgraph ABOUT_T["👤 /about"]
+    route_src_router_tsx__about["about · CSR"]:::csr
+    file_component_src_pages_AboutPage_tsx_AboutPage["📂 src/pages<br/>📄 AboutPage.tsx"]:::pkg
+  end
+  subgraph USERS_T["📄 /users"]
+    route_src_router_tsx__users["users · CSR"]:::csr
+    file_component_src_pages_UserListPage_tsx_UserListPage["📂 src/pages<br/>📄 UserListPage.tsx"]:::pkg
+    subgraph USERS__ID_T["📄 /:id"]
+      route_src_router_tsx__users__id[":id · CSR"]:::csr
+      file_component_src_pages_UserDetailPage_tsx_UserDetailPage["📂 src/pages<br/>📄 UserDetailPage.tsx"]:::pkg
     end
   end
-  subgraph USERS_S["📄 /users"]
-    route_src_router_tsx__users["/users · CSR"]:::csr
-    subgraph USERS_S_C
-      component_src_pages_UserListPage_tsx_UserListPage["UserListPage [CSR]"]
-    end
-    subgraph USERS__ID_S["📄 /:id"]
-      route_src_router_tsx__users__id["/users/:id · CSR"]:::csr
-      subgraph USERS__ID_S_C
-        component_src_pages_UserDetailPage_tsx_UserDetailPage["UserDetailPage [CSR]"]
-      end
-    end
-  end
-  route_src_router_tsx__about --> component_src_pages_AboutPage_tsx_AboutPage
-  route_src_router_tsx__users --> component_src_pages_UserListPage_tsx_UserListPage
-  route_src_router_tsx__users__id --> component_src_pages_UserDetailPage_tsx_UserDetailPage"
+  route_src_router_tsx__ --> file_component_src_pages_HomePage_tsx_HomePage
+  route_src_router_tsx__about --> file_component_src_pages_AboutPage_tsx_AboutPage
+  route_src_router_tsx__users --> file_component_src_pages_UserListPage_tsx_UserListPage
+  route_src_router_tsx__users__id --> file_component_src_pages_UserDetailPage_tsx_UserDetailPage"
 `;
 
 exports[`Phase XI — fixture baseline snapshots (P1) > mini-react-router-app > Tab3 db-screen diagram 1`] = `
-"%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#2a4055','primaryTextColor':'#f8fafc','primaryBorderColor':'#1e4060','lineColor':'#f59e0b','secondaryColor':'#0f172a','tertiaryColor':'#1a0a20','attributeBackgroundColorEven':'#ffffff','attributeBackgroundColorOdd':'#f1f5f9','textColor':'#1e293b','nodeBorder':'#1e4060','clusterBkg':'#0a0e1a','fontFamily':'JetBrains Mono','fontSize':'14'}}}%%
-erDiagram"
+"graph TD
+  empty["(no API calls detected)"]"
 `;
 
 exports[`Phase XI — fixture baseline snapshots (P1) > mini-remix-app > IRGraph summary 1`] = `
@@ -1098,10 +1162,10 @@ graph TB
   classDef muted fill:#0a0d14,stroke:#374151,color:#64748b,stroke-dasharray: 3 3
   classDef hdr fill:#06080f,stroke:#1e3a5f,color:#7dd3fc
   route_app_routes__index_tsx_page["/ · SSR"]:::ssr
-  subgraph ABOUT_S["👤 /about"]
-    route_app_routes_about_tsx_page["/about · SSR"]:::ssr
+  subgraph ABOUT_T["👤 /about"]
+    route_app_routes_about_tsx_page["about · SSR"]:::ssr
   end
-  subgraph USERS_S["📄 /users"]
+  subgraph USERS_T["📄 /users"]
     route_app_routes_users__id_tsx_page[":id · SSR"]:::ssr
   end"
 `;
@@ -2741,10 +2805,10 @@ graph TB
   classDef muted fill:#0a0d14,stroke:#374151,color:#64748b,stroke-dasharray: 3 3
   classDef hdr fill:#06080f,stroke:#1e3a5f,color:#7dd3fc
   route_src_routes_page["/ · SSR"]:::ssr
-  subgraph ABOUT_S["👤 /about"]
-    route_src_routes_about_page["/about · SSR"]:::ssr
+  subgraph ABOUT_T["👤 /about"]
+    route_src_routes_about_page["about · SSR"]:::ssr
   end
-  subgraph BLOG_S["📝 /blog"]
+  subgraph BLOG_T["📝 /blog"]
     route_src_routes_blog__slug__page[":slug · SSR"]:::ssr
   end"
 `;

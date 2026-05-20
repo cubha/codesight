@@ -1,3 +1,11 @@
+import { useEffect, useState } from 'react'
+
 export default function TrnStmtSchPage() {
-  return <div>거래명세표 조회</div>
+  const [rows, setRows] = useState<unknown[]>([])
+  useEffect(() => {
+    fetch('/api/partner/perfMgmt/transStmt/search', { method: 'POST' })
+      .then(r => r.json())
+      .then(setRows)
+  }, [])
+  return <div>거래내역 {rows.length}</div>
 }

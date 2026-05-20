@@ -1,5 +1,43 @@
 # Changelog
 
+## [1.2.42] — 2026-05-20
+
+### Changed — React (react-router) 분석 결과 전면 재설계 + file-based FE 어댑터 6종 Tab2 표준화 + Tab1 외부 API Gateway 분기
+
+React Router SPA 프로젝트 분석에서 Tab1/2/3 콘텐츠가 본질적으로 잘못된 방향이었던 점(단순 라우트 나열·Screen-Component 노드 그래프·React SPA에서 빈 ER 다이어그램)을 해소.
+
+- **Tab1 (Rendering Architecture)** — `framework='react-router'` 어댑터에 한해 `BROWSER → 🧭 React Router · SPA → ⚛ React · CSR Engine` 프레임워크 헤더 wrapper 추가. 도메인별 라우트 nested 트리는 유지. (`InfraInfo.hasReactRouter` 신규). **추가: 외부 REST API Gateway 데이터 레이어 노드** — `apiCallEdges.length > 0` && backends/Supabase/Prisma/Firebase/Dexie/hasExternalAPI 모두 미설정 시 `subgraph DATALAYER → 🔌 External REST API → API_GATEWAY` 신규 분기 발동, library별 라벨 자동 합성(`axios · fetch` 등). 분기 우선순위 = **backends > Supabase > Prisma > Firebase > Dexie > hasExternalAPI > apiCallEdges(신규)** — LLM enabled에서 `metadata.backends` 항상 우선 (회귀 0).
+- **Tab2 (Screen–Component Mapping)** — 도메인 nested 트리 + 각 라우트 leaf 옆에 **파일경로 노드(디렉터리 + 파일명)** 노출. Mermaid `<br/>` HTML 라벨로 두 줄 표시. 기존 컴포넌트 이름만 보여주던 방식 폐기. **file-based FE 어댑터 6종 표준화** — `framework='react-router'` 단독에서 **file-based 어댑터 화이트리스트**(`nextjs-app-router` · `nextjs-pages` · `nuxt` · `sveltekit` · `remix` · `react-router`)로 확장. `buildReactRouterScreenDiagram` → **`buildFeFileTreeScreenDiagram`** 개명 + `isFileTreeTab2Eligible(meta)` 헬퍼. **그룹 라우트 `app/(marketing)/about/page.tsx`** · **동적 라우트 `app/blog/[slug]/page.tsx`** 처럼 URL≠파일경로 케이스에서 디렉터리 정보 시각 노출. config-based(`vue-spa`·`angular`)는 v1.2.43+ 평가.
+- **Tab3 (DB–Screen Mapping)** — **분기 표준 도입**. `adapterCategory==='BE'` → 현행 ER + Repository 합성 / `framework==='react-router' && tableNodes.length===0` → 신규 **FE API 호출 다이어그램** (axios/fetch/react-query) / 그 외(Next.js+Supabase·Prisma·Vite 등 FE+tables>0) → 현행 ER 그대로 (회귀 0). 사용자 결정: "supabase 등 분석에 대한 내용은 재사용 및 분석 분기 명확하게 구분".
+
+### Added — FE API 호출 정적 분석
+
+- `IREdge.kind`에 `'api-call'` 신규 추가 + `ApiCallInfo { method, path, library }` 메타 필드. 기존 `'calls'`(Spring DI)와 의미 분리.
+- `makeNodeId`에 `'endpoint'` 가상 kind 추가 — graph.nodes에는 등록하지 않고 edge target 식별자로만 사용 (method+path 동일 호출 자동 dedupe).
+- 신규 `packages/core/src/adapters/reactrouter/parsers/api-call-parser.ts` — `_shared/fe-call-extractor`를 재사용하여 axios.{get,post,put,delete,patch}·fetch·useSWR 호출 추출. `useQuery({queryFn:...})`·`useMutation({mutationFn:...})` 콜백 안의 axios 호출은 ts-morph `forEachDescendant`로 자동 캡처.
+- `FeCall`에 `library: 'axios' | 'fetch' | 'react-query'` 필드 신규. Tab3 다이어그램에서 library별 클래스(`apiAxios`/`apiFetch`/`apiQuery`)로 색상 차등.
+- template literal 인터폴레이션(`` `/api/x/${id}` ``)은 `confidence='inferred'` + `inferenceChain` 보존 (점선 화살표 표시).
+
+### Fixed — Fixture 보강
+
+- `fixtures/mini-react-partner-mock-app` 7개 Page에 현실적 API 호출 패턴 분산 주입 (axios.{get,post,put,delete} / fetch(POST) / useQuery / useMutation / template literal). package.json에 `axios`·`@tanstack/react-query` 추가.
+
+### Verified — LLM enabled 정적 파서 무손상
+
+`analyzer.ts` mergeGraphs 경로에서 정적 routeNodes·componentNodes·tableNodes·edges는 보존만 되고 변형되지 않음을 회귀 테스트 2건으로 명시:
+- LLM `backendServices` 반환 시 `BACKEND_0` 분기 우선, 신규 External API Gateway 분기 미발동
+- LLM `backendServices` 없을 때 정적 `api-call` edges 보존되어 External API Gateway 분기 정상 발동
+
+### Verification
+
+- verify.sh **687 PASS**, 1 skipped (회귀 0, 신규 5 케이스 — api-call 파서 3 + LLM 무손상 2)
+- snapshot 갱신: mini-react-router-app·mini-react-partner-mock-app Tab1·Tab2·Tab3 + IRGraph summary / file-based 어댑터 5종 Tab2 (mini-next-app·mini-nextpages-app·mini-nuxt-app·mini-sveltekit-app·mini-remix-app)
+- 회귀 무영향 검증: mini-spring-*(BE) / mini-vue-spa-app·mini-angular-app(config-based SPA) / Supabase·Prisma·Firebase·Dexie 데이터 레이어 분기
+
+### Scope
+
+본 버전은 **file-based FE 어댑터 6종 + React Router**의 Tab1/2 표준화. **config-based 어댑터(Vue SPA·Angular)와 Expo·Vite 등 다른 FE 스택의 표준 구현은 v1.2.43에서 진행** (project_v143_fe_standard.md). 향후 useQuery/useMutation 자체 hook detection (caller 추적), Next.js Client Component의 react-query 분석 등은 v1.2.44+에서 별도 평가.
+
 ## [1.2.41] — 2026-05-19
 
 ### Fixed — BE Tab1/Tab2 cluster 영역 어긋남 (v1.2.40 ELK mrtree 결함)

@@ -5,6 +5,7 @@ import {
   EMPTY_ADAPTER_RESULT,
 } from '@codebase-viz/types'
 import { parseReactRouterFull } from './parsers/route-parser.js'
+import { parseApiCalls } from './parsers/api-call-parser.js'
 import { detectTsOrmTables, parseSupabaseTables } from '../../db/index.js'
 import { buildMapperEdges } from '../_shared/mapper-utils.js'
 
@@ -25,11 +26,12 @@ export class ReactRouterAdapter implements IAdapter {
     ])
     const tableNodes = [...supabaseTables, ...ormTables]
     const mapperEdges = buildMapperEdges(routeNodes, componentNodes, tableNodes, analyzerVersion)
+    const apiCallEdges = await parseApiCalls(repoRoot, componentNodes, analyzerVersion)
     return {
       ...EMPTY_ADAPTER_RESULT,
       routeNodes,
       componentNodes,
-      componentEdges: rendersEdges,
+      componentEdges: [...rendersEdges, ...apiCallEdges],
       tableNodes,
       mapperEdges,
     }
