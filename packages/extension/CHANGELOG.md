@@ -1,5 +1,39 @@
 # Changelog
 
+## [1.2.42] — 2026-05-20
+
+### Changed — React (react-router) Tab1/2/3 전면 재설계 + file-based FE 어댑터 6종 Tab2 표준화 + Tab1 외부 API Gateway 분기
+
+- **Tab1**:
+  - React Router SPA 프레임워크 헤더(`BROWSER → React Router · SPA → React · CSR Engine`) 추가.
+  - **외부 REST API Gateway 데이터 레이어 분기 신규** — `apiCallEdges>0` && backends/Supabase/Prisma/Firebase/Dexie/hasExternalAPI 모두 미설정 시 `subgraph DATALAYER → 🔌 External REST API → API_GATEWAY` + library별 라벨 합성(`axios · fetch` 등). 분기 우선순위 = backends > Supabase > Prisma > Firebase > Dexie > hasExternalAPI > apiCallEdges(신규).
+- **Tab2**:
+  - 라우트 → 디렉터리 + 파일명 노드 표시. 컴포넌트 이름만 보여주던 방식 폐기.
+  - **file-based 어댑터 6종 일반화** — `nextjs-app-router` · `nextjs-pages` · `nuxt` · `sveltekit` · `remix` · `react-router`. `buildReactRouterScreenDiagram` → `buildFeFileTreeScreenDiagram` 개명 + `isFileTreeTab2Eligible(meta)` 헬퍼.
+  - 그룹 라우트 `app/(marketing)/about/page.tsx`·동적 라우트 `app/blog/[slug]/page.tsx` 디렉터리 시각 노출.
+- **Tab3**: `framework='react-router' && tables===0`에서 **FE API 호출 다이어그램**(axios·fetch·react-query) 신규. Supabase·Prisma·BE 어댑터는 현행 ER 유지(회귀 0).
+
+### Added — `'api-call'` edge kind
+
+- `IREdge.kind`에 `'api-call'` 추가 + `ApiCallInfo { method, path, library }` 메타.
+- `makeNodeId`에 `'endpoint'` 가상 kind — graph.nodes에 미등록, edge target 식별자 전용.
+- 신규 `reactrouter/parsers/api-call-parser.ts` — `_shared/fe-call-extractor` 재사용.
+- `FeCall.library` 필드 신규.
+- template literal 인터폴레이션은 `confidence='inferred'` + 점선 화살표.
+
+### Verified — LLM enabled 정적 파서 무손상 (회귀 테스트 2건 신규)
+
+- LLM `backendServices` 반환 시 `BACKEND_0` 분기 우선, External API Gateway 미발동
+- LLM `backendServices` 없을 때 정적 `api-call` edges 보존되어 분기 정상 발동
+
+### Scope
+
+본 버전은 file-based FE 어댑터 6종(React Router 포함) Tab1·Tab2 표준화. **config-based(Vue SPA·Angular)·Expo·Vite 등 다른 FE 스택의 표준 구현은 v1.2.43에서 진행** (별도 메모리 project_v143_fe_standard.md).
+
+## [1.2.41] — 2026-05-19
+
+(상위 모노레포 CHANGELOG.md 참조)
+
 ## [1.2.40] — 2026-05-19
 
 ### Changed — BE Tab1/Tab2 다이어그램 트리 표준화

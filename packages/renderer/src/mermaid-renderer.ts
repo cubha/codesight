@@ -191,6 +191,7 @@ interface InfraInfo {
   hasNextjs: boolean
   hasVite: boolean
   hasExpo: boolean
+  hasReactRouter: boolean
   hasSupabase: boolean
   hasDexie: boolean
   hasPrisma: boolean
@@ -199,18 +200,31 @@ interface InfraInfo {
 
 function metadataToInfra(meta?: IRGraphMetadata): InfraInfo {
   if (meta === undefined) {
-    return { hasNextjs: false, hasVite: false, hasExpo: false, hasSupabase: false, hasDexie: false, hasPrisma: false, hasFirebase: false }
+    return { hasNextjs: false, hasVite: false, hasExpo: false, hasReactRouter: false, hasSupabase: false, hasDexie: false, hasPrisma: false, hasFirebase: false }
   }
   const fw = meta.framework.toLowerCase()
   return {
     hasNextjs: fw === 'nextjs-app-router' || fw === 'nextjs-pages' || fw.startsWith('next'),
     hasVite: fw === 'vite-react' || fw.includes('vite'),
     hasExpo: fw === 'expo' || fw.includes('expo') || meta.deployTarget === 'mobile',
+    hasReactRouter: fw === 'react-router',
     hasSupabase: meta.hasSupabase,
     hasDexie: meta.hasDexie,
     hasPrisma: meta.hasPrisma,
     hasFirebase: meta.hasFirebase,
   }
+}
+
+// v1.2.43 ST2: file-based 라우팅 어댑터(파일 경로 = URL 또는 파일 위치에 URL 의미 인코딩)
+// Tab2에 라우트 → 디렉터리·파일명 노드 패턴을 적용할 수 있는 어댑터 화이트리스트.
+// config-based(react-router/vue-spa/angular)는 라우트=명시 매핑이라 디렉터리 정보 가치가 다르나
+// react-router는 v1.2.42에서 동일 패턴 채택(파일경로 시각 노출 가치 입증), 본 함수에 포함.
+// vue-spa·angular는 v1.2.44+로 보존.
+function isFileTreeTab2Eligible(meta?: IRGraphMetadata): boolean {
+  if (meta === undefined) return false
+  const fw = meta.framework.toLowerCase()
+  return fw === 'nextjs-app-router' || fw === 'nextjs-pages' || fw === 'nuxt' ||
+    fw === 'sveltekit' || fw === 'remix' || fw === 'react-router'
 }
 
 function buildRouteSectionLines(sections: Map<string, RouteNode[]>, indent: string): string[] {
@@ -757,6 +771,13 @@ function buildRenderingDiagram(graph: IRGraph): string {
     lines.push(`    subgraph RN["⚛ React Native · Expo"]`)
     for (const l of buildNestedSubgraphLines(routeGroups, '      ')) lines.push(l)
     lines.push('    end\n  end')
+  } else if (infra.hasReactRouter) {
+    frontendRef = 'REACT'
+    lines.push(`  subgraph BROWSER["🌐 Browser · Client-Side App"]`)
+    lines.push(`    subgraph ROUTER["🧭 React Router · SPA"]`)
+    lines.push(`      subgraph REACT["⚛ React · CSR Engine"]`)
+    for (const l of buildNestedSubgraphLines(routeGroups, '        ')) lines.push(l)
+    lines.push('      end\n    end\n  end')
   } else {
     for (const l of buildNestedSubgraphLines(routeGroups, '  ')) lines.push(l)
   }
@@ -823,6 +844,24 @@ function buildRenderingDiagram(graph: IRGraph): string {
     lines.push(`      API_SVC[("Backend Service")]`)
     lines.push('    end\n  end')
     if (frontendRef !== undefined) lines.push(`  ${frontendRef} -.->|"REST"| API_SVC`)
+  } else {
+    // v1.2.43 ST1: FE 어댑터에서 axios/fetch/react-query 호출(api-call edges)이 감지됐고
+    // 위 모든 데이터 레이어 분기(backends/Supabase/Dexie/Firebase/Prisma/hasExternalAPI)에 해당 없으면
+    // 외부 REST API Gateway 노드를 표시. React Router SPA + 다른 SPA들이 주 대상.
+    // LLM enabled에서 backends가 채워지면 line 765의 `if backends.length > 0` 분기가 우선이라 충돌 없음.
+    const apiCallEdges = graph.edges.filter(e => e.kind === 'api-call')
+    if (apiCallEdges.length > 0 && frontendRef !== undefined) {
+      const libraries = new Set<string>()
+      for (const e of apiCallEdges) {
+        if (e.apiCall?.library !== undefined) libraries.add(e.apiCall.library)
+      }
+      const libLabel = libraries.size > 0 ? Array.from(libraries).join(' · ') : 'REST'
+      lines.push(`  subgraph DATALAYER["🔌 API LAYER"]`)
+      lines.push(`    subgraph API_G["⚡ External REST API"]`)
+      lines.push(`      API_GATEWAY[("Backend Service")]`)
+      lines.push('    end\n  end')
+      lines.push(`  ${frontendRef} -.->|"${libLabel}"| API_GATEWAY`)
+    }
   }
 
   return lines.join('\n')
@@ -1095,12 +1134,104 @@ function buildScreenComponentDiagram(graph: IRGraph): string {
   ) {
     // v1.1.6: 1 top-level branch = 1 chunk (Tab1과 동일 정책)
     // v1.1.53: routeCount 게이트 추가 — 작은 프로젝트는 single-diagram로 유지.
+    // v1.2.42 scope: chunked 경로는 react-router 분기 미적용 (v1.2.43+ 평가).
     return joinChunks(branchingGroups.map(g =>
       renderScreenSection([g], rendersEdges, importsEdges, componentNodes)
     ))
   }
 
+  // v1.2.42 → v1.2.43 ST2: file-based 어댑터(Next/NextPages/Nuxt/SvelteKit/Remix/ReactRouter)는
+  // 라우트 → 디렉터리 트리 → 파일 leaf 표현으로 분기. Vue SPA·Angular(config-based)는 현행 유지.
+  // BE 어댑터는 위에서 별도 분기 (회귀 0).
+  if (isFileTreeTab2Eligible(graph.metadata)) {
+    return buildFeFileTreeScreenDiagram(branchingGroups, rendersEdges, componentNodes)
+  }
+
   return renderScreenSection(branchingGroups, rendersEdges, importsEdges, componentNodes)
+}
+
+// v1.2.42 ST3 → v1.2.43 ST2: file-based FE 어댑터 Tab2 표준.
+// 라우트 nested 트리 + 각 라우트 leaf 옆에 컴포넌트의 filePath를 별도 노드로 emit.
+// 도메인/디렉터리 nested subgraph는 Tab1과 일관 + leaf = 디렉터리 + 파일명.
+// - file-based 라우팅 어댑터 6종(Next.js App·Pages, Nuxt, SvelteKit, Remix, React Router) 공통 적용
+// - group route `(marketing)` · 동적 route `[slug]` 등 URL≠파일경로 케이스에서 가치 큼
+// - LLM enabled에서도 ComponentNode.filePath 정적 기반이라 동일 동작
+function buildFeFileTreeScreenDiagram(
+  routeGroups: NestedGroup[],
+  rendersEdges: IREdge[],
+  componentNodes: ComponentNode[],
+): string {
+  const compById = new Map(componentNodes.map(c => [c.id, c]))
+  const lines: string[] = [RENDERING_INIT, 'graph TB', CLASS_DEFS]
+  const edges: string[] = []
+  const fileNodeRendered = new Set<string>()
+
+  emitFeFileTreeLines(routeGroups, '  ', compById, rendersEdges, lines, edges, fileNodeRendered)
+  lines.push(...edges)
+  return lines.join('\n')
+}
+
+function emitFeFileTreeLines(
+  groups: NestedGroup[],
+  indent: string,
+  compById: Map<string, ComponentNode>,
+  rendersEdges: IREdge[],
+  lines: string[],
+  edges: string[],
+  fileNodeRendered: Set<string>,
+): void {
+  const i2 = indent + '  '
+  for (const group of groups) {
+    const leafSeg = group.groupKey.split('/').filter(Boolean).pop()
+    if (leafSeg === undefined) {
+      for (const r of group.routes) {
+        emitRouteAndFileLeaf(r, indent, compById, rendersEdges, lines, edges, fileNodeRendered)
+      }
+      if (group.children.length > 0) {
+        emitFeFileTreeLines(group.children, indent, compById, rendersEdges, lines, edges, fileNodeRendered)
+      }
+      continue
+    }
+    const sgId = groupSubgraphId(group.groupKey).replace(/_G$/, '_T')
+    lines.push(`${indent}subgraph ${sgId}["${sectionLabel(leafSeg)}"]`)
+    for (const r of group.routes) {
+      emitRouteAndFileLeaf(r, i2, compById, rendersEdges, lines, edges, fileNodeRendered)
+    }
+    if (group.children.length > 0) {
+      emitFeFileTreeLines(group.children, i2, compById, rendersEdges, lines, edges, fileNodeRendered)
+    }
+    lines.push(`${indent}end`)
+  }
+}
+
+function emitRouteAndFileLeaf(
+  r: RouteNode,
+  indent: string,
+  compById: Map<string, ComponentNode>,
+  rendersEdges: IREdge[],
+  lines: string[],
+  edges: string[],
+  fileNodeRendered: Set<string>,
+): void {
+  const badge = r.renderingMode === 'unknown' ? '?' : r.renderingMode
+  const displayPath = r.path.split('/').filter(Boolean).pop() ?? r.path
+  lines.push(`${indent}${sanitizeId(r.id)}["${displayPath} · ${badge}"]:::${modeClass(r.renderingMode)}`)
+
+  const edge = rendersEdges.find(e => e.from === r.id)
+  if (edge === undefined) return
+  const comp = compById.get(edge.to)
+  if (comp === undefined) return
+
+  const fileId = `file_${sanitizeId(comp.id)}`
+  if (!fileNodeRendered.has(fileId)) {
+    fileNodeRendered.add(fileId)
+    const parts = comp.filePath.split('/')
+    const fileName = parts.pop() ?? comp.filePath
+    const dir = parts.join('/')
+    const label = dir.length > 0 ? `📂 ${dir}<br/>📄 ${fileName}` : `📄 ${fileName}`
+    lines.push(`${indent}${fileId}["${label}"]:::pkg`)
+  }
+  edges.push(`  ${sanitizeId(r.id)} --> ${fileId}`)
 }
 
 // MySQL Workbench 스타일 — th(테이블명 헤더): 어두운 청회색 배경 + 밝은 텍스트
@@ -1117,8 +1248,134 @@ function getSourceLabel(node: IRNode): string | undefined {
   return undefined
 }
 
+// v1.2.42 ST5: React Router Tab3 = Route별 API 호출 다이어그램.
+// - 도메인 subgraph (Tab1·Tab2와 일관)
+// - 각 라우트 leaf → rendersEdge로 매핑된 Page Component → api-call edges
+// - API endpoint 노드는 method+path를 라벨로 합성 (graph.nodes에 미등록, edge.to NodeId로만 식별)
+// - library별 클래스 차등 (axios/fetch/react-query)
+function buildFeApiCallDiagram(graph: IRGraph): string {
+  const routeNodes = graph.nodes.filter(isRouteNode).filter(r => r.routeFileKind === 'page')
+  const componentNodes = graph.nodes.filter(isComponentNode)
+  const rendersEdges = graph.edges.filter(e => e.kind === 'renders')
+  const apiCallEdges = graph.edges.filter(e => e.kind === 'api-call')
+
+  if (routeNodes.length === 0) return 'graph TD\n  empty["(no routes found)"]'
+  if (apiCallEdges.length === 0) return 'graph TD\n  empty["(no API calls detected)"]'
+
+  const compById = new Map(componentNodes.map(c => [c.id, c]))
+  const routeToComp = new Map<string, string>()
+  for (const e of rendersEdges) {
+    if (!routeToComp.has(e.from)) routeToComp.set(e.from, e.to)
+  }
+  const compToApiCalls = new Map<string, typeof apiCallEdges>()
+  for (const e of apiCallEdges) {
+    const list = compToApiCalls.get(e.from) ?? []
+    list.push(e)
+    compToApiCalls.set(e.from, list)
+  }
+
+  const lines: string[] = [RENDERING_INIT, 'graph LR', CLASS_DEFS]
+  lines.push('  classDef apiAxios fill:#1a0d1a,stroke:#a855f7,color:#e9d5ff')
+  lines.push('  classDef apiFetch fill:#0d1a1a,stroke:#06b6d4,color:#a5f3fc')
+  lines.push('  classDef apiQuery fill:#1a0d0d,stroke:#f43f5e,color:#fecdd3')
+  const edgeLines: string[] = []
+  const endpointEmitted = new Set<string>()
+
+  const routeGroups = groupRoutesByUrl(routeNodes)
+  emitFeApiCallTreeLines(
+    routeGroups,
+    '  ',
+    routeToComp,
+    compById,
+    compToApiCalls,
+    lines,
+    edgeLines,
+    endpointEmitted,
+  )
+  lines.push(...edgeLines)
+  return lines.join('\n')
+}
+
+function emitFeApiCallTreeLines(
+  groups: NestedGroup[],
+  indent: string,
+  routeToComp: Map<string, string>,
+  compById: Map<string, ComponentNode>,
+  compToApiCalls: Map<string, IREdge[]>,
+  lines: string[],
+  edges: string[],
+  endpointEmitted: Set<string>,
+): void {
+  const i2 = indent + '  '
+  for (const group of groups) {
+    const leafSeg = group.groupKey.split('/').filter(Boolean).pop()
+    if (leafSeg === undefined) {
+      for (const r of group.routes) {
+        emitRouteApiCalls(r, indent, routeToComp, compById, compToApiCalls, lines, edges, endpointEmitted)
+      }
+      if (group.children.length > 0) {
+        emitFeApiCallTreeLines(group.children, indent, routeToComp, compById, compToApiCalls, lines, edges, endpointEmitted)
+      }
+      continue
+    }
+    const sgId = groupSubgraphId(group.groupKey).replace(/_G$/, '_API')
+    lines.push(`${indent}subgraph ${sgId}["${sectionLabel(leafSeg)}"]`)
+    for (const r of group.routes) {
+      emitRouteApiCalls(r, i2, routeToComp, compById, compToApiCalls, lines, edges, endpointEmitted)
+    }
+    if (group.children.length > 0) {
+      emitFeApiCallTreeLines(group.children, i2, routeToComp, compById, compToApiCalls, lines, edges, endpointEmitted)
+    }
+    lines.push(`${indent}end`)
+  }
+}
+
+function emitRouteApiCalls(
+  r: RouteNode,
+  indent: string,
+  routeToComp: Map<string, string>,
+  _compById: Map<string, ComponentNode>,
+  compToApiCalls: Map<string, IREdge[]>,
+  lines: string[],
+  edges: string[],
+  endpointEmitted: Set<string>,
+): void {
+  const badge = r.renderingMode === 'unknown' ? '?' : r.renderingMode
+  const displayPath = r.path.split('/').filter(Boolean).pop() ?? r.path
+  lines.push(`${indent}${sanitizeId(r.id)}["${displayPath} · ${badge}"]:::${modeClass(r.renderingMode)}`)
+
+  const compId = routeToComp.get(r.id)
+  if (compId === undefined) return
+  const calls = compToApiCalls.get(compId) ?? []
+  for (const call of calls) {
+    if (call.apiCall === undefined) continue
+    const { method, path: apiPath, library } = call.apiCall
+    const endpointId = `ep_${sanitizeId(`${method}_${apiPath}`)}`
+    if (!endpointEmitted.has(endpointId)) {
+      endpointEmitted.add(endpointId)
+      const cls = library === 'fetch' ? 'apiFetch' : library === 'react-query' ? 'apiQuery' : 'apiAxios'
+      const arrow = call.confidence === 'inferred' ? '⟿' : '→'
+      lines.push(`${indent}${endpointId}["${method} ${apiPath} ${arrow} ${library}"]:::${cls}`)
+    }
+    const edgeArrowChar = call.confidence === 'inferred' ? '-.->' : '-->'
+    edges.push(`  ${sanitizeId(r.id)} ${edgeArrowChar} ${endpointId}`)
+  }
+}
+
 function buildDbScreenDiagram(graph: IRGraph): string {
   const tableNodes = graph.nodes.filter(isTableNode)
+
+  // v1.2.42 ST5: Tab3 분기
+  //   1. BE 어댑터 → 현행 ER + Repository 합성 (이 함수 하단 'adapterCategory==='BE'' 블록 유지)
+  //   2. react-router FE + tables===0 → 신규 FE API 호출 다이어그램 (axios/fetch/react-query)
+  //   3. 그 외(Next.js+Supabase·Vite·Nuxt·SvelteKit·Vue SPA 등 FE+tables>0) → 현행 ER 다이어그램 (회귀 0)
+  if (graph.metadata?.adapterCategory !== 'BE' && tableNodes.length === 0) {
+    const infra = metadataToInfra(graph.metadata)
+    if (infra.hasReactRouter) {
+      return buildFeApiCallDiagram(graph)
+    }
+  }
+
   const queriesEdges = graph.edges.filter(e => e.kind === 'queries')
 
   // Deduplicate query sources (routes + components that actually query tables)

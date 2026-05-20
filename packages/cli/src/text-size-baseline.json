@@ -2,19 +2,19 @@
   "fixtures": {
     "mini-next-app": {
       "rendering": 1619,
-      "screenComponent": 1501,
+      "screenComponent": 1581,
       "dbScreen": 793,
       "exceeded": false
     },
     "mini-nuxt-app": {
       "rendering": 1201,
-      "screenComponent": 1201,
+      "screenComponent": 1199,
       "dbScreen": 434,
       "exceeded": false
     },
     "mini-sveltekit-app": {
       "rendering": 1104,
-      "screenComponent": 1104,
+      "screenComponent": 1103,
       "dbScreen": 434,
       "exceeded": false
     },
@@ -62,19 +62,19 @@
     },
     "mini-remix-app": {
       "rendering": 1121,
-      "screenComponent": 1121,
+      "screenComponent": 1120,
       "dbScreen": 434,
       "exceeded": false
     },
     "mini-react-router-app": {
-      "rendering": 1210,
-      "screenComponent": 1798,
-      "dbScreen": 434,
+      "rendering": 1435,
+      "screenComponent": 1951,
+      "dbScreen": 43,
       "exceeded": false
     },
     "mini-nextpages-app": {
       "rendering": 1799,
-      "screenComponent": 1450,
+      "screenComponent": 1423,
       "dbScreen": 434,
       "exceeded": false
     }

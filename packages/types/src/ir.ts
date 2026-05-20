@@ -121,12 +121,22 @@ export type IRNode = RouteNode | ComponentNode | TableNode
 //   'renders'    — RouteNode(page/layout) → ComponentNode
 //   'imports'    — ComponentNode → ComponentNode (direct TSX import)
 //   'queries'    — ComponentNode → TableNode (supabase.from() call)
-//   'calls'      — reserved for Server Action calls (out of scope for MVP)
+//   'calls'      — Spring DI: Controller→Service→Repository chain
 //   'fe-be-call' — FE fetch/axios call → BE RouteNode (cross-project URL match)
+//   'api-call'   — FE Component → FE-local API endpoint (axios/fetch/react-query). v1.2.42.
 //
 // `importDepth` is meaningful only for 'imports' edges (1 = direct import).
 // `crossProject` is meaningful only for 'fe-be-call' edges.
-export type EdgeKind = 'renders' | 'calls' | 'queries' | 'imports' | 'fe-be-call'
+// `apiCall` is meaningful only for 'api-call' edges.
+export type EdgeKind = 'renders' | 'calls' | 'queries' | 'imports' | 'fe-be-call' | 'api-call'
+
+export type ApiCallLibrary = 'axios' | 'fetch' | 'react-query'
+
+export interface ApiCallInfo {
+  method: string            // GET | POST | PUT | DELETE | PATCH (uppercase)
+  path: string              // URL path; interpolation kept as ${...} for inferred
+  library: ApiCallLibrary
+}
 
 type IREdgeBase = {
   id: EdgeId
@@ -135,6 +145,7 @@ type IREdgeBase = {
   kind: EdgeKind
   importDepth?: number       // populated only for kind === 'imports'
   crossProject?: { fromRepoRoot: string; toRepoRoot: string }  // populated only for kind === 'fe-be-call'
+  apiCall?: ApiCallInfo      // populated only for kind === 'api-call'
   provenance: Provenance
 }
 
@@ -235,11 +246,13 @@ export function isTableNode(node: IRNode): node is TableNode {
 //                  Prevents NodeId collision when page.tsx and layout.tsx share a directory.
 //   ComponentNode → symbol = exported identifier (default export → filename stem)
 //   TableNode    → symbol = table name
+//   endpoint     → symbol = `${METHOD}:${path}` — used as edge target placeholder
+//                  for 'api-call' edges (no node registered in graph.nodes).
 //
 // Full format: "${kind}:${repoRelativePath}:${symbol}"
 // Deterministic — same input always yields the same ID. UUID is forbidden.
 export function makeNodeId(
-  kind: 'route' | 'component' | 'table',
+  kind: 'route' | 'component' | 'table' | 'endpoint',
   repoRelativePath: string,
   symbol: string
 ): NodeId {

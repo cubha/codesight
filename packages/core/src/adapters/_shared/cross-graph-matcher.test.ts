@@ -27,8 +27,8 @@ function makeRoute(path: string, method?: string): RouteNode {
 const opts = { fromRepoRoot: '/repo/frontend', toRepoRoot: '/repo/backend', analyzerVersion: 'codebase-viz@0.1.0' }
 
 // Helper: use repo-relative filePaths (consistent with extractFeCalls output)
-function feCall(method: string, url: string, filePath: string, line = 1): { method: string; url: string; filePath: string; line: number; confidence: 'verified' } {
-  return { method, url, filePath, line, confidence: 'verified' }
+function feCall(method: string, url: string, filePath: string, line = 1): { method: string; url: string; filePath: string; line: number; confidence: 'verified'; library: 'axios' } {
+  return { method, url, filePath, line, confidence: 'verified', library: 'axios' }
 }
 
 describe('matchFeCallsToBeRoutes', () => {

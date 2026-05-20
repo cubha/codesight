@@ -1,6 +1,8 @@
 import * as path from 'node:path'
 import { Project, SyntaxKind, type SourceFile, type Node } from 'ts-morph'
 
+export type FeCallLibrary = 'axios' | 'fetch' | 'react-query'
+
 export interface FeCall {
   method: string
   url: string
@@ -8,6 +10,7 @@ export interface FeCall {
   line: number       // 1-based
   confidence: 'verified' | 'inferred'
   inferenceChain?: string[]
+  library: FeCallLibrary
 }
 
 const AXIOS_HTTP_METHODS = new Set(['get', 'post', 'put', 'delete', 'patch', 'head', 'options'])
@@ -80,11 +83,12 @@ function buildFeCall(
   resolved: { url: string; confidence: 'verified' | 'inferred'; inferenceChain?: string[] },
   filePath: string,
   line: number,
+  library: FeCallLibrary,
 ): FeCall {
   if (resolved.inferenceChain !== undefined) {
-    return { method, url: resolved.url, filePath, line, confidence: resolved.confidence, inferenceChain: resolved.inferenceChain }
+    return { method, url: resolved.url, filePath, line, confidence: resolved.confidence, inferenceChain: resolved.inferenceChain, library }
   }
-  return { method, url: resolved.url, filePath, line, confidence: resolved.confidence }
+  return { method, url: resolved.url, filePath, line, confidence: resolved.confidence, library }
 }
 
 function extractMethodFromFetchOptions(args: Node[]): string {
@@ -124,7 +128,7 @@ function processSourceFile(sf: SourceFile, filePath: string, calls: FeCall[]): v
       const resolved = extractUrlFromNode(firstArg, consts)
       if (!resolved) return
       const method = extractMethodFromFetchOptions(args)
-      calls.push(buildFeCall(method, resolved, filePath, call.getStartLineNumber()))
+      calls.push(buildFeCall(method, resolved, filePath, call.getStartLineNumber(), 'fetch'))
       return
     }
 
@@ -136,7 +140,7 @@ function processSourceFile(sf: SourceFile, filePath: string, calls: FeCall[]): v
         if (!firstArg) return
         const resolved = extractUrlFromNode(firstArg, consts)
         if (!resolved) return
-        calls.push(buildFeCall(methodName.toUpperCase(), resolved, filePath, call.getStartLineNumber()))
+        calls.push(buildFeCall(methodName.toUpperCase(), resolved, filePath, call.getStartLineNumber(), 'axios'))
         return
       }
 
@@ -146,7 +150,7 @@ function processSourceFile(sf: SourceFile, filePath: string, calls: FeCall[]): v
         if (!firstArg) return
         const resolved = extractUrlFromNode(firstArg, consts)
         if (!resolved) return
-        calls.push(buildFeCall('GET', resolved, filePath, call.getStartLineNumber()))
+        calls.push(buildFeCall('GET', resolved, filePath, call.getStartLineNumber(), 'react-query'))
         return
       }
     }
@@ -156,7 +160,7 @@ function processSourceFile(sf: SourceFile, filePath: string, calls: FeCall[]): v
       if (!firstArg) return
       const resolved = extractUrlFromNode(firstArg, consts)
       if (!resolved) return
-      calls.push(buildFeCall('GET', resolved, filePath, call.getStartLineNumber()))
+      calls.push(buildFeCall('GET', resolved, filePath, call.getStartLineNumber(), 'react-query'))
     }
   })
 }
