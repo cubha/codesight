@@ -27,9 +27,9 @@ const FRAMEWORK_PROFILES: Record<FrameworkKind, FrameworkProfile> = {
   'react-router':      { adapterId: 'react-router',      parsingLevel: 'L2', llmRecommended: false },
   'remix':             { adapterId: 'remix',             parsingLevel: 'L2', llmRecommended: false },
   'angular':           { adapterId: 'angular',           parsingLevel: 'L2', llmRecommended: false },
-  // L1: limited static analysis
-  'expo':              { adapterId: 'expo',              parsingLevel: 'L1', llmRecommended: true  },
-  // L3: LLM-only (no static adapter)
+  // LLM-only (no static adapter — adapterId undefined)
+  // expo·vite-react는 화면 프레임워크가 아닌 플랫폼/빌드 도구 — 실제 화면은 RN/React/Vue 등. 정적 어댑터 신설 부적합
+  'expo':              {                                  parsingLevel: 'L1', llmRecommended: true  },
   'vite-react':        {                                  parsingLevel: 'L3', llmRecommended: true  },
   'flutter':           {                                  parsingLevel: 'L1', llmRecommended: true  },
   'unknown':           {                                  parsingLevel: 'L3', llmRecommended: true  },

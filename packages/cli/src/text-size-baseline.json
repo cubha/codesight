@@ -49,13 +49,13 @@
       "exceeded": false
     },
     "mini-vue-spa-app": {
-      "rendering": 1230,
+      "rendering": 1450,
       "screenComponent": 1230,
       "dbScreen": 434,
       "exceeded": false
     },
     "mini-angular-app": {
-      "rendering": 1307,
+      "rendering": 1545,
       "screenComponent": 1258,
       "dbScreen": 434,
       "exceeded": false

@@ -1,5 +1,29 @@
 # Changelog
 
+## [1.2.43] — 2026-05-20
+
+### Changed — config-based FE 어댑터(Vue SPA · Angular) Tab1 wrapper 표준 적용
+
+v1.2.42에서 file-based FE 어댑터 6종에 도입된 `Browser → Router → Engine` 3단 wrapper 표준을 config-based 화면 프레임워크 2종(Vue SPA · Angular)에 균등 적용. FE 어댑터 8종 Tab1 헤더 표현 통일 완성.
+
+- **Tab1 (Rendering Architecture)** — `framework='vue-spa'` 어댑터에 `BROWSER → 🧭 Vue Router · SPA → 💚 Vue · CSR Engine` 3단 wrapper 신규(`InfraInfo.hasVueSpa`, `frontendRef='VUE'`). `framework='angular'` 어댑터에 `BROWSER → 🧭 Angular Router · SPA → 🅰 Angular · CSR Engine` 3단 wrapper 신규(`InfraInfo.hasAngular`, `frontendRef='ANGULAR'`). 도메인별 라우트 nested 트리는 유지. **외부 REST API Gateway 데이터 레이어 분기는 frontendRef 정의로 자동 발동** — Vue SPA·Angular도 axios/fetch 호출 시 `DATALAYER → 🔌 External REST API → API_GATEWAY` 노출(v1.2.42 통합 동작 흡수, 별도 코드 작업 불필요).
+- **Tab2 (Screen–Component Mapping)** — config-based 어댑터(`vue-spa`·`angular`)는 `route.filePath`가 라우터 정의 파일(`src/router/index.ts`·`src/app/app.routes.ts` 등)로 통일되어 있어 파일경로 노드 적용 시 모든 라우트가 같은 파일을 가리키게 됨 → 시각 가치 부족. 어댑터에서 컴포넌트 파일을 추적해 route.filePath를 컴포넌트로 매핑하는 보강 작업이 선행 필요. **v1.2.43 SKIP**, v1.2.44+ 어댑터 보강 patch로 분리.
+- **Tab3 (DB–Screen Mapping)** — 현행 ER 다이어그램 유지(회귀 0). Vue SPA·Angular는 tables>0 케이스에서 표준 ER 분기 적용.
+
+### Fixed — Expo adapterId 죽은 참조 + over-defensive 분기 정리
+
+v1.2.43 진입 전 화면 프레임워크 vs 플랫폼/빌드 도구 분류 정합성 정리. Expo·Vite는 화면 프레임워크가 아닌 RN 모바일 플랫폼/빌드 도구이므로 별도 어댑터 분기 신설 부적합 — Tab1 메타 표현만 유지.
+
+- `stack-detector.ts:31` — `'expo': { adapterId: 'expo', ... }` 죽은 참조 제거 (registry에 `expo` 어댑터 미등록). `expo`·`vite-react`를 LLM-only 그룹으로 명시 ("화면 프레임워크가 아닌 플랫폼/빌드 도구" 주석).
+- `mermaid-renderer.ts:208-209` — `fw.includes('vite')`, `fw.includes('expo')` redundant fallback 제거 (`FrameworkKind` union이 닫혀 있어 unreachable). 명시 `fw === 'vite-react'`, `fw === 'expo'`만 유지. `deployTarget === 'mobile'` LLM fallback은 보존.
+- `mermaid-renderer.ts:761-773` — `hasVite`·`hasExpo` wrapper 분기에 의도 주석 보강. "빌드/플랫폼 메타 표현용, 별도 화면 프레임워크 아님. LLM-only 경로에서만 routes 채워짐" 명시.
+
+### Internal
+
+- snapshot: `mini-vue-spa-app` · `mini-angular-app` Tab1 rendering diagram 갱신 (2건).
+- verify.sh: 687 PASS · 1 skipped · 회귀 0.
+- 폐기 결정(부활 금지): Expo·Vite 별도 화면 프레임워크 어댑터 신설. 두 케이스는 Tab1 메타(빌드/플랫폼)로 충분. 실제 화면은 RN/React/Vue 등이 담당.
+
 ## [1.2.42] — 2026-05-20
 
 ### Changed — React (react-router) 분석 결과 전면 재설계 + file-based FE 어댑터 6종 Tab2 표준화 + Tab1 외부 API Gateway 분기
