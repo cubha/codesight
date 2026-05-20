@@ -1,5 +1,28 @@
 # Changelog
 
+## [1.2.43] — 2026-05-20
+
+### Changed — config-based FE 어댑터(Vue SPA · Angular) Tab1 wrapper 표준 적용
+
+v1.2.42에서 file-based FE 어댑터 6종에 도입된 `Browser → Router → Engine` 3단 wrapper 표준을 config-based 화면 프레임워크 2종(Vue SPA · Angular)에 균등 적용. FE 어댑터 8종 Tab1 헤더 표현 통일.
+
+- **Tab1 (Rendering Architecture)**:
+  - **Vue SPA**: `BROWSER → 🧭 Vue Router · SPA → 💚 Vue · CSR Engine` 3단 wrapper 신규 (`InfraInfo.hasVueSpa`).
+  - **Angular**: `BROWSER → 🧭 Angular Router · SPA → 🅰 Angular · CSR Engine` 3단 wrapper 신규 (`InfraInfo.hasAngular`).
+  - 외부 REST API Gateway 분기는 `frontendRef` 정의로 자동 발동 — Vue SPA·Angular도 axios/fetch 호출 시 데이터 레이어 자동 노출(v1.2.42 통합 동작 흡수).
+- **Tab2**: config-based 어댑터는 `route.filePath`가 라우터 정의 파일(`src/router/index.ts` 등)로 통일되어 있어 파일경로 노드 가치 부족 — 어댑터에서 컴포넌트 파일 추적 보강이 선행 필요. **v1.2.43 SKIP**, v1.2.44+로 분리.
+
+### Fixed — Expo adapterId 죽은 참조 + over-defensive 분기 정리
+
+- `stack-detector.ts`: `'expo' adapterId: 'expo'` 죽은 참조 제거 (registry 미등록). expo·vite-react를 LLM-only 그룹으로 명시.
+- `mermaid-renderer.ts`: `fw.includes('vite')`, `fw.includes('expo')` redundant fallback 제거 (FrameworkKind union 닫힘으로 unreachable). 명시 `fw === 'vite-react'`, `fw === 'expo'`만 유지. `deployTarget === 'mobile'` 보존.
+- `hasVite`/`hasExpo` wrapper 분기에 의도 주석 보강 (빌드/플랫폼 메타 표현용, 별도 화면 프레임워크 아님).
+
+### Internal
+
+- snapshot: `mini-vue-spa-app` · `mini-angular-app` Tab1 갱신 (2건).
+- verify.sh: 687 PASS · 1 skipped · 회귀 0.
+
 ## [1.2.42] — 2026-05-20
 
 ### Changed — React (react-router) Tab1/2/3 전면 재설계 + file-based FE 어댑터 6종 Tab2 표준화 + Tab1 외부 API Gateway 분기

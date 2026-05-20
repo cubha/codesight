@@ -192,6 +192,8 @@ interface InfraInfo {
   hasVite: boolean
   hasExpo: boolean
   hasReactRouter: boolean
+  hasVueSpa: boolean
+  hasAngular: boolean
   hasSupabase: boolean
   hasDexie: boolean
   hasPrisma: boolean
@@ -200,14 +202,16 @@ interface InfraInfo {
 
 function metadataToInfra(meta?: IRGraphMetadata): InfraInfo {
   if (meta === undefined) {
-    return { hasNextjs: false, hasVite: false, hasExpo: false, hasReactRouter: false, hasSupabase: false, hasDexie: false, hasPrisma: false, hasFirebase: false }
+    return { hasNextjs: false, hasVite: false, hasExpo: false, hasReactRouter: false, hasVueSpa: false, hasAngular: false, hasSupabase: false, hasDexie: false, hasPrisma: false, hasFirebase: false }
   }
   const fw = meta.framework.toLowerCase()
   return {
     hasNextjs: fw === 'nextjs-app-router' || fw === 'nextjs-pages' || fw.startsWith('next'),
-    hasVite: fw === 'vite-react' || fw.includes('vite'),
-    hasExpo: fw === 'expo' || fw.includes('expo') || meta.deployTarget === 'mobile',
+    hasVite: fw === 'vite-react',
+    hasExpo: fw === 'expo' || meta.deployTarget === 'mobile',
     hasReactRouter: fw === 'react-router',
+    hasVueSpa: fw === 'vue-spa',
+    hasAngular: fw === 'angular',
     hasSupabase: meta.hasSupabase,
     hasDexie: meta.hasDexie,
     hasPrisma: meta.hasPrisma,
@@ -759,6 +763,8 @@ function buildRenderingDiagram(graph: IRGraph): string {
     for (const l of buildNestedSubgraphLines(routeGroups, '        ')) lines.push(l)
     lines.push('      end\n    end\n  end')
   } else if (infra.hasVite) {
+    // Vite는 화면 프레임워크가 아닌 빌드 도구. framework='vite-react'(LLM-only)인 SPA용 Tab1 메타 표현.
+    // Vite + React + react-router 조합은 react-router 어댑터 분기가 우선됨(stack-detector 우선순위).
     frontendRef = 'REACT'
     lines.push(`  subgraph BROWSER["🌐 Browser · Client-Side App"]`)
     lines.push(`    subgraph BUNDLER["⚡ Vite · Dev/Build"]`)
@@ -766,6 +772,8 @@ function buildRenderingDiagram(graph: IRGraph): string {
     for (const l of buildNestedSubgraphLines(routeGroups, '        ')) lines.push(l)
     lines.push('      end\n    end\n  end')
   } else if (infra.hasExpo) {
+    // Expo는 화면 프레임워크가 아닌 RN 모바일 플랫폼. framework='expo'(LLM-only) 또는 deployTarget='mobile' Tab1 메타.
+    // 실제 화면은 React Native 컴포넌트. 정적 어댑터 미등록 — routes는 LLM 결과로만 채워짐.
     frontendRef = 'RN'
     lines.push(`  subgraph MOBILE["📱 Mobile · iOS / Android"]`)
     lines.push(`    subgraph RN["⚛ React Native · Expo"]`)
@@ -776,6 +784,20 @@ function buildRenderingDiagram(graph: IRGraph): string {
     lines.push(`  subgraph BROWSER["🌐 Browser · Client-Side App"]`)
     lines.push(`    subgraph ROUTER["🧭 React Router · SPA"]`)
     lines.push(`      subgraph REACT["⚛ React · CSR Engine"]`)
+    for (const l of buildNestedSubgraphLines(routeGroups, '        ')) lines.push(l)
+    lines.push('      end\n    end\n  end')
+  } else if (infra.hasVueSpa) {
+    frontendRef = 'VUE'
+    lines.push(`  subgraph BROWSER["🌐 Browser · Client-Side App"]`)
+    lines.push(`    subgraph ROUTER["🧭 Vue Router · SPA"]`)
+    lines.push(`      subgraph VUE["💚 Vue · CSR Engine"]`)
+    for (const l of buildNestedSubgraphLines(routeGroups, '        ')) lines.push(l)
+    lines.push('      end\n    end\n  end')
+  } else if (infra.hasAngular) {
+    frontendRef = 'ANGULAR'
+    lines.push(`  subgraph BROWSER["🌐 Browser · Client-Side App"]`)
+    lines.push(`    subgraph ROUTER["🧭 Angular Router · SPA"]`)
+    lines.push(`      subgraph ANGULAR["🅰 Angular · CSR Engine"]`)
     for (const l of buildNestedSubgraphLines(routeGroups, '        ')) lines.push(l)
     lines.push('      end\n    end\n  end')
   } else {

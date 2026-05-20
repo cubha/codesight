@@ -1,8 +1,12 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none">
-  <line x1="8" y1="3" x2="3" y2="12" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
-  <line x1="8" y1="3" x2="13" y2="12" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
-  <line x1="3" y1="12" x2="13" y2="12" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
-  <circle cx="8" cy="3" r="2" fill="currentColor"/>
-  <circle cx="3" cy="12" r="2" fill="currentColor"/>
-  <circle cx="13" cy="12" r="2" fill="currentColor"/>
+  <line x1="8" y1="2.5" x2="3" y2="7.5" stroke="currentColor" stroke-width="1.05" stroke-linecap="round" opacity="0.85"/>
+  <line x1="8" y1="2.5" x2="13" y2="7.5" stroke="currentColor" stroke-width="1.05" stroke-linecap="round" opacity="0.85"/>
+  <line x1="3" y1="7.5" x2="5" y2="13" stroke="currentColor" stroke-width="1.05" stroke-linecap="round" opacity="0.85"/>
+  <line x1="3" y1="7.5" x2="11" y2="13" stroke="currentColor" stroke-width="1.05" stroke-linecap="round" opacity="0.38"/>
+  <line x1="13" y1="7.5" x2="11" y2="13" stroke="currentColor" stroke-width="1.05" stroke-linecap="round" opacity="0.85"/>
+  <circle cx="8" cy="2.5" r="2" fill="currentColor"/>
+  <circle cx="3" cy="7.5" r="1.6" fill="currentColor"/>
+  <circle cx="13" cy="7.5" r="1.6" fill="currentColor"/>
+  <circle cx="5" cy="13" r="1.6" fill="currentColor"/>
+  <circle cx="11" cy="13" r="1.6" fill="currentColor"/>
 </svg>
