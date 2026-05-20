@@ -2,7 +2,7 @@
   "fixtures": {
     "mini-next-app": {
       "rendering": 1619,
-      "screenComponent": 1581,
+      "screenComponent": 1751,
       "dbScreen": 793,
       "exceeded": false
     },
@@ -49,14 +49,14 @@
       "exceeded": false
     },
     "mini-vue-spa-app": {
-      "rendering": 1450,
-      "screenComponent": 1230,
+      "rendering": 1454,
+      "screenComponent": 2173,
       "dbScreen": 434,
       "exceeded": false
     },
     "mini-angular-app": {
-      "rendering": 1545,
-      "screenComponent": 1258,
+      "rendering": 1562,
+      "screenComponent": 1976,
       "dbScreen": 434,
       "exceeded": false
     },

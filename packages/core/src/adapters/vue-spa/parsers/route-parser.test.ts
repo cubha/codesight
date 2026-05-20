@@ -48,6 +48,46 @@ describe('parseVueRoutes', () => {
     const routes = await parseVueRoutes(tmpDir, 'test@0.1')
     for (const r of routes) expect(r.routeFileKind).toBe('page')
   })
+
+  // v1.2.44 A1-1: filePath 컴포넌트 파일 치환
+  it('A1-1: 각 라우트 filePath는 dynamic import 컴포넌트 파일로 치환됨', async () => {
+    // 실제 .vue 파일 생성 (위 beforeAll에서 만든 라우터의 import target)
+    await fs.writeFile(path.join(tmpDir, 'src', 'Home.vue'), '<template>home</template>')
+    await fs.writeFile(path.join(tmpDir, 'src', 'About.vue'), '<template>about</template>')
+    await fs.writeFile(path.join(tmpDir, 'src', 'UserDetail.vue'), '<template>user</template>')
+    const routes = await parseVueRoutes(tmpDir, 'test@0.1')
+    const home = routes.find(r => r.path === '/')
+    const about = routes.find(r => r.path === '/about')
+    const detail = routes.find(r => r.path === '/users/:id')
+    expect(home?.filePath).toMatch(/Home\.vue$/)
+    expect(about?.filePath).toMatch(/About\.vue$/)
+    expect(detail?.filePath).toMatch(/UserDetail\.vue$/)
+    // 라우터 정의 파일과 달라야 함
+    expect(home?.filePath).not.toMatch(/router\/index\.ts$/)
+  })
+
+  it('A1-1: component 파일을 못 찾으면 라우터 정의 파일 fallback (회귀 가드)', async () => {
+    const fallbackDir = await fs.mkdtemp(path.join(os.tmpdir(), 'cv-vue-fb-'))
+    try {
+      await fs.mkdir(path.join(fallbackDir, 'src', 'router'), { recursive: true })
+      await fs.writeFile(
+        path.join(fallbackDir, 'src', 'router', 'index.ts'),
+        `import { createRouter, createWebHistory } from 'vue-router'
+const router = createRouter({
+  history: createWebHistory(),
+  routes: [
+    { path: '/missing', component: () => import('../views/Missing.vue') },
+  ],
+})
+export default router`,
+      )
+      const routes = await parseVueRoutes(fallbackDir, 'test@0.1')
+      const r = routes.find(rr => rr.path === '/missing')
+      expect(r?.filePath).toMatch(/router\/index\.ts$/)
+    } finally {
+      await fs.rm(fallbackDir, { recursive: true, force: true })
+    }
+  })
 })
 
 describe('parseVueRoutes — external routes file (N-21)', () => {

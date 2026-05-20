@@ -1,5 +1,61 @@
 # Changelog
 
+## [1.2.44] — 2026-05-21
+
+### Fixed — React Router `.map()` 패턴 라우트 추적 회귀 해소 (사용자 실측)
+
+사용자 실제 React Router 프로젝트(`appRoutes.map(r => <Route element={<r.component/>} />)`)에서 라우트가 0건으로 분석되던 회귀 3건 일괄 수정.
+
+- **F-Route-1 외부 import 데이터 배열 추적** (`route-parser.ts` Case A-2) — `.map()`의 데이터 배열이 외부 파일 import인 경우 같은 파일 const만 검색하던 한계 해소. `resolveArrayLiteralFromIdentifier` 헬퍼 신설로 same-file → import 1-hop fallback. `<Routes>` children인 `{externalElementsArray}` 자체가 외부 파일의 `export const = X.map(...)` 패턴도 추적 (Case B에 swap된 ResolverCtx로 X 재resolve).
+- **F-Route-2 lowercase `component` Identifier 인식** (`extractRoutesFromArray`) — React Router 공식 키 `element`/`Component`/`lazy` 외 사용자 커스텀 컨벤션 `{ path, component: PageComponent }`도 인식. 4번째 분기 + 첫 글자 대문자 가드(string/숫자/객체 prop 오인식 차단).
+- **F-Route-3 `<paramName.propName />` member access 매핑** (`extractMapPathPrefix` + 신규 `extractMapElementPropName`) — map callback의 `element={<r.component />}` PropertyAccessExpression 인식. callback param + prop name 추출 → entries 동적 키 lookup (`component` 외 `page`·`view` 등 임의 키 이름도 지원). `extractRoutesFromArray`에 `extraComponentKey` 파라미터 신설.
+- **외부 import 컴포넌트 abs base resolve** — 외부 모듈에서 추출된 elementComponent를 `parseReactRouterFull` JSX 분기가 현재 sourceFile importMap에서 lookup하던 한계 해소. `resolveElementComponentAbsBase` 헬퍼로 외부 sourceFile importMap에서 미리 resolve → `JsxRouteRaw.elementComponentAbsBase` 메타로 전달.
+
+### Changed — Vue SPA · Angular Tab2 file-tree 표준 진입 + 사용자 표준 2 부합 완성
+
+v1.2.43 SKIP 처리됐던 config-based FE 어댑터 Tab2 표준화 완료. Vue SPA·Angular도 file-based 6종과 동일한 file leaf + 1-depth import child 표시.
+
+- **Vue SPA `route.filePath` 컴포넌트 파일 치환** (`vue-spa/route-parser.ts`) — 라우트 정의의 `component: () => import('./Foo.vue')` (dynamic) · `component: FooComp` (sync Identifier) 분석 → 모듈 경로 resolve(`.vue`·`.ts`·`.tsx`·`.js`·`.jsx` 확장자 fallback) → `route.filePath` 치환. 외부 파일 import 시 routesArray sourceFile 기준 routerDir + importMap 사용.
+- **Angular `loadComponent` / `component` Identifier 추적** (`angular/route-parser.ts`) — `loadComponent: () => import('./foo').then(m => m.Foo)` (이미 v1.2.40 처리) + 신규 `component: FooComponent` Identifier 분기. `componentSpecMap`(spec + isIdentifier + resolveFromDir) 신설. `provideRouter(externalRoutes)` 패턴 시 routesArray sourceFile(외부 `app.routes.ts`) 기준 importMap으로 component Identifier resolve. fallback도 routesArraySf relPath로 통일.
+- **`buildFeFileTreeScreenDiagram` 화이트리스트 확장** (`mermaid-renderer.ts:227`) — `isFileTreeTab2Eligible`에 `vue-spa` · `angular` 추가. 두 어댑터도 라우트 → 디렉터리 트리 + 파일 leaf 표현 적용.
+- **`RouteNode → ComponentNode` rendersEdge 보완** (`vue-spa/adapter.ts` · `angular/adapter.ts`) — `route.filePath ↔ component.filePath` 매칭으로 rendersEdge 생성 (confidence='inferred'). Angular는 기존 loadComponentMap 우선 + seenRouteIds Set 중복 가드 + sync Identifier 패턴 fallback. Tab2 file leaf + 라우트→파일 edge 정상 표시 → 사용자 표준 2 부합 완성.
+
+### Added — Tab2 1-depth import child component leaf (Sub-1 fan-in · Sub-2 page→page)
+
+Tab2가 라우트→파일 1:1 매핑만 표시하던 한계 해소. page 컴포넌트의 직접 import도 child file leaf로 노출 → 사용자 표준 2 "어떤 화면이 어떤 컴포넌트들로 구성되는가" 본래 목적 부합.
+
+- `buildFeFileTreeScreenDiagram` · `emitFeFileTreeLines` · `emitRouteAndFileLeaf` 시그니처에 `importsEdges: IREdge[]` 추가. 호출부에서 `graph.edges.filter(e => e.kind === 'imports')` 전달.
+- `emitRouteAndFileLeaf`에서 page ComponentNode를 from으로 하는 importsEdges 중 `importDepth === 1` 필터 → child component file leaf emit + `file → child_file` Y축 edge. **routeFileKind === 'page' 가드**로 Next.js layout/loading 노이즈 차단. 외부 lib는 IR componentNodes 미등록이라 `compById.get → undefined`로 자동 필터.
+- **Sub-1 (shared component)** — 동일 component가 N page에서 import되어도 노드 1회만 emit + page → component edge N개(fan-in). 기존 `fileNodeRendered: Set<string>` 가드 활용.
+- **Sub-2 (page → page import)** — drill-down 라우트 간 page → page import도 동일하게 1-depth import edge로 표시 (routeFileKind 필터 제거).
+
+### Changed — Tab3 라벨 'DB–Screen' → 'Data Flow' 격상 (사용자 표준 amendment)
+
+FE-only 프로젝트(react-router SPA + 외부 API)에서 v1.2.42부터 Tab3가 `buildFeApiCallDiagram`(Screen↔API)를 렌더했으나 'DB-Screen' 라벨과 불일치하던 점 해소. 사용자 표준 2를 "Tab3 = 어떤 화면이 어떤 데이터 소스(DB 테이블 ∪ 외부 API endpoint)에 접근하는가"로 일반화.
+
+- `packages/extension/src/i18n/dict.ts` — 4 로케일 × 2 키 격상: `tab.dbScreen` = '데이터 흐름' / 'Data Flow' / 'データフロー' / '数据流'. `export.dbScreenAll` = '데이터 흐름 (전체)' 등.
+- `packages/extension/src/webview.ts:234` — HTML 탭 라벨 하드코드 'DB–Screen' → 'Data Flow'.
+- `packages/renderer/src/mermaid-renderer.ts:1525` — export MD 헤더 '# DB–Screen Mapping' → '# Data Flow (Screen ↔ Data Source)'.
+- 분기 로직 자체는 v1.2.42 그대로 보존 (BE 또는 tableCount>0 → ER, 그 외 react-router → API 다이어그램). 라벨만 amendment.
+
+### Added — `docs/design/FE-DIAGRAM-STANDARD.md` v1.0 (FE 표준 단일진실)
+
+BE-DIAGRAM-STANDARD.md(v1.2.40)와 쌍을 이루는 FE 표준 문서. R-T1.x·R-T2.x·R-T3.x 규칙 체계 + 어댑터별 적용표(file-based 6 + Vue SPA + Angular + LLM-only 2) + Tab3 'Data Flow' 격상 amendment 명시. v1.2.44 이후 모든 FE 어댑터 작업의 ground truth.
+
+### Verified — 신규 검증 fixture 2종
+
+- `fixtures/mini-react-router-map-import-app/` — 사용자 케이스 1:1 재현 (외부 import 배열 + lowercase `component` 키 + `<route.component/>` member access). 페이지 5종 + 라우터 3 파일. F-Route-1·2·3 회귀 가드.
+- `fixtures/mini-angular-standalone-app/` — Angular v17+ standalone components + 100% `loadComponent` lazy load 패턴. Dashboard/Profile/Settings 3 라우트.
+
+### Internal
+
+- verify.sh: 687 → **699 PASS** (+12 신규 단위 테스트, 회귀 0).
+- snapshot 갱신 11건 — Phase 2: mini-next-app Tab2(import child leaf) + mini-vue-spa-app IRGraph·Tab1·Tab2 + mini-angular-app IRGraph·Tab1·Tab2 (filePath 치환·file-tree 화이트리스트). Phase 2-b: 추가 4건 (vue/angular Tab2 file leaf 추가).
+- 신규 헬퍼: `resolveArrayLiteralFromIdentifier` · `resolveElementComponentAbsBase` · `extractMapElementPropName` · `extractLoadComponentModuleSpec`.
+- 신규 메타: `JsxRouteRaw.elementComponentAbsBase` (외부 import 추적 컴포넌트 abs base) · `extractRoutesFromArray.extraComponentKey` (callback 동적 propName).
+- 알려진 한계: forChild `path: ''` 동일 path 중복 라우트가 mermaid 그룹핑에서 첫 라우트만 노출 (v1.2.44 이전부터의 동작, 후속 minor에서 평가).
+- 사용자 결정: Phase 1(hotfix) + Phase 2(표준 완성) + Phase 2-b(rendersEdge 보완) 통합 v1.2.44 patch ship.
+
 ## [1.2.43] — 2026-05-20
 
 ### Changed — config-based FE 어댑터(Vue SPA · Angular) Tab1 wrapper 표준 적용

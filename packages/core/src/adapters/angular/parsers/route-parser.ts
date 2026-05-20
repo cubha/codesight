@@ -52,6 +52,18 @@ function extractLoadComponentClass(
   return undefined
 }
 
+// v1.2.44 A1-2: loadComponent의 import 모듈 spec ('./foo')만 추출 (className 별개).
+// filePath resolve에 사용.
+function extractLoadComponentModuleSpec(
+  prop: import('ts-morph').PropertyAssignment,
+): string | undefined {
+  const init = prop.getInitializer()
+  if (init === undefined) return undefined
+  const text = init.getText()
+  const m = text.match(/import\(['"`]([^'"`]+)['"`]\)/)
+  return m !== null ? m[1] : undefined
+}
+
 function resolveLoadChildrenPaths(
   prop: import('ts-morph').PropertyAssignment,
   parentPath: string,
@@ -101,12 +113,21 @@ function resolveLoadChildrenPaths(
   return []
 }
 
+// v1.2.44 A1-2: 각 경로의 컴포넌트 spec(모듈 상대 경로 or Identifier 이름)을 수집하는 map.
+// parseAngularRoutes는 이 map으로 routeFilePath를 컴포넌트 파일로 치환한다.
+interface ComponentSpecEntry {
+  spec: string  // 모듈 상대 경로(예 './foo') 또는 Identifier name(예 'FooComponent')
+  isIdentifier: boolean  // true=Identifier sync import, false=dynamic import path
+  resolveFromDir: string  // spec을 어느 디렉토리 기준으로 resolve할지 (loadChildren cross-file 시 외부 파일 디렉토리)
+}
+
 function extractPathsFromRoutesArray(
   arrayNode: import('ts-morph').Node,
   parentPath = '',
   project?: import('ts-morph').Project,
   currentFileDir?: string,
   loadComponentMap?: Map<string, string>,
+  componentSpecMap?: Map<string, ComponentSpecEntry>,
 ): string[] {
   const paths: string[] = []
   if (!arrayNode.isKind(SyntaxKind.ArrayLiteralExpression)) return paths
@@ -137,9 +158,26 @@ function extractPathsFromRoutesArray(
 
     // Capture loadComponent class name for renders edge generation
     const loadComponentProp = obj.getProperty('loadComponent')
-    if (loadComponentProp?.isKind(SyntaxKind.PropertyAssignment) && loadComponentMap !== undefined) {
-      const className = extractLoadComponentClass(loadComponentProp.asKindOrThrow(SyntaxKind.PropertyAssignment))
-      if (className !== undefined) loadComponentMap.set(fullPath, className)
+    if (loadComponentProp?.isKind(SyntaxKind.PropertyAssignment)) {
+      const propAssign = loadComponentProp.asKindOrThrow(SyntaxKind.PropertyAssignment)
+      const className = extractLoadComponentClass(propAssign)
+      if (className !== undefined && loadComponentMap !== undefined) {
+        loadComponentMap.set(fullPath, className)
+      }
+      // v1.2.44 A1-2: loadComponent 모듈 spec 캡처
+      const moduleSpec = extractLoadComponentModuleSpec(propAssign)
+      if (moduleSpec !== undefined && componentSpecMap !== undefined && currentFileDir !== undefined) {
+        componentSpecMap.set(fullPath, { spec: moduleSpec, isIdentifier: false, resolveFromDir: currentFileDir })
+      }
+    }
+
+    // v1.2.44 A1-2: component: FooComponent (Identifier sync import) 캡처
+    const componentProp = obj.getProperty('component')
+    if (componentProp?.isKind(SyntaxKind.PropertyAssignment) && componentSpecMap !== undefined && currentFileDir !== undefined) {
+      const init = componentProp.asKindOrThrow(SyntaxKind.PropertyAssignment).getInitializer()
+      if (init?.isKind(SyntaxKind.Identifier)) {
+        componentSpecMap.set(fullPath, { spec: init.getText(), isIdentifier: true, resolveFromDir: currentFileDir })
+      }
     }
 
     // Recurse into children: [] passing accumulated path as prefix
@@ -147,7 +185,7 @@ function extractPathsFromRoutesArray(
     if (childrenProp?.isKind(SyntaxKind.PropertyAssignment)) {
       const childInit = childrenProp.asKindOrThrow(SyntaxKind.PropertyAssignment).getInitializer()
       if (childInit !== undefined) {
-        paths.push(...extractPathsFromRoutesArray(childInit, fullPath, project, currentFileDir, loadComponentMap))
+        paths.push(...extractPathsFromRoutesArray(childInit, fullPath, project, currentFileDir, loadComponentMap, componentSpecMap))
       }
     }
 
@@ -229,8 +267,27 @@ export async function parseAngularRoutes(
 
       if (routesArray === undefined) continue
 
+      // v1.2.44 A1-2: routesArray가 외부 파일 import인 경우 그 외부 파일의 디렉토리 기준으로 resolve
+      // (routes의 component Identifier import는 외부 파일에 있으므로)
+      const routesArraySf = routesArray.getSourceFile()
+      const routesArrayDir = path.dirname(routesArraySf.getFilePath())
+
       const rawPathMap = new Map<string, string>()
-      const extractedPaths = extractPathsFromRoutesArray(routesArray, '', project, fileDir, rawPathMap)
+      // v1.2.44 A1-2: componentSpec 수집 — resolveFromDir은 외부 파일 디렉토리
+      const componentSpecMap = new Map<string, ComponentSpecEntry>()
+      const extractedPaths = extractPathsFromRoutesArray(routesArray, '', project, routesArrayDir, rawPathMap, componentSpecMap)
+
+      // v1.2.44 A1-2: sync Identifier resolve용 importMap (routesArray의 sourceFile)
+      const importMap = new Map<string, string>()
+      for (const decl of routesArraySf.getImportDeclarations()) {
+        const di = decl.getDefaultImport()
+        if (di !== undefined) importMap.set(di.getText(), decl.getModuleSpecifierValue())
+        for (const ni of decl.getNamedImports()) importMap.set(ni.getName(), decl.getModuleSpecifierValue())
+      }
+
+      // v1.2.44 A1-2: routesArray가 외부 파일이면 fallback도 그 파일로 변경
+      // (provideRouter 호출 파일이 아닌, routes 정의 파일이 라우트의 원본)
+      const routesArrayRelPath = path.relative(repoRoot, routesArraySf.getFilePath()).replace(/\\/g, '/')
 
       for (const rawPath of extractedPaths) {
         const urlPath = rawPath === '' ? '/' : rawPath.startsWith('/') ? rawPath : ('/' + rawPath)
@@ -243,18 +300,52 @@ export async function parseAngularRoutes(
           analyzerVersion,
         }
 
-        const routeId = makeNodeId('route', relPath, urlPath)
+        // v1.2.44 A1-2: componentSpec resolve → 컴포넌트 abs path → relPath 치환
+        let routeFilePath = routesArrayRelPath  // fallback: routes 정의 파일 (외부 import면 외부 파일)
+        let routeConfidence: 'verified' | 'inferred' = 'verified'
+        let routeInferenceChain: string[] | undefined
+        const specEntry = componentSpecMap.get(rawPath)
+        if (specEntry !== undefined) {
+          let moduleSpec: string | undefined
+          if (specEntry.isIdentifier) {
+            moduleSpec = importMap.get(specEntry.spec)
+          } else {
+            moduleSpec = specEntry.spec
+          }
+          if (moduleSpec !== undefined && moduleSpec.startsWith('.')) {
+            const absBase = path.resolve(specEntry.resolveFromDir, moduleSpec)
+            let compAbsPath: string | undefined
+            for (const ext of ['.ts', '.tsx', '.js', '.jsx']) {
+              try {
+                await fs.access(absBase + ext)
+                compAbsPath = absBase + ext
+                break
+              } catch { /* try next */ }
+            }
+            if (compAbsPath !== undefined) {
+              routeFilePath = path.relative(repoRoot, compAbsPath).replace(/\\/g, '/')
+              routeInferenceChain = [`라우트 정의의 component spec '${specEntry.spec}' → 컴포넌트 파일로 매핑`]
+              routeConfidence = 'inferred'
+            }
+          }
+        }
+
+        const confField = routeConfidence === 'inferred' && routeInferenceChain !== undefined
+          ? { confidence: 'inferred' as const, inferenceChain: routeInferenceChain }
+          : { confidence: 'verified' as const }
+
+        const routeId = makeNodeId('route', routeFilePath, urlPath)
         routes.push(
           createRouteNode({
             id: routeId,
             path: urlPath,
-            filePath: relPath,
+            filePath: routeFilePath,
             routeFileKind: 'page',
             dynamicSegmentType,
             isGroupRoute: false,
             renderingMode: 'CSR',
             provenance,
-            confidence: 'verified',
+            ...confField,
           }),
         )
 
