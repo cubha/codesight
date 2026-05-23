@@ -121,7 +121,7 @@ export class PanelProvider implements vscode.WebviewViewProvider {
 </head>
 <body>
 <div id="header">
-  <span style="font-weight:600;font-size:11px;">CodeSight</span>
+  <span style="font-weight:600;font-size:11px;">Codebase Visualizer</span>
   <span id="state">Ready</span>
   <button class="clear-btn" onclick="clearLog()">Clear</button>
 </div>

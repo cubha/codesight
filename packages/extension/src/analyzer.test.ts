@@ -86,12 +86,27 @@ describe('loadCachedGraph / saveCachedGraph — 캐시 무효화 (C1)', () => {
     expect(loaded?.analyzerVersion).toBe(ANALYZER_VERSION)
   })
 
-  it('saveCachedGraph — .codesight/cache.json 에 현재 버전 기록', async () => {
+  it('saveCachedGraph — .codebase-viz/cache.json 에 현재 버전 기록', async () => {
     const dir = await makeTmpDir()
     const fakeGraph = { analyzerVersion: ANALYZER_VERSION, schemaVersion: 1, repoRoot: dir, generatedAt: '', nodes: [], edges: [] }
     await saveCachedGraph(dir, fakeGraph as Parameters<typeof saveCachedGraph>[1])
-    const raw = await fs.readFile(path.join(dir, '.codesight', 'cache.json'), 'utf8')
+    const raw = await fs.readFile(path.join(dir, '.codebase-viz', 'cache.json'), 'utf8')
     const entry = JSON.parse(raw) as { analyzerVersion: string }
     expect(entry.analyzerVersion).toBe(ANALYZER_VERSION)
+  })
+
+  it('loadCachedGraph — 옛 .codesight/cache.json 위치 fallback 읽기', async () => {
+    const dir = await makeTmpDir()
+    const legacyDir = path.join(dir, '.codesight')
+    await fs.mkdir(legacyDir, { recursive: true })
+    const fakeGraph = { analyzerVersion: ANALYZER_VERSION, schemaVersion: 1, repoRoot: dir, generatedAt: '', nodes: [], edges: [] }
+    await fs.writeFile(
+      path.join(legacyDir, 'cache.json'),
+      JSON.stringify({ analyzerVersion: ANALYZER_VERSION, graph: fakeGraph }),
+      'utf8',
+    )
+    const loaded = await loadCachedGraph(dir)
+    expect(loaded).not.toBeNull()
+    expect(loaded?.analyzerVersion).toBe(ANALYZER_VERSION)
   })
 })

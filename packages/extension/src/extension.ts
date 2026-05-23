@@ -122,18 +122,24 @@ function cacheFileName(pairRepoRoot?: string): string {
 }
 
 function readCache(repoRoot: string, pairRepoRoot?: string): DiagramCache | undefined {
-  try {
-    const file = path.join(repoRoot, '.codesight', cacheFileName(pairRepoRoot))
-    if (!fs.existsSync(file)) return undefined
-    return JSON.parse(fs.readFileSync(file, 'utf8')) as DiagramCache
-  } catch {
-    return undefined
+  const candidates = [
+    path.join(repoRoot, '.codebase-viz', cacheFileName(pairRepoRoot)),
+    path.join(repoRoot, '.codesight', cacheFileName(pairRepoRoot)),
+  ]
+  for (const file of candidates) {
+    try {
+      if (!fs.existsSync(file)) continue
+      return JSON.parse(fs.readFileSync(file, 'utf8')) as DiagramCache
+    } catch {
+      continue
+    }
   }
+  return undefined
 }
 
 function writeCache(repoRoot: string, graph: IRGraph, diagrams: DiagramSet, pairRepoRoot?: string): void {
   try {
-    const dir = path.join(repoRoot, '.codesight')
+    const dir = path.join(repoRoot, '.codebase-viz')
     fs.mkdirSync(dir, { recursive: true })
     const data: DiagramCache = {
       savedAt: Date.now(),

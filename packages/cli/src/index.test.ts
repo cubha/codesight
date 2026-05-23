@@ -36,7 +36,8 @@ describe('analyze CLI', () => {
 
     const content = await fs.readFile(path.join(OUTPUT_DIR, 'rendering.md'), 'utf8')
     expect(content).toContain('```mermaid')
-    expect(content).toContain('graph TD')
+    // v1.2.45: FE Tab1은 graph LR (표준 1 형제 X축 배치, mermaid v11 nested LR 트리거).
+    expect(content).toContain('graph LR')
   })
 
   it('db-screen.md에 posts 테이블이 포함된다', async () => {

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>CodeSight</title>
+  <title>Codebase Visualizer</title>
   <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
   <style>
     :root {
@@ -165,7 +165,7 @@
 <body>
 
 <header>
-  <div class="logo">Code<em>Sight</em></div>
+  <div class="logo">Codebase <em>Visualizer</em></div>
   <div class="badge" id="h-badge">—</div>
   <div class="header-right">
     <div class="status-dot"></div>
@@ -300,10 +300,10 @@ const elkReady = (async () => {
       window.mermaid.registerLayoutLoaders(mod.default);
       return true;
     }
-    console.warn('[CodeSight] mermaid.registerLayoutLoaders 미가용 — dagre fallback');
+    console.warn('[Codebase Viz] mermaid.registerLayoutLoaders 미가용 — dagre fallback');
     return false;
   } catch (e) {
-    console.warn('[CodeSight] ELK layout 로드 실패 — dagre fallback:', e && e.message);
+    console.warn('[Codebase Viz] ELK layout 로드 실패 — dagre fallback:', e && e.message);
     return false;
   }
 })();
@@ -1012,7 +1012,7 @@ function exportMd() {
     .filter(([,v]) => v)
     .map(([k,v]) => '## '+labels[k]+'\n\n```mermaid\n'+v+'\n```')
     .join('\n\n');
-  var hdr = '# CodeSight — '+(meta.projectName||'Project')+'\n\n'+
+  var hdr = '# Codebase Viz — '+(meta.projectName||'Project')+'\n\n'+
     '> '+(meta.routeCount??'?')+tr('export.routes')+' · '+(meta.tableCount??'?')+tr('export.tables')+'\n';
   postMsg({type:'export', format:'md', data:hdr+'\n'+sections+'\n',
     filename:(meta.projectName||'codesight')+'.md'});

@@ -33,12 +33,23 @@ export interface ConvertResult {
   edges: IREdge[]
 }
 
+export interface ConvertOptions {
+  // v1.2.45 결함 #13: 정적 어댑터가 이미 component를 verified로 등록한 경우 LLM component skip.
+  // React Router처럼 router.tsx에 라우트 정의 + 별도 src/pages dir인 config-based 어댑터에서
+  // LLM이 보내는 comp.filePath의 dirname(=router.tsx 위치)과 static comp.filePath(=pages 안)이
+  // 어긋나서 dedup 실패 → 두 ComponentNode 공존 → Tab2 file-tree에서 잘못된 leaf emit.
+  // file-based(Next/Nuxt 등)는 우연히 일치라 dedup 작동했으나 config-based는 본질적 mismatch.
+  skipComponents?: boolean
+}
+
 export function convertToIR(
   result: LLMAnalysisResult,
   repoRoot: string,
   analyzerVersion: string,
+  options?: ConvertOptions,
 ): ConvertResult {
   void repoRoot
+  const skipComponents = options?.skipComponents ?? false
   const routeNodes: RouteNode[] = []
   const componentNodes: ComponentNode[] = []
   const tableNodes: TableNode[] = []
@@ -64,6 +75,8 @@ export function convertToIR(
       inferenceChain: [`LLM identified route from ${repoRelFile}`],
     })
     routeNodes.push(routeNode)
+
+    if (skipComponents) continue
 
     for (const compName of route.components) {
       if (componentIndex.has(compName)) continue

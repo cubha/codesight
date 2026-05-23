@@ -90,8 +90,13 @@ function groupRoutesRecursive(
   return Array.from(clusterMap.entries()).map(([clusterKey, clusterRoutes]) => {
     const exactRoutes = clusterRoutes.filter(r => r.path === clusterKey)
     const deeperRoutes = clusterRoutes.filter(r => r.path !== clusterKey)
-    // Each cluster checks its own size for recursion
-    const shouldRecurseCluster = depth < maxDepth && new Set(clusterRoutes.map(r => r.path)).size > 1
+    // v1.2.45 결함 #1 (회귀 해소): single-route cluster라도 route.path가 clusterKey보다 깊으면 recurse.
+    // 그래야 URL intermediate segment(예: /partner/ordProdPlanMgmt/prodOrdSpec → ordProdPlanMgmt)가
+    // NestedGroup tree에 명시적으로 보존되어 Tab1/Tab2 subgraph wrapper로 시각화됨 (FE 표준 v1.1 R-T1.2).
+    const shouldRecurseCluster = depth < maxDepth && (
+      new Set(clusterRoutes.map(r => r.path)).size > 1 ||
+      (clusterRoutes.length === 1 && deeperRoutes.length > 0)
+    )
 
     if (!shouldRecurseCluster || deeperRoutes.length === 0) {
       return { groupKey: clusterKey, routes: clusterRoutes, children: [] }

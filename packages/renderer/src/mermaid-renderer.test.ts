@@ -123,8 +123,10 @@ describe('renderMermaid', () => {
 
     await renderMermaid(graph, OUTPUT_DIR)
     const content = await fs.readFile(path.join(OUTPUT_DIR, 'rendering.md'), 'utf8')
-    expect(content).toContain('subgraph BLOG_G')
-    expect(content).toContain('subgraph ADMIN_G')
+    // FE 표준 v1.1 (R-T1.2 amendment) 정합: 단일 route + 자식 0개 + 일반 segment는 wrapper 없이 route node로 emit.
+    // 라우트별 displayPath + rendering mode badge가 직접 표시되는지 검증.
+    expect(content).toContain('/blog · SSR')
+    expect(content).toContain('/admin · CSR')
     expect(content).toContain('classDef ssr')
     expect(content).toContain('classDef csr')
   })
@@ -622,7 +624,8 @@ describe('BE 렌더러 — Tab1 (BE-C, v1.2.40 표준)', () => {
     })
     await renderMermaid(graph, OUTPUT_DIR)
     const content = await fs.readFile(path.join(OUTPUT_DIR, 'rendering.md'), 'utf8')
-    expect(content).toContain('BLOG_G')
+    // FE 표준 v1.1 (R-T1.2 amendment) 정합: 단일 route는 평탄화. FE 렌더러가 BE 분기로 빠지지 않았음을 확인.
+    expect(content).toContain('/blog · SSR')
     expect(content).not.toContain('_BE')
   })
 })
