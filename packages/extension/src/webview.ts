@@ -58,7 +58,7 @@ export class CodeSightPanel {
 
     const panel = vscode.window.createWebviewPanel(
       'codesight',
-      'CodeSight',
+      'Codebase Visualizer',
       vscode.ViewColumn.Beside,
       {
         enableScripts: true,
@@ -145,7 +145,7 @@ export class CodeSightPanel {
     }
 
     await vscode.workspace.fs.writeFile(uri, bytes)
-    void vscode.window.showInformationMessage(`CodeSight: 저장 완료 — ${path.basename(uri.fsPath)}`)
+    void vscode.window.showInformationMessage(`Codebase Viz: 저장 완료 — ${path.basename(uri.fsPath)}`)
   }
 
   private buildViewerHtmlImpl(params: ViewerParams): string {
@@ -200,7 +200,7 @@ export class CodeSightPanel {
     return `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8">
 <style>body{font-family:monospace;background:#060810;color:#86efac;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;font-size:14px;}
 .dot{animation:blink 1.2s infinite alternate}@keyframes blink{to{opacity:.2}}</style></head>
-<body><div>CodeSight: Analyzing project<span class="dot">...</span></div></body></html>`
+<body><div>Codebase Viz: Analyzing project<span class="dot">...</span></div></body></html>`
   }
 
   private buildErrorHtml(message: string): string {

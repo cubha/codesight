@@ -116,14 +116,23 @@ export async function runAnalysis(
       )
     }
 
+    // v1.2.45 결함 #13: 정적 어댑터가 component를 verified로 등록한 경우 LLM component skip.
+    // v1.2.45 #18 (회귀 해소): adapter 존재 여부가 아닌 "adapter가 실제 component를 만들었는지"로 분기.
+    // turborepo/monorepo 케이스(fa-support 등)에서 NextAdapter는 repoRoot의 단일 appDir만 보므로
+    // 0 component 생성 → adapter !== undefined만 보고 skip하면 LLM component까지 차단 → file_leaf 0건 회귀.
+    const adapterHasComponents = result.componentNodes.length > 0
     const { routeNodes: llmRoutes, componentNodes: llmComponents, tableNodes: llmTables, edges: llmEdges } =
-      convertToIR(llmResult, repoRoot, ANALYZER_VERSION)
+      convertToIR(llmResult, repoRoot, ANALYZER_VERSION, { skipComponents: adapterHasComponents })
 
     const allLLMNodes = [...llmRoutes, ...llmComponents, ...llmTables]
     const { verified } = await verifyNodes(allLLMNodes, repoRoot)
 
     const llmMeta = {
-      framework: llmResult.framework || stack.framework,
+      // v1.2.45 결함 #10: 정적 어댑터가 결정한 framework는 LLM이 덮어쓰지 못한다.
+      // LLM이 mini-react-partner-mock-app을 'vite-react'로 분류하면 isFileTreeTab2Eligible 화이트리스트
+      // 통과 실패 → Tab2 file-tree 표준 우회 → legacy renderScreenSection fallback이 1.2.44 마이그레이션
+      // 구조(파일 경로 leaf)를 잃는다. stack.adapterId 있으면 stack.framework 신뢰.
+      framework: adapter !== undefined ? stack.framework : (llmResult.framework || stack.framework),
       hasSupabase: llmResult.hasSupabase ?? stack.hasSupabase,
       hasPrisma: llmResult.hasPrisma ?? stack.hasPrisma,
       hasDexie: llmResult.hasDexie ?? stack.hasDexie,
@@ -140,7 +149,7 @@ export async function runAnalysis(
     }
   }
 
-  const outputDir = path.join(repoRoot, '.codesight')
+  const outputDir = path.join(repoRoot, '.codebase-viz')
   await renderMermaid(finalGraph, outputDir).catch(() => { /* best-effort */ })
   await saveCachedGraph(repoRoot, finalGraph)
 
@@ -215,19 +224,26 @@ interface CacheEntry {
 }
 
 export async function loadCachedGraph(repoRoot: string): Promise<IRGraph | null> {
-  try {
-    const raw = await fs.readFile(path.join(repoRoot, '.codesight', 'cache.json'), 'utf8')
-    const entry = JSON.parse(raw) as CacheEntry
-    if (entry.analyzerVersion !== ANALYZER_VERSION) return null
-    return entry.graph
-  } catch {
-    return null
+  const candidates = [
+    path.join(repoRoot, '.codebase-viz', 'cache.json'),
+    path.join(repoRoot, '.codesight', 'cache.json'),
+  ]
+  for (const file of candidates) {
+    try {
+      const raw = await fs.readFile(file, 'utf8')
+      const entry = JSON.parse(raw) as CacheEntry
+      if (entry.analyzerVersion !== ANALYZER_VERSION) continue
+      return entry.graph
+    } catch {
+      continue
+    }
   }
+  return null
 }
 
 export async function saveCachedGraph(repoRoot: string, graph: IRGraph): Promise<void> {
   try {
-    const dir = path.join(repoRoot, '.codesight')
+    const dir = path.join(repoRoot, '.codebase-viz')
     await fs.mkdir(dir, { recursive: true })
     const entry: CacheEntry = { analyzerVersion: ANALYZER_VERSION, graph }
     await fs.writeFile(path.join(dir, 'cache.json'), JSON.stringify(entry), 'utf8')
@@ -237,5 +253,5 @@ export async function saveCachedGraph(repoRoot: string, graph: IRGraph): Promise
 }
 
 export async function getCacheDir(): Promise<string> {
-  return path.join(os.homedir(), '.codesight', 'cache')
+  return path.join(os.homedir(), '.codebase-viz', 'cache')
 }

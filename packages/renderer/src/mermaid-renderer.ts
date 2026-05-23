@@ -31,6 +31,9 @@ function sanitizeId(s: string): string {
   return s.replace(/[^a-zA-Z0-9_]/g, '_')
 }
 
+// v1.2.45 결함 #15 (회귀 해소): ELK opt-in 폐기. v1.2.45 ELK INCLUDE_CHILDREN은 모든 level X축 강제로
+// 규칙 B(leaf cluster 내부 Y축) 위반. webview console에서 ELK loader 메시지 미확인. dagre로 복귀.
+// 규칙 A(sibling X축)는 buildNestedSubgraphLines + leaf 합성 노드 패턴(#16·#17)으로 dagre에서 직접 강제.
 const RENDERING_INIT = `%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0c1a30','primaryTextColor':'#7dd3fc','primaryBorderColor':'#0e3a6e','edgeLabelBackground':'#0c1a30','lineColor':'#334155','secondaryColor':'#0f172a','clusterBkg':'#060c18','clusterBorder':'#1e3a5f','fontFamily':'JetBrains Mono','fontSize':'14'}}}%%`
 // v1.2.41 ST-FIX-2: BE 전용 init — flowchart.nodeSpacing/rankSpacing 축소로 DI 체인 간격 조밀화. FE 다이어그램은 RENDERING_INIT 유지.
 // v1.2.41 ST-FIX-3: Y축(rankSpacing) 1/3 축소. visible edge 영역(Tab2 DI 체인)은 정상 반영,
@@ -108,9 +111,13 @@ function buildSectionsFromRoutes(routes: RouteNode[]): Map<string, RouteNode[]> 
 // stripGroupPrefix로 prefix 제거 → 노드 width 감소 → mermaid가 한 row에 더 많은 노드 배치 가능.
 function stripGroupPrefix(path: string, groupKey: string | undefined): string {
   if (groupKey === undefined || groupKey === '' || groupKey === '/') return path
-  // 인덱스 라우트(path === groupKey)는 단축 시 라벨이 '/' 한 글자가 되어 노드 폭이 거의 0이 된다.
-  // 원본 path 유지로 노드 폭 확보 (다른 라우트는 prefix 제거되므로 mixed visual은 의도).
-  if (path === groupKey) return path
+  // v1.2.45: path === groupKey면 leaf segment 반환 (예: '/agency/userMgmt' + groupKey '/agency/userMgmt' → 'userMgmt').
+  // 표준 1 절대원칙(R-T1.2 "동일 Depth = X축, 라벨은 자기 노드 의미만")에 부합.
+  // 단 leaf segment가 빈 문자열이면 path 유지 (인덱스 라우트 가드).
+  if (path === groupKey) {
+    const segs = path.split('/').filter(Boolean)
+    return segs.length > 0 ? segs[segs.length - 1]! : path
+  }
   if (path.startsWith(groupKey + '/')) return path.slice(groupKey.length + 1)
   return path
 }
@@ -130,41 +137,80 @@ function groupSubgraphId(groupKey: string): string {
   return sanitizeId(segs.join('_').toUpperCase()) + '_G'
 }
 
+// v1.2.45 결함 #16 (회귀 해소): buildNestedSubgraphLines는 children 사이 chain만 emit한다.
+// 호출자(buildRenderingDiagram, buildFeFileTreeScreenDiagram)가 top-level group이 2개 이상이면
+// 자체적으로 chain emit해야 한다 — outer wrapper(BROWSER/ROUTER/REACT) 안의 sibling top-level은
+// outer wrapper도 outer wrapper 안 sibling 자동 가로배치를 못 함 (mermaid v11 dagre).
+function emitTopLevelSiblingChain(groups: NestedGroup[], indent: string): string | undefined {
+  if (groups.length < 2) return undefined
+  const ids: string[] = []
+  for (const g of groups) {
+    const segs = g.groupKey.split('/').filter(Boolean)
+    if (segs.length === 0) continue
+    // FE 표준 v1.1 (R-T1.2 amendment): 평탄화된 leaf 자식은 subgraph 없이 route node로 emit됨.
+    // chain 참조도 route node ID 사용해야 phantom subgraph 노드 생성 안 됨.
+    const leafSeg = segs[segs.length - 1]!
+    const isDyn = /^\[.+\]$/.test(leafSeg) || leafSeg.startsWith(':')
+    const isGrp = /^\(.+\)$/.test(leafSeg)
+    if (g.children.length === 0 && g.routes.length === 1 && !isDyn && !isGrp) {
+      ids.push(sanitizeId(g.routes[0]!.id))
+    } else {
+      ids.push(groupSubgraphId(g.groupKey))
+    }
+  }
+  if (ids.length < 2) return undefined
+  return `${indent}${ids.join(' ~~~ ')}`
+}
+
 // Emit nested Mermaid subgraphs from NestedGroup[]. Used by buildRenderingDiagram and buildCombinedDiagram.
-function buildNestedSubgraphLines(groups: NestedGroup[], indent: string): string[] {
+// FE 표준 v1.1 (R-T1.2 amendment, 2026-05-23): mermaid v11은 nested subgraph 내부 자식들의 LR direction을
+// 보장하지 못한다(webview 실측 입증). top-level 형제 X축 보장은 outer wrapper 안 chain emit으로 처리하고,
+// nested 자식은 Y축 stack을 기본 표준으로 한다. 본 함수의 `~~~` chain emit은 top-level X축 보장용이며,
+// nested level에서 chain이 X축으로 작동하는 케이스가 있어도 표준 약속에 포함하지 않는다 (보너스 효과).
+function buildNestedSubgraphLines(groups: NestedGroup[], indent: string, parentGroupKey?: string): string[] {
   const lines: string[] = []
   const i2 = indent + '  '
   for (const group of groups) {
     const leafSeg = group.groupKey.split('/').filter(Boolean).pop()
     if (leafSeg === undefined) {
       for (const r of group.routes) lines.push(renderingRouteLabel(r, indent))
-      if (group.children.length > 0) lines.push(...buildNestedSubgraphLines(group.children, indent))
+      if (group.children.length > 0) lines.push(...buildNestedSubgraphLines(group.children, indent, parentGroupKey))
+    } else if (
+      group.children.length === 0 &&
+      group.routes.length === 1 &&
+      !/^\[.+\]$/.test(leafSeg) &&
+      !leafSeg.startsWith(':') &&
+      !/^\(.+\)$/.test(leafSeg)
+    ) {
+      // FE 표준 v1.1 (R-T1.2 amendment): 단일 route + 자식 0개 + dynamic/group route 아닌 leaf는 wrapper 중복.
+      // route node만 부모 indent로 emit하여 의미 없는 leaf subgraph 제거. R-T1.3·R-T1.4는 보존.
+      // parentGroupKey 있으면 stripPrefix 적용(부모 라벨과 prefix 중복 회피). root level은 full path 유지.
+      lines.push(renderingRouteLabel(group.routes[0]!, indent, parentGroupKey))
     } else {
       const sgId = groupSubgraphId(group.groupKey)
       const label = sectionLabel(leafSeg)
       lines.push(`${indent}subgraph ${sgId}["${label}"]`)
       lines.push(...emitInnerRowSubgraphs(i2, sgId, group.routes.length,
         (i, ind) => renderingRouteLabel(group.routes[i]!, ind, group.groupKey)))
-      // v1.1.6 T4: 자식 subgraph가 GROUPS_PER_ROW 초과 시 invisible row 래퍼 + direction LR.
-      // 부모 안에서 자식 가로 정렬(within-group), 5개 초과면 Y 줄넘김. NestedGroup tree 유지.
-      // mermaid 11.x direction LR: 외부 edge 없는 Tab1에서만 안전 (Tab2는 별도 검증 필요).
       if (group.children.length > 0) {
-        if (group.children.length <= GROUPS_PER_ROW) {
-          lines.push(...buildNestedSubgraphLines(group.children, i2))
-        } else {
-          const i3 = i2 + '  '
-          const rowChunks = chunkGroups(group.children, GROUPS_PER_ROW)
-          rowChunks.forEach((chunk, rowIdx) => {
-            const rowId = `${sgId}_CR${rowIdx}`
-            lines.push(`${i2}subgraph ${rowId} [" "]`)
-            lines.push(`${i3}direction LR`)
-            lines.push(...buildNestedSubgraphLines(chunk, i3))
-            lines.push(`${i2}end`)
-            lines.push(`${i2}style ${rowId} fill:none,stroke:none`)
-          })
-        }
+        lines.push(...buildNestedSubgraphLines(group.children, i2, group.groupKey))
       }
       lines.push(`${indent}end`)
+      // FE 표준 v1.1: children >= 2면 형제 ID들을 ~~~ chain으로 연결 (top-level은 X축 보장, nested는 보너스).
+      // chain은 cluster 끝(end) 직후, 즉 조부모 indent에 위치 — 부모 cluster 안에 두면 mermaid v11이 무시.
+      // 평탄화된 leaf 자식(R-T1.2 v1.1)은 subgraph 없이 route node로 emit되므로 chain ID도 route node ID 사용.
+      if (group.children.length >= 2) {
+        const childIds = group.children.map(c => {
+          const cLeaf = c.groupKey.split('/').filter(Boolean).pop() ?? ''
+          const isDyn = /^\[.+\]$/.test(cLeaf) || cLeaf.startsWith(':')
+          const isGrp = /^\(.+\)$/.test(cLeaf)
+          if (c.children.length === 0 && c.routes.length === 1 && !isDyn && !isGrp) {
+            return sanitizeId(c.routes[0]!.id)
+          }
+          return groupSubgraphId(c.groupKey)
+        }).join(' ~~~ ')
+        lines.push(`${indent}${childIds}`)
+      }
     }
   }
   return lines
@@ -318,7 +364,8 @@ function chunkGroups<T>(items: T[], size: number): T[][] {
 // v1.1.5 이전: collectNestedRoutes로 평면화 → 재귀 그룹핑 결과 폐기 → /api 안에 100+ 형제 평면 배치 → mermaid 세로 압축
 // v1.1.6: buildNestedSubgraphLines 재사용 → /api → /v1 → /admin → /users 식 depth 보존 → leaf subgraph 노드 수 자연 감소
 function buildRouteRowDiagram(groups: NestedGroup[]): string {
-  const lines = [RENDERING_INIT, 'graph TD', CLASS_DEFS]
+  // v1.2.45: FE chunked 경로도 graph LR (표준 1 형제 X축 배치, 단일 chunk 안에 여러 형제 가능).
+  const lines = [RENDERING_INIT, 'graph LR', CLASS_DEFS]
   lines.push(...buildNestedSubgraphLines(groups, '  '))
   return lines.join('\n')
 }
@@ -741,68 +788,98 @@ function buildRenderingDiagram(graph: IRGraph): string {
   const backends = graph.metadata?.backends ?? []
   const allCSR = routeNodes.length > 0 && routeNodes.every(r => r.renderingMode === 'CSR')
 
-  const lines: string[] = [RENDERING_INIT, 'graph TD', CLASS_DEFS]
+  // v1.2.45 (Playwright 검증): FE Tab1은 outer `graph LR` 사용.
+  // 표준 1 R-T1.2 "동일 Depth = X축"을 mermaid가 형제 subgraph 자동 가로 배치로 충족.
+  // 외부 edge가 어느 컨테이너에 incoming해도 LR이 영향받지 않음 (TD + nested direction LR은 무시됨).
+  const lines: string[] = [RENDERING_INIT, 'graph LR', CLASS_DEFS]
 
   // ── 1. FRONTEND LAYER ────────────────────────────────────────────────────
-  // frontendRef: subgraph node ID to use as source for data layer edges.
-  // undefined for backend-only frameworks (Django, Flask, SpringBoot, etc.)
+  // frontendRef: outermost wrapper subgraph ID — 외부 data layer edge source.
+  // v1.2.45 #19 (회귀 해소 P2): mermaid v11 공식 명세 "subgraph 노드 중 하나라도 외부 edge 가지면
+  // 그 subgraph direction 무시"에 따라, 외부 edge는 반드시 *outermost* wrapper에서 발사해야
+  // inner sub-cluster의 direction(LR + ~~~ chain)이 보존됨. middle/inner wrapper(REACT, VUE 등)에서
+  // 외부 edge 발사하면 부모 direction 상속 연쇄로 top-level sibling이 Y축 stack됨.
   let frontendRef: string | undefined
   if (infra.hasNextjs && !allCSR) {
-    frontendRef = 'REACT'
+    frontendRef = 'INFRA'
     lines.push(`  subgraph INFRA["☁ VERCEL · Edge Network"]`)
     lines.push(`    subgraph RUNTIME["⚙ Node.js · Server Runtime"]`)
     lines.push(`      subgraph FRAMEWORK["▲ Next.js · App Router"]`)
     lines.push(`        subgraph REACT["⚛ React · SSR Engine"]`)
-    if (infra.hasSupabase) lines.push(`          SSR_FETCH["(SSR data fetch)"]:::unk`)
+    // v1.2.45 #19: SSR_FETCH 더미 노드 제거 — REACT subgraph 내부 노드가 외부 edge 가지면
+    // REACT direction이 무력화되어 top-level sibling Y축 회귀. 외부 edge는 frontendRef(INFRA)에서 발사.
     for (const l of buildNestedSubgraphLines(routeGroups, '          ')) lines.push(l)
+    const topChainSsr = emitTopLevelSiblingChain(routeGroups, '          ')
+    if (topChainSsr !== undefined) lines.push(topChainSsr)
+
     lines.push('        end\n      end\n    end\n  end')
   } else if (infra.hasNextjs && allCSR) {
-    frontendRef = 'REACT'
+    frontendRef = 'BROWSER'
     lines.push(`  subgraph BROWSER["🌐 Browser · Client-Side App"]`)
     lines.push(`    subgraph FRAMEWORK["▲ Next.js · App Router"]`)
     lines.push(`      subgraph REACT["⚛ React · CSR Engine"]`)
     for (const l of buildNestedSubgraphLines(routeGroups, '        ')) lines.push(l)
+    const topChainCsr = emitTopLevelSiblingChain(routeGroups, '        ')
+    if (topChainCsr !== undefined) lines.push(topChainCsr)
+
     lines.push('      end\n    end\n  end')
   } else if (infra.hasVite) {
     // Vite는 화면 프레임워크가 아닌 빌드 도구. framework='vite-react'(LLM-only)인 SPA용 Tab1 메타 표현.
     // Vite + React + react-router 조합은 react-router 어댑터 분기가 우선됨(stack-detector 우선순위).
-    frontendRef = 'REACT'
+    frontendRef = 'BROWSER'
     lines.push(`  subgraph BROWSER["🌐 Browser · Client-Side App"]`)
     lines.push(`    subgraph BUNDLER["⚡ Vite · Dev/Build"]`)
     lines.push(`      subgraph REACT["⚛ React · CSR Engine"]`)
     for (const l of buildNestedSubgraphLines(routeGroups, '        ')) lines.push(l)
+    const topChainVite = emitTopLevelSiblingChain(routeGroups, '        ')
+    if (topChainVite !== undefined) lines.push(topChainVite)
+
     lines.push('      end\n    end\n  end')
   } else if (infra.hasExpo) {
     // Expo는 화면 프레임워크가 아닌 RN 모바일 플랫폼. framework='expo'(LLM-only) 또는 deployTarget='mobile' Tab1 메타.
     // 실제 화면은 React Native 컴포넌트. 정적 어댑터 미등록 — routes는 LLM 결과로만 채워짐.
-    frontendRef = 'RN'
+    frontendRef = 'MOBILE'
     lines.push(`  subgraph MOBILE["📱 Mobile · iOS / Android"]`)
     lines.push(`    subgraph RN["⚛ React Native · Expo"]`)
     for (const l of buildNestedSubgraphLines(routeGroups, '      ')) lines.push(l)
+    const topChainExpo = emitTopLevelSiblingChain(routeGroups, '      ')
+    if (topChainExpo !== undefined) lines.push(topChainExpo)
+
     lines.push('    end\n  end')
   } else if (infra.hasReactRouter) {
-    frontendRef = 'REACT'
+    frontendRef = 'BROWSER'
     lines.push(`  subgraph BROWSER["🌐 Browser · Client-Side App"]`)
     lines.push(`    subgraph ROUTER["🧭 React Router · SPA"]`)
     lines.push(`      subgraph REACT["⚛ React · CSR Engine"]`)
     for (const l of buildNestedSubgraphLines(routeGroups, '        ')) lines.push(l)
+    const topChainRR = emitTopLevelSiblingChain(routeGroups, '        ')
+    if (topChainRR !== undefined) lines.push(topChainRR)
+
     lines.push('      end\n    end\n  end')
   } else if (infra.hasVueSpa) {
-    frontendRef = 'VUE'
+    frontendRef = 'BROWSER'
     lines.push(`  subgraph BROWSER["🌐 Browser · Client-Side App"]`)
     lines.push(`    subgraph ROUTER["🧭 Vue Router · SPA"]`)
     lines.push(`      subgraph VUE["💚 Vue · CSR Engine"]`)
     for (const l of buildNestedSubgraphLines(routeGroups, '        ')) lines.push(l)
+    const topChainVue = emitTopLevelSiblingChain(routeGroups, '        ')
+    if (topChainVue !== undefined) lines.push(topChainVue)
+
     lines.push('      end\n    end\n  end')
   } else if (infra.hasAngular) {
-    frontendRef = 'ANGULAR'
+    frontendRef = 'BROWSER'
     lines.push(`  subgraph BROWSER["🌐 Browser · Client-Side App"]`)
     lines.push(`    subgraph ROUTER["🧭 Angular Router · SPA"]`)
     lines.push(`      subgraph ANGULAR["🅰 Angular · CSR Engine"]`)
     for (const l of buildNestedSubgraphLines(routeGroups, '        ')) lines.push(l)
+    const topChainAng = emitTopLevelSiblingChain(routeGroups, '        ')
+    if (topChainAng !== undefined) lines.push(topChainAng)
+
     lines.push('      end\n    end\n  end')
   } else {
     for (const l of buildNestedSubgraphLines(routeGroups, '  ')) lines.push(l)
+    const topChainBare = emitTopLevelSiblingChain(routeGroups, '  ')
+    if (topChainBare !== undefined) lines.push(topChainBare)
   }
 
   // ── 2. DATA / BACKEND LAYER (always outside frontend, unconditional) ─────
@@ -836,7 +913,8 @@ function buildRenderingDiagram(graph: IRGraph): string {
       if (frontendRef !== undefined) lines.push(`  ${frontendRef} -.->|"REST"| ${beId}`)
     }
   } else if (infra.hasSupabase) {
-    const fetchSrc = (infra.hasNextjs && !allCSR) ? 'SSR_FETCH' : (frontendRef ?? 'REACT')
+    // v1.2.45 #19: fetchSrc도 frontendRef(outermost wrapper) 사용 — middle wrapper에서 외부 edge 발사 금지.
+    const fetchSrc = frontendRef ?? 'BROWSER'
     lines.push(`  subgraph DATALAYER["🗄 DATA LAYER"]`)
     lines.push(`    subgraph SUPABASE_G["⚡ Supabase · BaaS"]`)
     lines.push(`      PG_SB[("PostgreSQL")]`)
@@ -1186,13 +1264,64 @@ function buildFeFileTreeScreenDiagram(
   componentNodes: ComponentNode[],
 ): string {
   const compById = new Map(componentNodes.map(c => [c.id, c]))
-  const lines: string[] = [RENDERING_INIT, 'graph TB', CLASS_DEFS]
+  const lines: string[] = [RENDERING_INIT, 'graph LR', CLASS_DEFS]
   const edges: string[] = []
   const fileNodeRendered = new Set<string>()
 
   emitFeFileTreeLines(routeGroups, '  ', compById, rendersEdges, importsEdges, lines, edges, fileNodeRendered)
+
+  // v1.2.45 #17 Tab2 top-level ~~~ chain — leaf composite node ID 또는 subgraph ID 혼합 가능.
+  const topIds = collectChildIds(routeGroups, compById, rendersEdges)
+  if (topIds.length >= 2) lines.push(`  ${topIds.join(' ~~~ ')}`)
+
   lines.push(...edges)
   return lines.join('\n')
+}
+
+// v1.2.45 결함 #17 (회귀 해소): leaf cluster(children=0 + routes=1) + 매칭 file_leaf 있으면 subgraph 대신
+// 단일 합성 노드(route 라벨 + 파일경로) emit. subgraph가 사라져 mermaid v11 외부 edge direction
+// inheritance 문제(규칙 B 위반) 자동 회피. sibling은 노드 ~~~ chain로 X축 강제(규칙 A 만족).
+function tryComposeLeafGroup(
+  group: NestedGroup,
+  compById: Map<string, ComponentNode>,
+  rendersEdges: IREdge[],
+): { id: string; line: string; comp: ComponentNode; route: RouteNode } | undefined {
+  if (group.children.length !== 0) return undefined
+  if (group.routes.length !== 1) return undefined
+  const r = group.routes[0]!
+  const edge = rendersEdges.find(e => e.from === r.id)
+  if (edge === undefined) return undefined
+  const comp = compById.get(edge.to)
+  if (comp === undefined) return undefined
+  const id = `leaf_${sanitizeId(r.id)}`
+  const badge = r.renderingMode === 'unknown' ? '?' : r.renderingMode
+  const displayPath = r.path.split('/').filter(Boolean).pop() ?? r.path
+  const parts = comp.filePath.split('/')
+  const fileName = parts.pop() ?? comp.filePath
+  const dir = parts.join('/')
+  const fileLabel = dir.length > 0 ? `📂 ${dir}<br/>📄 ${fileName}` : `📄 ${fileName}`
+  const line = `["${displayPath} · ${badge}<br/>${fileLabel}"]:::${modeClass(r.renderingMode)}`
+  return { id, line: `${id}${line}`, comp, route: r }
+}
+
+// 부모 cluster의 children chain용 ID 수집. leaf composite은 노드 ID, 그 외는 subgraph ID.
+function collectChildIds(
+  children: NestedGroup[],
+  compById: Map<string, ComponentNode>,
+  rendersEdges: IREdge[],
+): string[] {
+  const ids: string[] = []
+  for (const c of children) {
+    const segs = c.groupKey.split('/').filter(Boolean)
+    if (segs.length === 0) continue
+    const composite = tryComposeLeafGroup(c, compById, rendersEdges)
+    if (composite !== undefined) {
+      ids.push(composite.id)
+    } else {
+      ids.push(groupSubgraphId(c.groupKey).replace(/_G$/, '_T'))
+    }
+  }
+  return ids
 }
 
 function emitFeFileTreeLines(
@@ -1217,6 +1346,30 @@ function emitFeFileTreeLines(
       }
       continue
     }
+    // v1.2.45 결함 #17 (회귀 해소): leaf composite 가능한 group은 subgraph 없이 단일 노드만 emit.
+    const composite = tryComposeLeafGroup(group, compById, rendersEdges)
+    if (composite !== undefined) {
+      lines.push(`${indent}${composite.line}`)
+      // 1-depth import child: from 합성 노드 ID로 cross-cluster edge 유지
+      if (composite.route.routeFileKind === 'page') {
+        const childImports = importsEdges.filter(e => e.from === composite.comp.id && e.importDepth === 1)
+        for (const childEdge of childImports) {
+          const childComp = compById.get(childEdge.to)
+          if (childComp === undefined) continue
+          const childFileId = `file_${sanitizeId(childComp.id)}`
+          if (!fileNodeRendered.has(childFileId)) {
+            fileNodeRendered.add(childFileId)
+            const parts = childComp.filePath.split('/')
+            const fileName = parts.pop() ?? childComp.filePath
+            const dir = parts.join('/')
+            const label = dir.length > 0 ? `📂 ${dir}<br/>📄 ${fileName}` : `📄 ${fileName}`
+            lines.push(`${indent}${childFileId}["${label}"]:::pkg`)
+          }
+          edges.push(`  ${composite.id} --> ${childFileId}`)
+        }
+      }
+      continue
+    }
     const sgId = groupSubgraphId(group.groupKey).replace(/_G$/, '_T')
     lines.push(`${indent}subgraph ${sgId}["${sectionLabel(leafSeg)}"]`)
     for (const r of group.routes) {
@@ -1226,6 +1379,14 @@ function emitFeFileTreeLines(
       emitFeFileTreeLines(group.children, i2, compById, rendersEdges, importsEdges, lines, edges, fileNodeRendered)
     }
     lines.push(`${indent}end`)
+    // 자식 chain: leaf composite은 노드 ID, 일반 cluster는 subgraph ID로 ~~~ 연결.
+    // ⚠️ chain은 부모 cluster 바깥(`end` 다음, `${indent}` 들여쓰기)에 emit해야 작동.
+    // 부모 안에 emit하면 plain 노드 chain도 X축이 깨짐(v1.2.45 buildup AGENCY 사례).
+    // FE 표준 v1.1: nested X축은 보장하지 않으나 chain 효과로 작동하는 케이스는 보너스로 유지.
+    if (group.children.length >= 2) {
+      const childIds = collectChildIds(group.children, compById, rendersEdges)
+      if (childIds.length >= 2) lines.push(`${indent}${childIds.join(' ~~~ ')}`)
+    }
   }
 }
 
@@ -1262,7 +1423,9 @@ function emitRouteAndFileLeaf(
     const label = dir.length > 0 ? `📂 ${dir}<br/>📄 ${fileName}` : `📄 ${fileName}`
     lines.push(`${indent}${fileId}["${label}"]:::pkg`)
   }
-  edges.push(`  ${sanitizeId(r.id)} --> ${fileId}`)
+  // v1.2.45 결함 #9: edge를 cluster 안에 emit해야 graph LR에서 cluster width 영향이 형제 X축 layout 방해를 안 함
+  // (advisor 권고 — edge가 root level에 있으면 mermaid가 cluster를 자동 Y로 쌓음).
+  lines.push(`${indent}${sanitizeId(r.id)} --> ${fileId}`)
 
   // v1.2.44 A5-B-2: page 컴포넌트의 1-depth imports child component leaf + Y축 edge
   // routeFileKind === 'page' 가드 (layout/loading 차단)
@@ -1280,6 +1443,7 @@ function emitRouteAndFileLeaf(
       const label = dir.length > 0 ? `📂 ${dir}<br/>📄 ${fileName}` : `📄 ${fileName}`
       lines.push(`${indent}${childFileId}["${label}"]:::pkg`)
     }
+    // cross-cluster 가능성 — root level (edges 배열)에 둠
     edges.push(`  ${fileId} --> ${childFileId}`)
   }
 }

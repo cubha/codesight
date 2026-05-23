@@ -2,7 +2,7 @@
   "name": "codebase-arch-viz",
   "displayName": "Codebase Architecture Visualizer",
   "description": "Architecture diagrams for 13 frameworks — route hierarchy, component trees, DB schema, and FE↔BE cross-project analysis. Static analysis, no API key needed.",
-  "version": "1.2.44",
+  "version": "1.2.45",
   "publisher": "cubha",
   "license": "MIT",
   "icon": "media/icon.png",
@@ -57,14 +57,14 @@
       "activitybar": [
         {
           "id": "codesight-sidebar",
-          "title": "CodeSight",
+          "title": "Codebase Visualizer",
           "icon": "media/icon-activity.svg"
         }
       ],
       "panel": [
         {
           "id": "codesight-panel",
-          "title": "CodeSight",
+          "title": "Codebase Visualizer",
           "icon": "media/icon-activity.svg"
         }
       ]
@@ -74,7 +74,7 @@
         {
           "type": "webview",
           "id": "codesight.sidebar",
-          "name": "CodeSight"
+          "name": "Codebase Visualizer"
         }
       ],
       "codesight-panel": [
@@ -88,23 +88,23 @@
     "commands": [
       {
         "command": "codesight.analyze",
-        "title": "CodeSight: Analyze Project"
+        "title": "Codebase Viz: Analyze Project"
       },
       {
         "command": "codesight.selectFolder",
-        "title": "CodeSight: Select Workspace Folder"
+        "title": "Codebase Viz: Select Workspace Folder"
       },
       {
         "command": "codesight.setApiKey",
-        "title": "CodeSight: Set API Key"
+        "title": "Codebase Viz: Set API Key"
       },
       {
         "command": "codesight.clearApiKey",
-        "title": "CodeSight: Clear API Key"
+        "title": "Codebase Viz: Clear API Key"
       }
     ],
     "configuration": {
-      "title": "CodeSight",
+      "title": "Codebase Visualizer",
       "properties": {
         "codesight.language": {
           "type": "string",
@@ -123,7 +123,7 @@
             "中文 (简体)"
           ],
           "default": "auto",
-          "description": "Display language for CodeSight UI (sidebar, viewer, messages). 'auto' follows VS Code display language."
+          "description": "Display language for Codebase Viz UI (sidebar, viewer, messages). 'auto' follows VS Code display language."
         },
         "codesight.llm.provider": {
           "type": "string",

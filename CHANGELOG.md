@@ -1,5 +1,46 @@
 # Changelog
 
+## [1.2.45] — 2026-05-23
+
+### Changed — FE 표준 v1.1 amendment (R-T1.2 X축 보장 범위 정정)
+
+`mini-react-partner-mock-app` + `fa-support` webview 실측을 통해 **mermaid v11이 nested subgraph LR direction을 보장하지 못함**이 일관되게 입증되었다. v1.0 표준이 "동일 directory depth = X축"을 약속했으나 라이브러리 능력 범위를 벗어남 → 표준을 라이브러리에 맞게 재설계 (자세한 사유: `docs/design/FE-DIAGRAM-STANDARD.md` §8 / [[feedback_mermaid_v11_nested_lr_limit]]).
+
+**표준 v1.1 결정**:
+- **Top-level 형제 cluster = X축 보장** (outer wrapper 안 + cluster end 직후 `~~~` chain emit)
+- **Nested 자식 cluster = Y축 stack 기본** (mermaid v11 구조 한계)
+- URL intermediate segment는 explicit subgraph로 보존하되 X축 보장은 약속하지 않음
+
+→ fa-support 보고 결함 2(`/dashboard` 안 nested 자식 Y축)는 amendment 후 "결함 아닌 표준 동작"으로 정정.
+
+### Fixed
+
+- **출력 폴더·UI 라벨 통일** — `.codesight/` ↔ `.codebase-viz/` 출력 폴더 이원화 + UI "CodeSight" 잔존 정정. CLI/extension 모두 `.codebase-viz/`로 통일, 기존 `.codesight/cache.json` 위치는 **읽기 fallback** 유지(무자각 마이그레이션). UI 라벨(viewsContainers·views·commands·configuration title) 전 "CodeSight" → "Codebase Viz". 마켓 ID(`codebase-arch-viz`)·명령어 ID(`codesight.*`)·config key 호환성 유지.
+- **로고·타이틀 'Codebase Visualizer' 통일** — `viewer.html` `Code<em>Sight</em>` 잔존(em 태그로 grep 누락) 정정. 로고·타이틀은 풀 네임, 메시지는 'Codebase Viz' 약어 유지(사용자 결정).
+- **Tab1 outer wrapper top-level X축 보장** — `mermaid-renderer.ts` outer `graph LR` + outer wrapper(BROWSER/ROUTER/REACT/etc.) 안 top-level group `~~~` chain emit (`emitTopLevelSiblingChain` 헬퍼 신설, 8개 어댑터 wrapper 분기 적용). v1.1 amendment 후 표준에 부합하는 X축 보장.
+- **Tab1 라벨 prefix 잔존 해소** — `stripGroupPrefix`가 `path === groupKey`일 때 leaf segment 반환 (예: `/agency/userMgmt` + groupKey 동일 → `userMgmt`). R-T1.2 v1.1 "라벨은 자기 노드 의미만" 부합.
+- **Tab1 leaf wrapper 평탄화 (옵션 X.2)** — `buildNestedSubgraphLines`에서 `children=0 + routes=1 + dynamic/group route 아닌` leaf의 wrapper subgraph 생략 후 route 노드만 부모 indent로 emit. `parentGroupKey` 인자 전달로 라벨에 부모 prefix strip 적용 (root level은 full path 유지). `emitTopLevelSiblingChain` chain ID도 평탄화된 자식이면 route 노드 ID 참조하여 phantom 회피. 효과: 단일-route + 자식 0개인 leaf의 중복 wrapper 제거 + 라벨 정합성.
+- **URL intermediate segment unfold** (`url-grouper.ts` Fix 1) — `groupRoutesRecursive` cluster 분기에 single-route recurse 조건 추가 (`clusterRoutes.length === 1 && deeperRoutes.length > 0`). NestedGroup tree에 intermediate URL segment를 explicit 보존 → mini-react-partner `/partner` 안 `/ordProdPlanMgmt`·`/matMgmt`·`/perfMgmt`가 명시 subgraph로 표현. v1.2.45 1차 buildup에서 누락되었던 결함 해소.
+- **LLM merger dedup 정정 (라우트·컴포넌트·edge 모두)** — `merger.ts` `nodeKey`가 `route:${filePath}` 단독이라 LLM이 같은 URL을 페이지 파일로, static adapter가 라우터 정의 파일로 등록하면 별도 라우트로 중복. 변경: route는 `${path}:${routeFileKind}`(URL 정체성), component는 filePath 확장자 정규화. **edge phantom 차단**: `idRemap` Map(LLM_id → static_id)으로 edge from/to 치환 + `makeEdgeId` 재생성.
+- **LLM converter component skip (config-based 어댑터)** — React Router(router.tsx 단일 파일 + 별도 src/pages dir)에서 LLM `comp.filePath` dirname vs static `comp.filePath` mismatch → 두 ComponentNode 공존 → Tab2 file-tree 잘못된 leaf emit. 해결: `convertToIR`에 `skipComponents` 옵션 추가, `analyzer.ts`에서 `result.componentNodes.length > 0`일 때 활성화(adapter가 실제 component를 만든 경우에만 LLM component skip). LLM 결과는 routes/tables/backends만 채용. monorepo (fa-support) 회귀도 함께 해소.
+- **Tab2 top-level cluster X축 강제** — `buildFeFileTreeScreenDiagram`에서 top-level cluster ID들 사이 `~~~` chain 한 줄 추가 → dagre가 root rank 결정 → top-level X축 정상화. nested 자식은 v1.1 표준대로 Y축 stack.
+
+### Discarded — 폐기 시도 (재발 방지 명시)
+
+v1.2.45 buildup 과정에서 시도되었으나 webview 실측 또는 구조적 한계로 폐기된 패턴. **향후 hotfix가 본 목록 다시 확인 필요** (`docs/design/FE-DIAGRAM-STANDARD.md` §8.5):
+- **ELK opt-in** (`layout:elk + hierarchyHandling:INCLUDE_CHILDREN`) — VS Code webview console에 loader 메시지조차 안 나타남 + `INCLUDE_CHILDREN`은 leaf 내부 Y축 표준과 구조 충돌
+- **invisible row wrapper + `direction LR`** — mermaid v11에서 시각적으로 무시 (syntax는 valid, layout 영향 0)
+- **chain을 부모 cluster 안(`${i2}` `end` 이전)에 emit** — Playwright 실측 회귀 (AGENCY_T 안 leaf composite도 Y축으로 깨짐)
+- **"단일-plain-노드 subgraph chain X축"** — CDN(정적 HTML)에서는 작동하나 webview 비일관 (Tab1 작동 / Tab2 비작동). 표준 약속에서 제외.
+
+### Tested
+
+- `verify.sh` **703 PASS** / 1 skipped · 회귀 0
+- BE Tab1 snapshot 영향 0건 (FE 변경 한정)
+- snapshot 19+ 갱신 (top-level `~~~` chain + leaf composite + leaf 평탄화 + intermediate unfold 반영)
+- 신규 테스트: `merger.test.ts` URL 정체성 dedup 2건 + LLM edge remap 1건 + `analyzer.test.ts` 옛 `.codesight` fallback 1건. `mermaid-renderer.test.ts` 2건은 leaf 평탄화 의도에 맞춰 갱신.
+- `mini-react-partner-mock-app` Playwright + webview 시각 검증: Tab1 `/partner` 자식 X축 정상 + 라벨 leaf segment만 표시. Tab2는 표준 v1.1 부합(top-level X축, nested Y축).
+
 ## [1.2.44] — 2026-05-21
 
 ### Fixed — React Router `.map()` 패턴 라우트 추적 회귀 해소 (사용자 실측)
