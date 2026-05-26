@@ -21,10 +21,9 @@ export class DjangoAdapter implements IAdapter {
       parseUrls(repoRoot, analyzerVersion).catch(() => []),
       parseDjangoComponents(repoRoot, analyzerVersion).catch(() => []),
       parseDjangoOrmModels(repoRoot, analyzerVersion).catch(() => []),
-      parseFlywayMigrations(repoRoot).catch(() => []),
+      parseFlywayMigrations(repoRoot, analyzerVersion).catch(() => []),
     ])
 
-    // Django ORM models take precedence; Flyway DDL supplements missing tables/columns
     const tableNodes = mergeFlywayTables(ormTables, flywayNodes)
 
     return {

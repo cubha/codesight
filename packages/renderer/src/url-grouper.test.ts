@@ -104,15 +104,14 @@ describe('groupRoutesByUrl', () => {
     expect(nestingDepth(result)).toBeLessThanOrEqual(2)
   })
 
-  it('9. minGroupSize 옵션은 distinctPaths 기반 재귀에서 무시 — maxDepth만 깊이 제어 (B1)', () => {
+  it('9. distinctPaths 기반 재귀 — maxDepth만 깊이 제어', () => {
     const routes = [
       r('/api/v1/partner/A'), r('/api/v1/partner/B'),
       r('/api/v1/partner/C'), r('/api/v1/partner/D'),
       r('/api/v1/admin/X'), r('/api/v1/admin/Y'),
       r('/api/v1/admin/Z'), r('/api/v1/admin/W'),
     ]
-    // distinctPaths.size > 1 이면 minGroupSize와 무관하게 재귀 발생
-    const result = groupRoutesByUrl(routes, { minGroupSize: 10 })
+    const result = groupRoutesByUrl(routes)
     function hasChildren(groups: typeof result): boolean {
       return groups.some(g => g.children.length > 0 || hasChildren(g.children))
     }
@@ -136,8 +135,7 @@ describe('groupRoutesByUrl', () => {
     expect(hasChildren(result)).toBe(false)
   })
 
-  it('12. BE 2개 경로 — distinctPaths.size > 1 이면 minGroupSize 무관하게 분리', () => {
-    // 기존 minGroupSize:3 기본값이면 2개 라우트는 재귀 안 했지만, 이제 distinctPaths 기준
+  it('12. BE 2개 경로 — distinctPaths.size > 1 이면 분리', () => {
     const routes = [r('/api/v1/users'), r('/api/v1/orders')]
     const result = groupRoutesByUrl(routes)
     // /api/v1 LCP → 단일 그룹, children 없이 평면이거나 nested

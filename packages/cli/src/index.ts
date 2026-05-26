@@ -3,7 +3,7 @@ import * as process from 'node:process'
 import { pathToFileURL } from 'node:url'
 import { createDefaultRegistry } from '@codebase-viz/core'
 import { renderMermaid } from '@codebase-viz/renderer'
-import { createIRGraph, EMPTY_ADAPTER_RESULT } from '@codebase-viz/types'
+import { ANALYZER_VERSION, createIRGraph, EMPTY_ADAPTER_RESULT } from '@codebase-viz/types'
 import {
   detectStack,
   collectFiles,
@@ -23,11 +23,11 @@ export async function analyze(
   const adapter = registry.get(stack.adapterId)
 
   const result = adapter !== undefined
-    ? await adapter.analyze({ repoRoot, stack, analyzerVersion: 'codebase-viz@0.1.0' })
+    ? await adapter.analyze({ repoRoot, stack, analyzerVersion: ANALYZER_VERSION })
     : EMPTY_ADAPTER_RESULT
 
   let finalGraph = createIRGraph({
-    analyzerVersion: 'codebase-viz@0.1.0',
+    analyzerVersion: ANALYZER_VERSION,
     repoRoot,
     projectName: path.basename(repoRoot),
     metadata: {
@@ -61,7 +61,7 @@ export async function analyze(
     })
 
     const { routeNodes: llmRoutes, componentNodes: llmComponents, tableNodes: llmTables, edges: llmEdges } =
-      convertToIR(llmResult, repoRoot, 'codebase-viz@0.1.0')
+      convertToIR(llmResult, ANALYZER_VERSION)
 
     const allLLMNodes = [...llmRoutes, ...llmComponents, ...llmTables]
     const { verified } = await verifyNodes(allLLMNodes, repoRoot)

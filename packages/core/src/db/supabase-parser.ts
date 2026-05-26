@@ -1,6 +1,6 @@
 import * as path from 'node:path'
-import * as fs from 'node:fs'
 import { Project, SyntaxKind, type TypeNode } from 'ts-morph'
+import { pathExists } from '../adapters/_shared/file-finder.js'
 import {
   createTableNode,
   makeNodeId,
@@ -33,7 +33,7 @@ export async function parseSupabaseTables(repoRoot: string, analyzerVersion: str
   let supabaseTypePath: string | undefined
   for (const candidate of CANDIDATE_PATHS) {
     const p = path.join(repoRoot, candidate)
-    if (fs.existsSync(p)) { supabaseTypePath = p; break }
+    if (await pathExists(p)) { supabaseTypePath = p; break }
   }
   if (supabaseTypePath === undefined) return []
 

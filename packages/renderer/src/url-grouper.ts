@@ -8,7 +8,6 @@ export interface NestedGroup {
 
 export interface GroupingOpts {
   maxDepth?: number
-  minGroupSize?: number
 }
 
 // Split a URL path into non-empty segments.
@@ -40,7 +39,6 @@ function groupRoutesRecursive(
   parentPrefix: string,
   depth: number,
   maxDepth: number,
-  minGroupSize: number,
 ): NestedGroup[] {
   if (routes.length === 0) return []
 
@@ -68,7 +66,7 @@ function groupRoutesRecursive(
     return [{
       groupKey: fullGroupKey,
       routes: exactRoutes,
-      children: groupRoutesRecursive(deeperRoutes, fullGroupKey, depth + 1, maxDepth, minGroupSize),
+      children: groupRoutesRecursive(deeperRoutes, fullGroupKey, depth + 1, maxDepth),
     }]
   }
 
@@ -105,7 +103,7 @@ function groupRoutesRecursive(
     return {
       groupKey: clusterKey,
       routes: exactRoutes,
-      children: groupRoutesRecursive(deeperRoutes, clusterKey, depth + 1, maxDepth, minGroupSize),
+      children: groupRoutesRecursive(deeperRoutes, clusterKey, depth + 1, maxDepth),
     }
   })
 }
@@ -115,6 +113,5 @@ export function groupRoutesByUrl(
   opts?: GroupingOpts,
 ): NestedGroup[] {
   const maxDepth = opts?.maxDepth ?? 8
-  const minGroupSize = opts?.minGroupSize ?? 3
-  return groupRoutesRecursive(routes, '', 0, maxDepth, minGroupSize)
+  return groupRoutesRecursive(routes, '', 0, maxDepth)
 }

@@ -6,10 +6,9 @@ import {
   makeNodeId,
   astToProvenance,
   type RouteNode,
-  type DynamicSegmentType,
 } from '@codebase-viz/types'
 import { createJavaParser } from '../../_shared/tree-sitter-loader.js'
-import { normalizeUrlPath } from '../../_shared/url-path-normalizer.js'
+import { normalizeUrlPath, getDynamicSegmentType } from '../../_shared/url-path-normalizer.js'
 import { findJavaFiles } from '../../_shared/file-finder.js'
 
 const HTTP_MAPPING_ANNOTATIONS = new Set([
@@ -129,10 +128,6 @@ function extractAnnotations(modifiers: Parser.SyntaxNode): AnnotationInfo[] {
     }
   }
   return infos
-}
-
-function getDynamicSegmentType(urlPath: string): DynamicSegmentType {
-  return urlPath.includes(':') ? 'dynamic' : 'static'
 }
 
 function composePath(classPrefix: string, methodSuffix: string): string {

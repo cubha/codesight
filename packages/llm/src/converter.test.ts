@@ -19,7 +19,7 @@ describe('convertToIR', () => {
       inferenceNotes: [],
     }
 
-    const { routeNodes } = convertToIR(result, REPO_ROOT, ANALYZER_VERSION)
+    const { routeNodes } = convertToIR(result, ANALYZER_VERSION)
     expect(routeNodes).toHaveLength(1)
     expect(routeNodes[0]?.path).toBe('/blog')
     expect(routeNodes[0]?.renderingMode).toBe('SSR')
@@ -34,7 +34,7 @@ describe('convertToIR', () => {
       inferenceNotes: [],
     }
 
-    const { routeNodes } = convertToIR(result, REPO_ROOT, ANALYZER_VERSION)
+    const { routeNodes } = convertToIR(result, ANALYZER_VERSION)
     expect(routeNodes[0]?.dynamicSegmentType).toBe('dynamic')
   })
 
@@ -46,7 +46,7 @@ describe('convertToIR', () => {
       inferenceNotes: [],
     }
 
-    const { componentNodes, edges } = convertToIR(result, REPO_ROOT, ANALYZER_VERSION)
+    const { componentNodes, edges } = convertToIR(result, ANALYZER_VERSION)
     expect(componentNodes).toHaveLength(2)
     expect(componentNodes.map(c => c.name)).toContain('BlogList')
     expect(componentNodes.map(c => c.name)).toContain('Header')
@@ -67,7 +67,7 @@ describe('convertToIR', () => {
       inferenceNotes: [],
     }
 
-    const { componentNodes } = convertToIR(result, REPO_ROOT, ANALYZER_VERSION)
+    const { componentNodes } = convertToIR(result, ANALYZER_VERSION)
     const headerNodes = componentNodes.filter(c => c.name === 'Header')
     expect(headerNodes).toHaveLength(1)
   })
@@ -80,7 +80,7 @@ describe('convertToIR', () => {
       inferenceNotes: [],
     }
 
-    const { tableNodes, edges } = convertToIR(result, REPO_ROOT, ANALYZER_VERSION)
+    const { tableNodes, edges } = convertToIR(result, ANALYZER_VERSION)
     expect(tableNodes).toHaveLength(1)
     expect(tableNodes[0]?.name).toBe('blog_posts')
 
@@ -97,7 +97,7 @@ describe('convertToIR', () => {
       inferenceNotes: [],
     }
 
-    const { routeNodes, componentNodes } = convertToIR(result, REPO_ROOT, ANALYZER_VERSION)
+    const { routeNodes, componentNodes } = convertToIR(result, ANALYZER_VERSION)
     const route = routeNodes[0]
     if (route?.confidence !== 'inferred') throw new Error('expected inferred')
     expect(route.inferenceChain.length).toBeGreaterThan(0)

@@ -23,7 +23,7 @@ async function writeFile(relPath: string, content = '<script></script>'): Promis
 describe('parseRoutes (SvelteKit)', () => {
   it('루트 페이지: src/routes/+page.svelte → path="/", routeFileKind="page"', async () => {
     await writeFile('src/routes/+page.svelte')
-    const nodes = await parseRoutes(tmpDir)
+    const nodes = await parseRoutes(tmpDir, 'test-analyzer@1.0.0')
     expect(nodes).toHaveLength(1)
     const node = nodes[0]
     expect(node).toBeDefined()
@@ -37,7 +37,7 @@ describe('parseRoutes (SvelteKit)', () => {
 
   it('정적 라우트: src/routes/about/+page.svelte → path="/about"', async () => {
     await writeFile('src/routes/about/+page.svelte')
-    const nodes = await parseRoutes(tmpDir)
+    const nodes = await parseRoutes(tmpDir, 'test-analyzer@1.0.0')
     expect(nodes).toHaveLength(1)
     const node = nodes[0]
     expect(node).toBeDefined()
@@ -48,7 +48,7 @@ describe('parseRoutes (SvelteKit)', () => {
 
   it('동적 라우트: src/routes/blog/[slug]/+page.svelte → path="/blog/:slug", dynamicSegmentType="dynamic"', async () => {
     await writeFile('src/routes/blog/[slug]/+page.svelte')
-    const nodes = await parseRoutes(tmpDir)
+    const nodes = await parseRoutes(tmpDir, 'test-analyzer@1.0.0')
     expect(nodes).toHaveLength(1)
     const node = nodes[0]
     expect(node).toBeDefined()
@@ -59,7 +59,7 @@ describe('parseRoutes (SvelteKit)', () => {
 
   it('API endpoint: src/routes/api/users/+server.ts → path="/api/users", routeFileKind="route-handler"', async () => {
     await writeFile('src/routes/api/users/+server.ts', 'export function GET() {}')
-    const nodes = await parseRoutes(tmpDir)
+    const nodes = await parseRoutes(tmpDir, 'test-analyzer@1.0.0')
     expect(nodes).toHaveLength(1)
     const node = nodes[0]
     expect(node).toBeDefined()
@@ -69,7 +69,7 @@ describe('parseRoutes (SvelteKit)', () => {
 
   it('그룹 라우트: src/routes/(marketing)/contact/+page.svelte → path="/contact", isGroupRoute=true', async () => {
     await writeFile('src/routes/(marketing)/contact/+page.svelte')
-    const nodes = await parseRoutes(tmpDir)
+    const nodes = await parseRoutes(tmpDir, 'test-analyzer@1.0.0')
     expect(nodes).toHaveLength(1)
     const node = nodes[0]
     expect(node).toBeDefined()
@@ -80,7 +80,7 @@ describe('parseRoutes (SvelteKit)', () => {
 
   it('레이아웃: src/routes/+layout.svelte → routeFileKind="layout"', async () => {
     await writeFile('src/routes/+layout.svelte')
-    const nodes = await parseRoutes(tmpDir)
+    const nodes = await parseRoutes(tmpDir, 'test-analyzer@1.0.0')
     expect(nodes).toHaveLength(1)
     const node = nodes[0]
     expect(node).toBeDefined()
@@ -96,7 +96,7 @@ describe('parseRoutes (SvelteKit)', () => {
     await writeFile('src/routes/(marketing)/contact/+page.svelte')
     await writeFile('src/routes/+layout.svelte')
 
-    const nodes = await parseRoutes(tmpDir)
+    const nodes = await parseRoutes(tmpDir, 'test-analyzer@1.0.0')
     expect(nodes).toHaveLength(6)
 
     const rootPage = nodes.find(n => n.path === '/' && n.routeFileKind === 'page')
@@ -127,31 +127,31 @@ describe('parseRoutes (SvelteKit)', () => {
 
   it('renderingMode: CSR 감지 (ssr = false)', async () => {
     await writeFile('src/routes/+page.svelte', '<script>\nexport const ssr = false\n</script>')
-    const nodes = await parseRoutes(tmpDir)
+    const nodes = await parseRoutes(tmpDir, 'test-analyzer@1.0.0')
     expect(nodes[0]!.renderingMode).toBe('CSR')
   })
 
   it('renderingMode: SSG 감지 (prerender = true)', async () => {
     await writeFile('src/routes/+page.svelte', '<script>\nexport const prerender = true\n</script>')
-    const nodes = await parseRoutes(tmpDir)
+    const nodes = await parseRoutes(tmpDir, 'test-analyzer@1.0.0')
     expect(nodes[0]!.renderingMode).toBe('SSG')
   })
 
   it('src/routes 없으면 빈 배열 반환', async () => {
-    const nodes = await parseRoutes(tmpDir)
+    const nodes = await parseRoutes(tmpDir, 'test-analyzer@1.0.0')
     expect(nodes).toEqual([])
   })
 
   it('provenance에 adapter="sveltekit@0.1" 포함', async () => {
     await writeFile('src/routes/+page.svelte')
-    const nodes = await parseRoutes(tmpDir)
+    const nodes = await parseRoutes(tmpDir, 'test-analyzer@1.0.0')
     expect(nodes[0]!.provenance.adapter).toBe('sveltekit@0.1')
     expect(nodes[0]!.provenance.line).toBe(1)
   })
 
   it('+server.js도 route-handler로 인식', async () => {
     await writeFile('src/routes/api/health/+server.js', 'export function GET() {}')
-    const nodes = await parseRoutes(tmpDir)
+    const nodes = await parseRoutes(tmpDir, 'test-analyzer@1.0.0')
     expect(nodes).toHaveLength(1)
     expect(nodes[0]!.routeFileKind).toBe('route-handler')
     expect(nodes[0]!.path).toBe('/api/health')
@@ -160,7 +160,7 @@ describe('parseRoutes (SvelteKit)', () => {
   it('NodeId 결정론적: 같은 디렉토리의 page/layout이 다른 ID', async () => {
     await writeFile('src/routes/+page.svelte')
     await writeFile('src/routes/+layout.svelte')
-    const nodes = await parseRoutes(tmpDir)
+    const nodes = await parseRoutes(tmpDir, 'test-analyzer@1.0.0')
     expect(nodes).toHaveLength(2)
     const ids = nodes.map(n => n.id)
     expect(new Set(ids).size).toBe(2)
@@ -168,14 +168,14 @@ describe('parseRoutes (SvelteKit)', () => {
 
   it('catch-all: src/routes/[...rest]/+page.svelte → dynamicSegmentType="catch-all"', async () => {
     await writeFile('src/routes/[...rest]/+page.svelte')
-    const nodes = await parseRoutes(tmpDir)
+    const nodes = await parseRoutes(tmpDir, 'test-analyzer@1.0.0')
     expect(nodes).toHaveLength(1)
     expect(nodes[0]!.dynamicSegmentType).toBe('catch-all')
   })
 
   it('+error.svelte → routeFileKind="error"', async () => {
     await writeFile('src/routes/+error.svelte')
-    const nodes = await parseRoutes(tmpDir)
+    const nodes = await parseRoutes(tmpDir, 'test-analyzer@1.0.0')
     expect(nodes).toHaveLength(1)
     expect(nodes[0]!.routeFileKind).toBe('error')
   })
@@ -186,7 +186,7 @@ describe('parseRoutes (SvelteKit)', () => {
 export const ssr = false
 export async function load() { return {} }
 `)
-    const nodes = await parseRoutes(tmpDir)
+    const nodes = await parseRoutes(tmpDir, 'test-analyzer@1.0.0')
     const dashboard = nodes.find(n => n.path === '/dashboard')
     expect(dashboard).toBeDefined()
     expect(dashboard?.renderingMode).toBe('CSR')
@@ -197,7 +197,7 @@ export async function load() { return {} }
     await writeFile('src/routes/about/+page.ts', `
 export const prerender = true
 `)
-    const nodes = await parseRoutes(tmpDir)
+    const nodes = await parseRoutes(tmpDir, 'test-analyzer@1.0.0')
     const about = nodes.find(n => n.path === '/about')
     expect(about).toBeDefined()
     expect(about?.renderingMode).toBe('SSG')
@@ -205,7 +205,7 @@ export const prerender = true
 
   it('+page.ts와 +page.server.ts 없으면 기본값 SSR (N-10)', async () => {
     await writeFile('src/routes/blog/+page.svelte')
-    const nodes = await parseRoutes(tmpDir)
+    const nodes = await parseRoutes(tmpDir, 'test-analyzer@1.0.0')
     const blog = nodes.find(n => n.path === '/blog')
     expect(blog).toBeDefined()
     expect(blog?.renderingMode).toBe('SSR')

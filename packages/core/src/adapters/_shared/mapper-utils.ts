@@ -1,11 +1,3 @@
-// mapper-utils.ts
-// RouteNode/ComponentNode ↔ TableNode 간의 mapperEdge를 생성하는 공통 유틸.
-//
-// 스펙 노트: 원래 명세에서 kind='db-access'를 제안했으나,
-// @codebase-viz/types의 EdgeKind = 'renders'|'calls'|'queries'|'imports' 에는
-// 'db-access'가 없다. Route/Component → TableNode 연결의 의미상 정확한 kind는
-// 'queries'이므로 이를 사용한다. (Evidence-first 원칙에 따른 타입 우선 적용)
-
 import path from 'node:path'
 import {
   createEdge,
@@ -16,17 +8,8 @@ import {
   type TableNode,
 } from '@codebase-viz/types'
 
-/**
- * Route/Component filePath에 table.name이 포함되는 경우에만 edge를 생성한다.
- * 휴리스틱: filePath.toLowerCase().includes(table.name.toLowerCase())
- *
- * silence > noise 원칙: 확실하지 않으면 연결하지 않는다.
- * confidence='inferred'로 설정하며, inferenceChain에 근거를 기록한다.
- */
-/**
- * basename(파일명, 확장자 제거) 에서 tableName 토큰 경계 매칭.
- * 예: "users" → "users.controller" ✅, "users-list" ✅, "superusers" ❌
- */
+// basename(파일명, 확장자 제거)에서 tableName 토큰 경계 매칭.
+// "superusers"가 "users" 테이블에 우연 매칭되는 false positive 방지 (silence > noise).
 function tokenMatch(fileBase: string, tableName: string): boolean {
   if (fileBase === tableName) return true
   // PascalCase / snake_case / kebab-case 정규화: 구분자 제거 후 비교

@@ -23,13 +23,13 @@ async function writeFile(relPath: string, content = '<template><div /></template
 
 describe('NuxtAdapter parseRoutes', () => {
   it('pages/ 디렉토리 없으면 빈 배열 반환', async () => {
-    const nodes = await parseRoutes(tmpDir)
+    const nodes = await parseRoutes(tmpDir, 'test-analyzer@1.0.0')
     expect(nodes).toEqual([])
   })
 
   it('pages/index.vue → path="/"', async () => {
     await writeFile('pages/index.vue')
-    const nodes = await parseRoutes(tmpDir)
+    const nodes = await parseRoutes(tmpDir, 'test-analyzer@1.0.0')
     expect(nodes).toHaveLength(1)
     const node = nodes[0]
     expect(node).toBeDefined()
@@ -43,7 +43,7 @@ describe('NuxtAdapter parseRoutes', () => {
 
   it('pages/about.vue → path="/about"', async () => {
     await writeFile('pages/about.vue')
-    const nodes = await parseRoutes(tmpDir)
+    const nodes = await parseRoutes(tmpDir, 'test-analyzer@1.0.0')
     expect(nodes).toHaveLength(1)
     const node = nodes[0]
     expect(node).toBeDefined()
@@ -53,7 +53,7 @@ describe('NuxtAdapter parseRoutes', () => {
 
   it('pages/users/[id].vue → path="/users/:id", dynamicSegmentType="dynamic"', async () => {
     await writeFile('pages/users/[id].vue')
-    const nodes = await parseRoutes(tmpDir)
+    const nodes = await parseRoutes(tmpDir, 'test-analyzer@1.0.0')
     expect(nodes).toHaveLength(1)
     const node = nodes[0]
     expect(node).toBeDefined()
@@ -63,7 +63,7 @@ describe('NuxtAdapter parseRoutes', () => {
 
   it('pages/blog/[...slug].vue → path="/blog/:slug*", dynamicSegmentType="catch-all"', async () => {
     await writeFile('pages/blog/[...slug].vue')
-    const nodes = await parseRoutes(tmpDir)
+    const nodes = await parseRoutes(tmpDir, 'test-analyzer@1.0.0')
     expect(nodes).toHaveLength(1)
     const node = nodes[0]
     expect(node).toBeDefined()
@@ -77,7 +77,7 @@ describe('NuxtAdapter parseRoutes', () => {
     await writeFile('pages/users/[id].vue')
     await writeFile('pages/blog/[...slug].vue')
 
-    const nodes = await parseRoutes(tmpDir)
+    const nodes = await parseRoutes(tmpDir, 'test-analyzer@1.0.0')
     expect(nodes).toHaveLength(4)
 
     const paths = nodes.map(n => n.path).sort()
@@ -94,7 +94,7 @@ describe('NuxtAdapter parseRoutes', () => {
 
   it('app/pages/ (Nuxt 4+ 호환) 디렉토리 탐지', async () => {
     await writeFile('app/pages/index.vue')
-    const nodes = await parseRoutes(tmpDir)
+    const nodes = await parseRoutes(tmpDir, 'test-analyzer@1.0.0')
     expect(nodes).toHaveLength(1)
     expect(nodes[0]!.path).toBe('/')
   })
@@ -102,7 +102,7 @@ describe('NuxtAdapter parseRoutes', () => {
   it('NodeId 결정론적 — 같은 디렉토리 두 파일이 다른 ID', async () => {
     await writeFile('pages/index.vue')
     await writeFile('pages/about.vue')
-    const nodes = await parseRoutes(tmpDir)
+    const nodes = await parseRoutes(tmpDir, 'test-analyzer@1.0.0')
     expect(nodes).toHaveLength(2)
     const ids = nodes.map(n => n.id)
     expect(new Set(ids).size).toBe(2)
@@ -121,7 +121,7 @@ describe('NuxtAdapter parseRoutes', () => {
 
   it('.ts 파일도 스캔', async () => {
     await writeFile('pages/api.ts', 'export default defineEventHandler(() => {})')
-    const nodes = await parseRoutes(tmpDir)
+    const nodes = await parseRoutes(tmpDir, 'test-analyzer@1.0.0')
     expect(nodes).toHaveLength(1)
     expect(nodes[0]!.path).toBe('/api')
   })
@@ -135,7 +135,7 @@ definePageMeta({
 })
 </script>
 `)
-    const nodes = await parseRoutes(tmpDir)
+    const nodes = await parseRoutes(tmpDir, 'test-analyzer@1.0.0')
     expect(nodes).toHaveLength(1)
     expect(nodes[0]!.renderingMode).toBe('CSR')
   })
@@ -147,21 +147,21 @@ definePageMeta({
 definePageMeta({ ssr: true })
 </script>
 `)
-    const nodes = await parseRoutes(tmpDir)
+    const nodes = await parseRoutes(tmpDir, 'test-analyzer@1.0.0')
     expect(nodes).toHaveLength(1)
     expect(nodes[0]!.renderingMode).toBe('SSR')
   })
 
   it('definePageMeta 없으면 renderingMode: SSR (기본값)', async () => {
     await writeFile('pages/default.vue')
-    const nodes = await parseRoutes(tmpDir)
+    const nodes = await parseRoutes(tmpDir, 'test-analyzer@1.0.0')
     expect(nodes).toHaveLength(1)
     expect(nodes[0]!.renderingMode).toBe('SSR')
   })
 
   it('.ts 파일은 definePageMeta 파싱 없이 SSR 기본값', async () => {
     await writeFile('pages/api.ts', 'export default defineEventHandler(() => {})')
-    const nodes = await parseRoutes(tmpDir)
+    const nodes = await parseRoutes(tmpDir, 'test-analyzer@1.0.0')
     expect(nodes).toHaveLength(1)
     expect(nodes[0]!.renderingMode).toBe('SSR')
   })

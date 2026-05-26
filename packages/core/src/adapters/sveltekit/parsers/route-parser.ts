@@ -83,7 +83,7 @@ async function findRoutesDir(repoRoot: string): Promise<{ dir: string; prefix: s
   return null
 }
 
-export async function parseRoutes(repoRoot: string, analyzerVersion = 'codebase-viz@0.1.0'): Promise<RouteNode[]> {
+export async function parseRoutes(repoRoot: string, analyzerVersion: string): Promise<RouteNode[]> {
   const routesDirInfo = await findRoutesDir(repoRoot)
   if (routesDirInfo === null) return []
 

@@ -411,7 +411,7 @@ export function activate(context: vscode.ExtensionContext): void {
         placeHolder: placeholderMap[provider],
       })
       if (key !== undefined && key !== '') {
-        await context.secrets.store(apiKeySlot(getProvider()), key)
+        await context.secrets.store(apiKeySlot(provider), key)
         sidebarProvider?.updateStatus({ hasApiKey: true })
         void vscode.window.showInformationMessage(t('msg.apiKeySaved', getLocale()))
       }

@@ -44,8 +44,6 @@ async function collectSvelteAndServerFiles(repoRoot: string): Promise<CollectedF
   return { svelteFiles, serverFiles }
 }
 
-const dirCache = new Map<string, Set<string>>()
-
 async function readSvelteAliases(repoRoot: string): Promise<Map<string, string>> {
   const aliases = new Map<string, string>()
   // Default SvelteKit alias
@@ -75,11 +73,11 @@ async function readSvelteAliases(repoRoot: string): Promise<Map<string, string>>
   return aliases
 }
 
-async function getDirFiles(dir: string): Promise<Set<string>> {
-  if (dirCache.has(dir)) return dirCache.get(dir)!
+async function getDirFiles(dir: string, cache: Map<string, Set<string>>): Promise<Set<string>> {
+  if (cache.has(dir)) return cache.get(dir)!
   const entries = await fs.readdir(dir).catch(() => [] as string[])
   const set = new Set(entries)
-  dirCache.set(dir, set)
+  cache.set(dir, set)
   return set
 }
 
@@ -97,7 +95,7 @@ export async function parseSvelteComponents(
   repoRoot: string,
   analyzerVersion: string,
 ): Promise<{ nodes: ComponentNode[]; edges: IREdge[] }> {
-  dirCache.clear()
+  const dirCache = new Map<string, Set<string>>()
   const aliases = await readSvelteAliases(repoRoot)
 
   const { svelteFiles, serverFiles } = await collectSvelteAndServerFiles(repoRoot)
@@ -128,7 +126,7 @@ export async function parseSvelteComponents(
     const relPath = path.relative(repoRoot, filePath).replace(/\\/g, '/')
     const name = path.basename(filePath, '.svelte')
 
-    const dirFiles = await getDirFiles(path.dirname(filePath))
+    const dirFiles = await getDirFiles(path.dirname(filePath), dirCache)
     const runtime = detectRuntime(filePath, dirFiles)
 
     const provenance: Provenance = {

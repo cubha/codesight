@@ -25,7 +25,6 @@ export class CodeSightPanel {
   private readonly panel: vscode.WebviewPanel
   private disposables: vscode.Disposable[] = []
   private lastParams?: ViewerParams
-  private reanalyzeCallback: (() => void) | undefined
 
   private constructor(
     private readonly extensionUri: vscode.Uri,
@@ -38,7 +37,7 @@ export class CodeSightPanel {
         if (msg.type === 'export') {
           void this.handleExport(msg as ExportMessage)
         } else if (msg.type === 'reanalyze') {
-          this.reanalyzeCallback?.()
+          void vscode.commands.executeCommand('codesight.reanalyze')
         }
       },
       null,
@@ -73,10 +72,6 @@ export class CodeSightPanel {
 
   static dispose(): void {
     CodeSightPanel.instance?.dispose()
-  }
-
-  setReanalyzeCallback(cb: () => void): void {
-    this.reanalyzeCallback = cb
   }
 
   showLoading(): void {
@@ -153,7 +148,7 @@ export class CodeSightPanel {
     const mermaidUri = webview.asWebviewUri(
       vscode.Uri.joinPath(this.extensionUri, 'media', 'mermaid.min.js'),
     )
-    // v1.2.40: ELK layout bundle (BE Tab1/Tab2 mrtree opt-in). 부재 시 dynamic import 실패 → dagre fallback.
+    // ELK layout bundle 부재 시 dynamic import 실패 → dagre fallback.
     const elkUri = webview.asWebviewUri(
       vscode.Uri.joinPath(this.extensionUri, 'media', 'mermaid-layout-elk.bundle.mjs'),
     )

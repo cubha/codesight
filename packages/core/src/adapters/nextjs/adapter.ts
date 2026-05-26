@@ -82,8 +82,8 @@ export class NextJsAdapter implements IAdapter {
     const hasAnyTsOrm = stack.hasPrisma || stack.hasDrizzle || stack.hasTypeOrm
 
     const [routeNodes, components, supabaseTables, ormTables] = await Promise.all([
-      parseRoutes(repoRoot),
-      parseComponents(repoRoot),
+      parseRoutes(repoRoot, analyzerVersion),
+      parseComponents(repoRoot, analyzerVersion),
       stack.hasSupabase ? parseTables(repoRoot) : Promise.resolve([]),
       hasAnyTsOrm ? detectTsOrmTables(repoRoot, analyzerVersion) : Promise.resolve([]),
     ])

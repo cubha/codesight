@@ -22,7 +22,7 @@ describe('parseComponents', () => {
       `'use client'\nexport default function Button() { return <button/> }`,
     )
 
-    const { nodes } = await parseComponents(tmpDir)
+    const { nodes } = await parseComponents(tmpDir, 'test-analyzer@1.0.0')
 
     expect(nodes).toHaveLength(1)
     const node = nodes[0]!
@@ -37,7 +37,7 @@ describe('parseComponents', () => {
       `export default function Header() { return <header/> }`,
     )
 
-    const { nodes } = await parseComponents(tmpDir)
+    const { nodes } = await parseComponents(tmpDir, 'test-analyzer@1.0.0')
 
     expect(nodes).toHaveLength(1)
     const node = nodes[0]!
@@ -54,7 +54,7 @@ describe('parseComponents', () => {
       `export default function MyCard() { return <div/> }`,
     )
 
-    const { nodes } = await parseComponents(tmpDir)
+    const { nodes } = await parseComponents(tmpDir, 'test-analyzer@1.0.0')
 
     expect(nodes[0]?.name).toBe('MyCard')
   })
@@ -69,7 +69,7 @@ describe('parseComponents', () => {
       `import Child from './Child.js'\nexport default function Parent() { return <Child/> }`,
     )
 
-    const { nodes, edges } = await parseComponents(tmpDir)
+    const { nodes, edges } = await parseComponents(tmpDir, 'test-analyzer@1.0.0')
 
     expect(nodes).toHaveLength(2)
     expect(edges).toHaveLength(1)
@@ -85,7 +85,7 @@ describe('parseComponents', () => {
       `import React from 'react'\nexport default function App() { return <div/> }`,
     )
 
-    const { edges } = await parseComponents(tmpDir)
+    const { edges } = await parseComponents(tmpDir, 'test-analyzer@1.0.0')
 
     expect(edges).toHaveLength(0)
   })
@@ -105,7 +105,7 @@ describe('parseComponents', () => {
       `import Header from '@/components/Header'\nexport default function Page() { return <Header/> }`,
     )
 
-    const { nodes, edges } = await parseComponents(tmpDir)
+    const { nodes, edges } = await parseComponents(tmpDir, 'test-analyzer@1.0.0')
 
     expect(nodes).toHaveLength(2)
     expect(edges).toHaveLength(1)
@@ -124,7 +124,7 @@ describe('parseComponents', () => {
       `import Button from '@/Button'\nexport default function Page() { return <Button/> }`,
     )
 
-    const { edges } = await parseComponents(tmpDir)
+    const { edges } = await parseComponents(tmpDir, 'test-analyzer@1.0.0')
 
     expect(edges).toHaveLength(0)
   })

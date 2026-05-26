@@ -25,3 +25,9 @@ export function normalizeUrlPath(rawPath: string): string {
   const segments = rawPath.split('/')
   return segments.map(s => normalizeSegment(s)).join('/')
 }
+
+// 정규화된 URL path가 `:param` 형태의 dynamic segment를 포함하는지 판정.
+// normalizeUrlPath() 통과 후 사용.
+export function getDynamicSegmentType(urlPath: string): 'dynamic' | 'static' {
+  return urlPath.includes(':') ? 'dynamic' : 'static'
+}

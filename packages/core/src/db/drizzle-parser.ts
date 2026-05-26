@@ -8,27 +8,9 @@ import {
   type ColumnDef,
   type Provenance,
 } from '@codebase-viz/types'
+import { findTsFiles } from '../adapters/_shared/file-finder.js'
 
-const EXCLUDE_DIRS = new Set(['.git', 'node_modules', '.next', 'dist', 'build', '.svelte-kit'])
 const TABLE_FUNCS = new Set(['pgTable', 'sqliteTable', 'mysqlTable', 'table'])
-
-async function findTsFiles(repoRoot: string): Promise<string[]> {
-  const results: string[] = []
-  async function recurse(dir: string): Promise<void> {
-    const entries = await fs.readdir(dir, { withFileTypes: true }).catch(() => null)
-    if (entries === null) return
-    for (const entry of entries) {
-      if (entry.isDirectory()) {
-        if (!EXCLUDE_DIRS.has(entry.name)) await recurse(path.join(dir, entry.name))
-      } else if (entry.isFile() && (entry.name.endsWith('.ts') || entry.name.endsWith('.tsx'))
-        && !entry.name.endsWith('.d.ts') && !entry.name.endsWith('.test.ts')) {
-        results.push(path.join(dir, entry.name))
-      }
-    }
-  }
-  await recurse(repoRoot)
-  return results
-}
 
 function resolveChainRoot(node: import('ts-morph').Node): string | null {
   let cur = node
@@ -50,7 +32,7 @@ export async function parseDrizzleSchema(
   repoRoot: string,
   analyzerVersion: string,
 ): Promise<TableNode[]> {
-  const allFiles = await findTsFiles(repoRoot)
+  const allFiles = await findTsFiles(repoRoot, { excludeDeclarations: true, excludeTests: true })
 
   const drizzleFiles: string[] = []
   for (const f of allFiles) {

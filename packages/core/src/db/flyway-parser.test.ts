@@ -36,7 +36,7 @@ describe('parseFlywayMigrations', () => {
 );`,
     )
 
-    const tables = await parseFlywayMigrations(tempDir)
+    const tables = await parseFlywayMigrations(tempDir, 'test-analyzer@1.0.0')
     expect(tables).toHaveLength(1)
     expect(tables[0]!.name).toBe('users')
     expect(tables[0]!.confidence).toBe('verified')
@@ -57,7 +57,7 @@ describe('parseFlywayMigrations', () => {
       `CREATE TABLE orders (id BIGINT NOT NULL PRIMARY KEY, user_id BIGINT NOT NULL);`,
     )
 
-    const tables = await parseFlywayMigrations(tempDir)
+    const tables = await parseFlywayMigrations(tempDir, 'test-analyzer@1.0.0')
     expect(tables).toHaveLength(2)
     const names = tables.map(t => t.name).sort()
     expect(names).toEqual(['orders', 'users'])
@@ -69,7 +69,7 @@ describe('parseFlywayMigrations', () => {
     mkdirp(migDir)
     // no .sql files written
 
-    const tables = await parseFlywayMigrations(tempDir)
+    const tables = await parseFlywayMigrations(tempDir, 'test-analyzer@1.0.0')
     expect(tables).toEqual([])
   })
 
@@ -77,7 +77,7 @@ describe('parseFlywayMigrations', () => {
     tempDir = makeTempDir()
     // no migration directory at all
 
-    const tables = await parseFlywayMigrations(tempDir)
+    const tables = await parseFlywayMigrations(tempDir, 'test-analyzer@1.0.0')
     expect(tables).toEqual([])
   })
 })

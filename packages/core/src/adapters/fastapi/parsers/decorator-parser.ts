@@ -6,10 +6,9 @@ import {
   makeNodeId,
   astToProvenance,
   type RouteNode,
-  type DynamicSegmentType,
 } from '@codebase-viz/types'
 import { createPythonParser } from '../../_shared/tree-sitter-loader.js'
-import { normalizeUrlPath } from '../../_shared/url-path-normalizer.js'
+import { normalizeUrlPath, getDynamicSegmentType } from '../../_shared/url-path-normalizer.js'
 import { findPyFiles } from '../../_shared/file-finder.js'
 
 const HTTP_METHODS = new Set(['get', 'post', 'put', 'delete', 'patch', 'head', 'options'])
@@ -20,11 +19,6 @@ function extractStringValue(node: Parser.SyntaxNode): string | undefined {
     if (child !== null && child.type === 'string_content') return child.text
   }
   return undefined
-}
-
-function getDynamicSegmentType(urlPath: string): DynamicSegmentType {
-  if (urlPath.includes(':')) return 'dynamic'
-  return 'static'
 }
 
 function getFirstStringArg(callNode: Parser.SyntaxNode): { value: string; row: number; col: number } | undefined {

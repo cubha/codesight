@@ -25,12 +25,11 @@ export class SpringBootAdapter implements IAdapter {
       parseSpringComponents(repoRoot, analyzerVersion).catch(() => []),
       parseJpaEntities(repoRoot, analyzerVersion).catch(() => []),
       parseMybatisMappers(repoRoot, analyzerVersion).catch(() => []),
-      parseFlywayMigrations(repoRoot).catch(() => []),
+      parseFlywayMigrations(repoRoot, analyzerVersion).catch(() => []),
     ])
 
     const diEdges = await parseSpringDependencies(repoRoot, componentNodes, analyzerVersion).catch(() => [])
 
-    // Merge: JPA nodes take precedence (more columns), MyBatis supplements missing tables
     const tablesByName = new Map(jpaNodes.map(n => [n.name, n]))
     for (const n of mybatisNodes) {
       const existing = tablesByName.get(n.name)

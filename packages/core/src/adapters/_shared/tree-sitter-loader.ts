@@ -21,11 +21,9 @@ export function setWasmDir(dir: string): void {
 
 function resolveWasmDir(): string {
   if (wasmDir !== undefined) return wasmDir
-  // import.meta.url is valid in ESM (vitest). In CJS bundles it may be empty.
-  // The extension always calls setWasmDir() before using tree-sitter.
+  // CJS 번들(esbuild)에서는 import.meta.url이 빈 문자열이 되므로 extension은 setWasmDir() 선행 필수.
   const metaUrl: string = import.meta.url ?? ''
   if (metaUrl === '') throw new Error('Call setWasmDir() before using tree-sitter in CJS bundles')
-  // From packages/core/src/adapters/_shared/, 3 levels up = packages/core/
   const here = path.dirname(fileURLToPath(metaUrl))
   return path.resolve(here, '..', '..', '..', 'wasm')
 }
