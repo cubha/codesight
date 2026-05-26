@@ -110,6 +110,7 @@ function findTsxCandidate(
 
 export async function parseComponents(
   repoRoot: string,
+  analyzerVersion: string,
 ): Promise<{ nodes: ComponentNode[]; edges: IREdge[] }> {
   const normalizedRoot = path.resolve(repoRoot)
   const aliasPaths = await loadTsConfigPaths(normalizedRoot)
@@ -174,7 +175,7 @@ export async function parseComponents(
       file: relPath,
       line: 1,
       adapter: 'nextjs-app-router@0.1',
-      analyzerVersion: 'codebase-viz@0.1.0',
+      analyzerVersion,
     }
 
     const node: ComponentNode = isClient
@@ -225,7 +226,7 @@ export async function parseComponents(
           file: relPath,
           line: importDecl.getStartLineNumber(),
           adapter: 'nextjs-app-router@0.1',
-          analyzerVersion: 'codebase-viz@0.1.0',
+          analyzerVersion,
         },
         confidence: 'verified',
       })

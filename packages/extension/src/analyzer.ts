@@ -1,6 +1,5 @@
 import * as fs from 'node:fs/promises'
 import * as path from 'node:path'
-import * as os from 'node:os'
 import { createDefaultRegistry, extractFeCalls, matchFeCallsToBeRoutes, remapCrossEdgeFromIds } from '@codebase-viz/core'
 import {
   renderMermaid,
@@ -9,7 +8,7 @@ import {
   type DiagramSet,
   type GroupingOptions,
 } from '@codebase-viz/renderer'
-import { createIRGraph, EMPTY_ADAPTER_RESULT, isComponentNode, isRouteNode, type IREdge, type IRGraph } from '@codebase-viz/types'
+import { ANALYZER_VERSION, createIRGraph, EMPTY_ADAPTER_RESULT, isComponentNode, isRouteNode, type IREdge, type IRGraph } from '@codebase-viz/types'
 import {
   detectStack,
   collectFiles,
@@ -39,11 +38,9 @@ export interface RunAnalysisOptions {
 
 export async function runAnalysis(
   repoRoot: string,
-  options?: RunAnalysisOptions | LLMOptions,
+  options?: RunAnalysisOptions,
 ): Promise<AnalysisResult> {
-  const opts: RunAnalysisOptions = options !== undefined && 'apiKey' in options
-    ? { llm: options }
-    : (options ?? {})
+  const opts = options ?? {}
   const llmOptions = opts.llm
   const grouping: GroupingOptions = { ...DEFAULT_GROUPING, ...(opts.grouping ?? {}) }
 
@@ -116,22 +113,19 @@ export async function runAnalysis(
       )
     }
 
-    // v1.2.45 결함 #13: 정적 어댑터가 component를 verified로 등록한 경우 LLM component skip.
-    // v1.2.45 #18 (회귀 해소): adapter 존재 여부가 아닌 "adapter가 실제 component를 만들었는지"로 분기.
-    // turborepo/monorepo 케이스(fa-support 등)에서 NextAdapter는 repoRoot의 단일 appDir만 보므로
-    // 0 component 생성 → adapter !== undefined만 보고 skip하면 LLM component까지 차단 → file_leaf 0건 회귀.
+    // config-based 어댑터에서 LLM/static dirname mismatch로 dedup 실패 → LLM component skip.
+    // adapter 존재 여부가 아닌 component 생성 여부로 분기 (monorepo NextAdapter는 단일 appDir만 보므로
+    // 0 component 생성 가능 → adapter !== undefined만 보면 LLM까지 차단).
     const adapterHasComponents = result.componentNodes.length > 0
     const { routeNodes: llmRoutes, componentNodes: llmComponents, tableNodes: llmTables, edges: llmEdges } =
-      convertToIR(llmResult, repoRoot, ANALYZER_VERSION, { skipComponents: adapterHasComponents })
+      convertToIR(llmResult, ANALYZER_VERSION, { skipComponents: adapterHasComponents })
 
     const allLLMNodes = [...llmRoutes, ...llmComponents, ...llmTables]
     const { verified } = await verifyNodes(allLLMNodes, repoRoot)
 
     const llmMeta = {
-      // v1.2.45 결함 #10: 정적 어댑터가 결정한 framework는 LLM이 덮어쓰지 못한다.
-      // LLM이 mini-react-partner-mock-app을 'vite-react'로 분류하면 isFileTreeTab2Eligible 화이트리스트
-      // 통과 실패 → Tab2 file-tree 표준 우회 → legacy renderScreenSection fallback이 1.2.44 마이그레이션
-      // 구조(파일 경로 leaf)를 잃는다. stack.adapterId 있으면 stack.framework 신뢰.
+      // 정적 어댑터가 결정한 framework는 LLM이 덮어쓰지 못한다 (isFileTreeTab2Eligible 화이트리스트
+      // 우회로 Tab2 file-tree 표준 손실되는 문제 방지).
       framework: adapter !== undefined ? stack.framework : (llmResult.framework || stack.framework),
       hasSupabase: llmResult.hasSupabase ?? stack.hasSupabase,
       hasPrisma: llmResult.hasPrisma ?? stack.hasPrisma,
@@ -216,7 +210,6 @@ async function buildPairResult(
   return { graph: beGraph, crossEdges }
 }
 
-export const ANALYZER_VERSION = 'codebase-viz@1.1.4'
 
 interface CacheEntry {
   analyzerVersion: string
@@ -252,6 +245,3 @@ export async function saveCachedGraph(repoRoot: string, graph: IRGraph): Promise
   }
 }
 
-export async function getCacheDir(): Promise<string> {
-  return path.join(os.homedir(), '.codebase-viz', 'cache')
-}

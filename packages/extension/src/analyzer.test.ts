@@ -2,7 +2,8 @@ import { describe, it, expect, afterEach } from 'vitest'
 import * as fs from 'node:fs/promises'
 import * as path from 'node:path'
 import * as os from 'node:os'
-import { runAnalysis, loadCachedGraph, saveCachedGraph, ANALYZER_VERSION } from './analyzer.js'
+import { runAnalysis, loadCachedGraph, saveCachedGraph } from './analyzer.js'
+import { ANALYZER_VERSION } from '@codebase-viz/types'
 
 describe('runAnalysis — LLM OFF + LLM-only stack', () => {
   const tmpDirs: string[] = []

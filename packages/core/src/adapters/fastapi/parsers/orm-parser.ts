@@ -26,15 +26,10 @@ export async function parseSqlAlchemyModels(
   analyzerVersion: string,
 ): Promise<TableNode[]> {
   const pyFiles = await findPyFiles(repoRoot)
-  const modelFiles = pyFiles.filter(f => {
-    // check heuristic - will read content below
-    return true
-  })
-
   const parser = await createPythonParser()
   const tables: TableNode[] = []
 
-  for (const filePath of modelFiles) {
+  for (const filePath of pyFiles) {
     const source = await fs.readFile(filePath, 'utf-8').catch(() => null)
     if (source === null) continue
     if (!source.includes('Column') && !source.includes('mapped_column')) continue

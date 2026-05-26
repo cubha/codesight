@@ -89,7 +89,7 @@ async function findPagesDir(repoRoot: string): Promise<string | null> {
   return null
 }
 
-export async function parseRoutes(repoRoot: string, analyzerVersion = 'codebase-viz@0.1.0'): Promise<RouteNode[]> {
+export async function parseRoutes(repoRoot: string, analyzerVersion: string): Promise<RouteNode[]> {
   const pagesDir = await findPagesDir(repoRoot)
   if (pagesDir === null) return []
 

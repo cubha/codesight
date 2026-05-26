@@ -74,13 +74,15 @@ export async function parseSpringDependencies(
   const seenEdgeIds = new Set<string>()
 
   function addEdge(from: ComponentNode, toTypeName: string, provenance: Provenance): void {
-    // v1.2.41 ST-FIX: interface 타입 매핑 실패 시 Impl 컨벤션 fallback
-    // (Spring 표준: Controller가 Service interface 주입 → ServiceImpl 매핑)
-    const toNode = nameToNode.get(toTypeName) ?? nameToNode.get(`${toTypeName}Impl`)
+    // Spring 표준: Controller가 Service interface 주입 시 ServiceImpl로 fallback 매핑.
+    const direct = nameToNode.get(toTypeName)
+    const toNode = direct ?? nameToNode.get(`${toTypeName}Impl`)
     if (toNode === undefined || from.id === toNode.id) return
     const edgeId = makeEdgeId('calls', from.id, toNode.id)
     if (seenEdgeIds.has(edgeId)) return
     seenEdgeIds.add(edgeId)
+    const chain = [`spring-di: ${from.name} → ${toTypeName} in ${provenance.file}`]
+    if (direct === undefined) chain.push(`resolved via Impl fallback as ${toTypeName}Impl`)
     edges.push(
       createEdge({
         id: edgeId,
@@ -89,9 +91,7 @@ export async function parseSpringDependencies(
         kind: 'calls',
         provenance,
         confidence: 'inferred',
-        inferenceChain: [
-          `spring-di: ${from.name} → ${toTypeName} in ${provenance.file}`,
-        ],
+        inferenceChain: chain,
       }),
     )
   }

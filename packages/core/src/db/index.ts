@@ -8,6 +8,8 @@ export { parseDrizzleSchema } from './drizzle-parser.js'
 export { parseTypeOrmEntities } from './typeorm-parser.js'
 export { parseSupabaseTables } from './supabase-parser.js'
 
+// FE 어댑터 전용 TS ORM 통합 진입점 (Prisma + Drizzle + TypeORM).
+// Flyway·Supabase는 각 BE 어댑터(springboot/django/nextjs)에서 직접 import — 본 함수에 미포함.
 export async function detectTsOrmTables(
   repoRoot: string,
   analyzerVersion: string,

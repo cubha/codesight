@@ -11,9 +11,9 @@ import {
   type ComponentNode,
   type IREdge,
   type NodeId,
-  type DynamicSegmentType,
   type Provenance,
 } from '@codebase-viz/types'
+import { getDynamicSegmentType } from '../../_shared/url-path-normalizer.js'
 
 const EXCLUDE_DIRS = new Set(['node_modules', '.git', 'dist', 'build', '.next'])
 const HTTP_METHOD_DECORATORS = new Set(['Get', 'Post', 'Put', 'Delete', 'Patch', 'All', 'Options', 'Head'])
@@ -58,11 +58,6 @@ function getStringArg(decorator: Decorator): string {
 function buildRoutePath(prefix: string, methodPath: string): string {
   const segments = [prefix, methodPath].filter(s => s.length > 0).join('/')
   return '/' + segments
-}
-
-function getDynamicSegmentType(routePath: string): DynamicSegmentType {
-  if (routePath.includes(':')) return 'dynamic'
-  return 'static'
 }
 
 function findDecoratorByName(node: ClassDeclaration | MethodDeclaration, name: string): Decorator | undefined {

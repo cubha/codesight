@@ -23,7 +23,7 @@ async function writeFile(relPath: string, content = 'export default function Pag
 describe('parseRoutes', () => {
   it('정적 라우트: app/page.tsx → path="/", dynamicSegmentType="static"', async () => {
     await writeFile('app/page.tsx')
-    const nodes = await parseRoutes(tmpDir)
+    const nodes = await parseRoutes(tmpDir, 'test-analyzer@1.0.0')
     expect(nodes).toHaveLength(1)
     const node = nodes[0]
     expect(node).toBeDefined()
@@ -37,7 +37,7 @@ describe('parseRoutes', () => {
 
   it('동적 라우트: app/blog/[slug]/page.tsx → path="/blog/:slug", dynamicSegmentType="dynamic"', async () => {
     await writeFile('app/blog/[slug]/page.tsx')
-    const nodes = await parseRoutes(tmpDir)
+    const nodes = await parseRoutes(tmpDir, 'test-analyzer@1.0.0')
     expect(nodes).toHaveLength(1)
     const node = nodes[0]
     expect(node).toBeDefined()
@@ -48,7 +48,7 @@ describe('parseRoutes', () => {
 
   it('그룹 라우트: app/(marketing)/about/page.tsx → isGroupRoute=true', async () => {
     await writeFile('app/(marketing)/about/page.tsx')
-    const nodes = await parseRoutes(tmpDir)
+    const nodes = await parseRoutes(tmpDir, 'test-analyzer@1.0.0')
     expect(nodes).toHaveLength(1)
     const node = nodes[0]
     expect(node).toBeDefined()
@@ -59,7 +59,7 @@ describe('parseRoutes', () => {
 
   it('route-handler: app/api/posts/route.ts → routeFileKind="route-handler"', async () => {
     await writeFile('app/api/posts/route.ts', 'export function GET() {}')
-    const nodes = await parseRoutes(tmpDir)
+    const nodes = await parseRoutes(tmpDir, 'test-analyzer@1.0.0')
     expect(nodes).toHaveLength(1)
     const node = nodes[0]
     expect(node).toBeDefined()
@@ -69,7 +69,7 @@ describe('parseRoutes', () => {
 
   it('layout: app/layout.tsx → routeFileKind="layout"', async () => {
     await writeFile('app/layout.tsx')
-    const nodes = await parseRoutes(tmpDir)
+    const nodes = await parseRoutes(tmpDir, 'test-analyzer@1.0.0')
     expect(nodes).toHaveLength(1)
     const node = nodes[0]
     expect(node).toBeDefined()
@@ -80,7 +80,7 @@ describe('parseRoutes', () => {
   it('NodeId 결정론적: 같은 디렉토리의 page/layout이 다른 ID', async () => {
     await writeFile('app/page.tsx')
     await writeFile('app/layout.tsx')
-    const nodes = await parseRoutes(tmpDir)
+    const nodes = await parseRoutes(tmpDir, 'test-analyzer@1.0.0')
     expect(nodes).toHaveLength(2)
     const ids = nodes.map(n => n.id)
     expect(new Set(ids).size).toBe(2)
@@ -94,7 +94,7 @@ describe('parseRoutes', () => {
 
   it('중첩 동적: app/[lang]/[...slug]/page.tsx → path="/:lang/:slug*", dynamicSegmentType="catch-all"', async () => {
     await writeFile('app/[lang]/[...slug]/page.tsx')
-    const nodes = await parseRoutes(tmpDir)
+    const nodes = await parseRoutes(tmpDir, 'test-analyzer@1.0.0')
     expect(nodes).toHaveLength(1)
     const node = nodes[0]
     expect(node).toBeDefined()
@@ -104,44 +104,44 @@ describe('parseRoutes', () => {
 
   it('renderingMode: SSG 감지', async () => {
     await writeFile('app/page.tsx', "export const dynamic = 'force-static'\nexport default function Page() {}")
-    const nodes = await parseRoutes(tmpDir)
+    const nodes = await parseRoutes(tmpDir, 'test-analyzer@1.0.0')
     expect(nodes[0]!.renderingMode).toBe('SSG')
   })
 
   it('renderingMode: ISR 감지', async () => {
     await writeFile('app/page.tsx', 'export const revalidate = 60\nexport default function Page() {}')
-    const nodes = await parseRoutes(tmpDir)
+    const nodes = await parseRoutes(tmpDir, 'test-analyzer@1.0.0')
     expect(nodes[0]!.renderingMode).toBe('ISR')
   })
 
   it('renderingMode: CSR 감지', async () => {
     await writeFile('app/page.tsx', "'use client'\nexport default function Page() {}")
-    const nodes = await parseRoutes(tmpDir)
+    const nodes = await parseRoutes(tmpDir, 'test-analyzer@1.0.0')
     expect(nodes[0]!.renderingMode).toBe('CSR')
   })
 
   it('app/ 디렉토리 없으면 빈 배열 반환', async () => {
-    const nodes = await parseRoutes(tmpDir)
+    const nodes = await parseRoutes(tmpDir, 'test-analyzer@1.0.0')
     expect(nodes).toEqual([])
   })
 
   it('JS 확장자 page.js → RouteNode 생성 (X-3)', async () => {
     await writeFile('app/blog/page.js', 'export default function BlogPage() {}')
-    const nodes = await parseRoutes(tmpDir)
+    const nodes = await parseRoutes(tmpDir, 'test-analyzer@1.0.0')
     const blogPage = nodes.find(n => n.path === '/blog' && n.routeFileKind === 'page')
     expect(blogPage).toBeDefined()
   })
 
   it('JSX 확장자 page.jsx → RouteNode 생성 (X-3)', async () => {
     await writeFile('app/contact/page.jsx', 'export default function ContactPage() {}')
-    const nodes = await parseRoutes(tmpDir)
+    const nodes = await parseRoutes(tmpDir, 'test-analyzer@1.0.0')
     const contactPage = nodes.find(n => n.path === '/contact' && n.routeFileKind === 'page')
     expect(contactPage).toBeDefined()
   })
 
   it('route.js → route-handler RouteNode 생성 (X-3)', async () => {
     await writeFile('app/api/data/route.js', 'export function GET() {}')
-    const nodes = await parseRoutes(tmpDir)
+    const nodes = await parseRoutes(tmpDir, 'test-analyzer@1.0.0')
     const handler = nodes.find(n => n.path === '/api/data' && n.routeFileKind === 'route-handler')
     expect(handler).toBeDefined()
   })

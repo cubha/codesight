@@ -1,4 +1,5 @@
 import {
+  EMPTY_ADAPTER_RESULT,
   type IAdapter,
   type AdapterContext,
   type AdapterResult,
@@ -29,6 +30,7 @@ export class NestJsAdapter implements IAdapter {
     ]
     const mapperEdges = buildMapperEdges(controllerResult.routes, allComponents, tableNodes, analyzerVersion)
     return {
+      ...EMPTY_ADAPTER_RESULT,
       routeNodes: controllerResult.routes,
       componentNodes: allComponents,
       componentEdges: moduleResult.edges,

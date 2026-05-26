@@ -31,19 +31,14 @@ function sanitizeId(s: string): string {
   return s.replace(/[^a-zA-Z0-9_]/g, '_')
 }
 
-// v1.2.45 결함 #15 (회귀 해소): ELK opt-in 폐기. v1.2.45 ELK INCLUDE_CHILDREN은 모든 level X축 강제로
+// ELK opt-in 폐기. v1.2.45 ELK INCLUDE_CHILDREN은 모든 level X축 강제로
 // 규칙 B(leaf cluster 내부 Y축) 위반. webview console에서 ELK loader 메시지 미확인. dagre로 복귀.
 // 규칙 A(sibling X축)는 buildNestedSubgraphLines + leaf 합성 노드 패턴(#16·#17)으로 dagre에서 직접 강제.
 const RENDERING_INIT = `%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0c1a30','primaryTextColor':'#7dd3fc','primaryBorderColor':'#0e3a6e','edgeLabelBackground':'#0c1a30','lineColor':'#334155','secondaryColor':'#0f172a','clusterBkg':'#060c18','clusterBorder':'#1e3a5f','fontFamily':'JetBrains Mono','fontSize':'14'}}}%%`
-// v1.2.41 ST-FIX-2: BE 전용 init — flowchart.nodeSpacing/rankSpacing 축소로 DI 체인 간격 조밀화. FE 다이어그램은 RENDERING_INIT 유지.
-// v1.2.41 ST-FIX-3: Y축(rankSpacing) 1/3 축소. visible edge 영역(Tab2 DI 체인)은 정상 반영,
+// BE 전용 init — flowchart.nodeSpacing/rankSpacing 축소로 DI 체인 간격 조밀화. FE 다이어그램은 RENDERING_INIT 유지.
+// Y축(rankSpacing) 1/3 축소. visible edge 영역(Tab2 DI 체인)은 정상 반영,
 // invisible `~~~` link 영역(Tab1 endpoints)은 dagre가 별도 처리하므로 endpoints emit 로직에서 visible edge로 전환됨.
 const BE_RENDERING_INIT = `%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0c1a30','primaryTextColor':'#7dd3fc','primaryBorderColor':'#0e3a6e','edgeLabelBackground':'#0c1a30','lineColor':'#334155','secondaryColor':'#0f172a','clusterBkg':'#060c18','clusterBorder':'#1e3a5f','fontFamily':'JetBrains Mono','fontSize':'14'},'flowchart':{'nodeSpacing':25,'rankSpacing':8,'padding':4}}}%%`
-
-// v1.2.41 ST-FIX-3 toggle: endpoints subgraph 유지 vs 제거. 시각 검증 후 사용자 결정 = subgraph 필수 → true 고정.
-// - true: BE-DIAGRAM-STANDARD R-T1.6 준수 (subgraph 박스로 endpoint 묶음). 단점: 내부 Y간격 mermaid v11 통제 불가 (deferred to v1.3.x BE Phase 2).
-// - false: subgraph 제거 + leaf→route vertical chain. Y간격 외부와 동일 (rankSpacing 8 적용). 표준 정정 필요.
-const ENDPOINTS_AS_SUBGRAPH = true
 
 const CLASS_DEFS = [
   `  classDef ssr fill:#0d1a0d,stroke:#16a34a,color:#86efac`,
@@ -56,11 +51,6 @@ const CLASS_DEFS = [
   `  classDef muted fill:#0a0d14,stroke:#374151,color:#64748b,stroke-dasharray: 3 3`,
   `  classDef hdr fill:#06080f,stroke:#1e3a5f,color:#7dd3fc`,
 ].join('\n')
-
-// v1.2.40 ST4: ELK mrtree per-diagram opt-in (R-T1.9). BE Tab1/Tab2 트리 레이아웃 전용.
-// viewer.html에서 @mermaid-js/layout-elk 번들을 동적 import 후 registerLayoutLoaders로 등록한다.
-// 등록 실패 시 mermaid가 unknown layout으로 무시 → dagre fallback (UX 회귀 0).
-const ELK_MRTREE_PRAGMA = `---\nconfig:\n  layout: elk.mrtree\n---`
 
 function modeClass(mode: string): string {
   const map: Record<string, string> = {
@@ -77,13 +67,6 @@ function getTopSection(routePath: string): string {
   return first.replace(/^\[/, '').replace(/\]$/, '') || 'root'
 }
 
-// Convert url-grouper groupKey (e.g. "/blog", "/") to the section key used internally
-// (e.g. "blog", "root"). Strips leading slash, returns "root" for empty/root.
-function groupKeyToSectionKey(groupKey: string): string {
-  const stripped = groupKey.replace(/^\//, '')
-  return stripped || 'root'
-}
-
 function collectNestedRoutes(groups: NestedGroup[]): RouteNode[] {
   const result: RouteNode[] = []
   for (const g of groups) {
@@ -93,25 +76,11 @@ function collectNestedRoutes(groups: NestedGroup[]): RouteNode[] {
   return result
 }
 
-// Flatten NestedGroup[] into a Map for buildScreenComponentDiagram (preserves one section per top-level cluster).
-function buildSectionsFromRoutes(routes: RouteNode[]): Map<string, RouteNode[]> {
-  const groups = groupRoutesByUrl(routes)
-  const sections = new Map<string, RouteNode[]>()
-  for (const group of groups) {
-    const secKey = groupKeyToSectionKey(group.groupKey)
-    const allRoutes = collectNestedRoutes([group])
-    const existing = sections.get(secKey) ?? []
-    for (const r of allRoutes) existing.push(r)
-    sections.set(secKey, existing)
-  }
-  return sections
-}
-
 // 그룹 subgraph 안에서는 path가 그룹 prefix와 중복되어 노드 라벨이 길어진다 (Y/X 축 폭발).
 // stripGroupPrefix로 prefix 제거 → 노드 width 감소 → mermaid가 한 row에 더 많은 노드 배치 가능.
 function stripGroupPrefix(path: string, groupKey: string | undefined): string {
   if (groupKey === undefined || groupKey === '' || groupKey === '/') return path
-  // v1.2.45: path === groupKey면 leaf segment 반환 (예: '/agency/userMgmt' + groupKey '/agency/userMgmt' → 'userMgmt').
+  // path === groupKey면 leaf segment 반환 (예: '/agency/userMgmt' + groupKey '/agency/userMgmt' → 'userMgmt').
   // 표준 1 절대원칙(R-T1.2 "동일 Depth = X축, 라벨은 자기 노드 의미만")에 부합.
   // 단 leaf segment가 빈 문자열이면 path 유지 (인덱스 라우트 가드).
   if (path === groupKey) {
@@ -137,7 +106,7 @@ function groupSubgraphId(groupKey: string): string {
   return sanitizeId(segs.join('_').toUpperCase()) + '_G'
 }
 
-// v1.2.45 결함 #16 (회귀 해소): buildNestedSubgraphLines는 children 사이 chain만 emit한다.
+// buildNestedSubgraphLines는 children 사이 chain만 emit한다.
 // 호출자(buildRenderingDiagram, buildFeFileTreeScreenDiagram)가 top-level group이 2개 이상이면
 // 자체적으로 chain emit해야 한다 — outer wrapper(BROWSER/ROUTER/REACT) 안의 sibling top-level은
 // outer wrapper도 outer wrapper 안 sibling 자동 가로배치를 못 함 (mermaid v11 dagre).
@@ -265,10 +234,10 @@ function metadataToInfra(meta?: IRGraphMetadata): InfraInfo {
   }
 }
 
-// v1.2.43 ST2: file-based 라우팅 어댑터(파일 경로 = URL 또는 파일 위치에 URL 의미 인코딩)
+// ST2: file-based 라우팅 어댑터(파일 경로 = URL 또는 파일 위치에 URL 의미 인코딩)
 // Tab2에 라우트 → 디렉터리·파일명 노드 패턴을 적용할 수 있는 어댑터 화이트리스트.
 // config-based(react-router/vue-spa/angular)는 라우트=명시 매핑이지만
-// v1.2.42 react-router → v1.2.44 vue-spa·angular에서 component 참조 추적으로 filePath를
+// react-router → v1.2.44 vue-spa·angular에서 component 참조 추적으로 filePath를
 // 컴포넌트 파일로 치환하여 동일 패턴 적용 (각 어댑터 route-parser.ts A1-1·A1-2 변경).
 function isFileTreeTab2Eligible(meta?: IRGraphMetadata): boolean {
   if (meta === undefined) return false
@@ -278,37 +247,11 @@ function isFileTreeTab2Eligible(meta?: IRGraphMetadata): boolean {
     fw === 'vue-spa' || fw === 'angular'
 }
 
-function buildRouteSectionLines(sections: Map<string, RouteNode[]>, indent: string): string[] {
-  const lines: string[] = []
-  const i2 = indent + '  '
-  for (const [secKey, nodes] of sections) {
-    if (secKey === 'root') {
-      for (const r of nodes) {
-        const badge = r.renderingMode === 'unknown' ? '?' : r.renderingMode
-        const methodPrefix = r.httpMethod !== undefined ? `${r.httpMethod} ` : ''
-        lines.push(`${indent}${sanitizeId(r.id)}["${methodPrefix}${r.path} · ${badge}"]:::${modeClass(r.renderingMode)}`)
-      }
-    } else {
-      const sgId = sanitizeId(secKey.toUpperCase()) + '_G'
-      lines.push(`${indent}subgraph ${sgId}["${sectionLabel(secKey)}"]`)
-      const groupPrefix = '/' + secKey
-      lines.push(...emitInnerRowSubgraphs(i2, sgId, nodes.length, (i, ind) => {
-        const r = nodes[i]!
-        const badge = r.renderingMode === 'unknown' ? '?' : r.renderingMode
-        const displayPath = stripGroupPrefix(r.path, groupPrefix)
-        return `${ind}${sanitizeId(r.id)}["${displayPath} · ${badge}"]:::${modeClass(r.renderingMode)}`
-      }))
-      lines.push(`${indent}end`)
-    }
-  }
-  return lines
-}
-
 const GROUPS_PER_ROW = 5
 // Tab2는 section당 8+ 컴포넌트를 가질 수 있어, 동일 row 내 section 수를 제한한다.
 // nested comp subgraph 방식에서 section 1개 ≈ 580px, 2개 ≈ 1200px → 2개가 안전 상한.
 const TAB2_GROUPS_PER_ROW = 2
-// v1.1.53: routes < N 이면 chunked path를 발동시키지 않음.
+// routes < N 이면 chunked path를 발동시키지 않음.
 // 작은 프로젝트(28 routes / 7 top-level)도 group 수가 GROUPS_PER_ROW(5)를 넘기면
 // chunked → viewer row-mode Y축 단조 나열되는 문제 회피. mermaid는 100+ nodes nested
 // subgraph도 단일 다이어그램으로 충분히 처리 가능. 200+ routes stress test(modules=10)는
@@ -361,10 +304,10 @@ function chunkGroups<T>(items: T[], size: number): T[][] {
 }
 
 // Row 다이어그램(chunked 경로): NestedGroup tree를 그대로 보존하여 nested subgraph emit.
-// v1.1.5 이전: collectNestedRoutes로 평면화 → 재귀 그룹핑 결과 폐기 → /api 안에 100+ 형제 평면 배치 → mermaid 세로 압축
-// v1.1.6: buildNestedSubgraphLines 재사용 → /api → /v1 → /admin → /users 식 depth 보존 → leaf subgraph 노드 수 자연 감소
+// 이전: collectNestedRoutes로 평면화 → 재귀 그룹핑 결과 폐기 → /api 안에 100+ 형제 평면 배치 → mermaid 세로 압축
+// buildNestedSubgraphLines 재사용 → /api → /v1 → /admin → /users 식 depth 보존 → leaf subgraph 노드 수 자연 감소
 function buildRouteRowDiagram(groups: NestedGroup[]): string {
-  // v1.2.45: FE chunked 경로도 graph LR (표준 1 형제 X축 배치, 단일 chunk 안에 여러 형제 가능).
+  // FE chunked 경로도 graph LR (표준 1 형제 X축 배치, 단일 chunk 안에 여러 형제 가능).
   const lines = [RENDERING_INIT, 'graph LR', CLASS_DEFS]
   lines.push(...buildNestedSubgraphLines(groups, '  '))
   return lines.join('\n')
@@ -429,7 +372,7 @@ function buildScreenSubgraphLines(
       lines.push(`${i2}end`)
     }
 
-    // v1.1.6 T4: Tab2도 자식 subgraph가 GROUPS_PER_ROW 초과 시 invisible row 래퍼 + direction LR.
+    // T4: Tab2도 자식 subgraph가 GROUPS_PER_ROW 초과 시 invisible row 래퍼 + direction LR.
     // mermaid v11 명세: 외부 edge는 immediate parent subgraph의 direction만 무시. ROW wrapper는
     // ancestor이므로 direction LR 유효 → 사용자 요구("부모 안에서 자식 가로") 충족.
     if (group.children.length > 0) {
@@ -561,9 +504,9 @@ function buildPkgTree(
   return root
 }
 
-// v1.2.40 ST1: 트리 인프라 헬퍼 — BE Tab1/Tab2 표준 (graph TD, node+edge tree, R-T1.4 / R-T2.1)
+// ST1: 트리 인프라 헬퍼 — BE Tab1/Tab2 표준 (graph TD, node+edge tree, R-T1.4 / R-T2.1)
 // 패키지 segment = `pkg_<sanitized>` 노드, 부모-자식 = `-->` edge.
-// v1.2.41 ST-FIX: HDR_PKG를 일반 노드 → subgraph wrapper로 변경. elk.mrtree가 일반 노드 root에서
+// HDR_PKG를 일반 노드 → subgraph wrapper로 변경. elk.mrtree가 일반 노드 root에서
 // children을 cluster 밖으로 배치하는 결함 해소. cluster 외곽이 모든 자식 트리를 강제 포함.
 function buildPackageHeaderOpen(lcpSegments: string[]): string[] {
   if (lcpSegments.length === 0) return []
@@ -584,7 +527,7 @@ type TreeEmit = {
 
 // 패키지 트리에서 node+edge만 emit. leaf(파일) 노드는 별도 emitter에서 처리하고 wiring만 책임진다.
 // rootLabel: 헤더 노드 없이 단일 트리일 때 root segment를 안 그릴 수 있도록 'BE_ROOT' 기본
-// v1.2.41 ST-FIX: clusterRoot=true 시 첫 depth edge 생략. HDR_PKG subgraph wrapper가 자식 트리 외곽선 역할.
+// clusterRoot=true 시 첫 depth edge 생략. HDR_PKG subgraph wrapper가 자식 트리 외곽선 역할.
 // (mrtree에 invisible link `~~~`도 시도했으나 mrtree가 이를 무력화 → cluster 어긋남 재발. mrtree pragma는 BE에서 제거됨.)
 function emitTreeNodes(
   tree: PkgTreeNode,
@@ -628,7 +571,7 @@ function chunkByTopLevelPackage(
   return chunks
 }
 
-// v1.2.40 ST3: BE Tab1 = 패키지 트리(node+edge) + leaf = 📄 Controller [/api/prefix] + endpoint subgraph.
+// ST3: BE Tab1 = 패키지 트리(node+edge) + leaf = 📄 Controller [/api/prefix] + endpoint subgraph.
 // 표준: docs/design/BE-DIAGRAM-STANDARD.md §2 (R-T1.1~9).
 // - 트리: emitTreeNodes (R-T1.4) — outer BE_ROOT subgraph 폐기 (D7)
 // - 헤더: 📁 src/main/java/com.<lcp> annotation 노드 (R-T1.2)
@@ -661,31 +604,18 @@ function emitControllerFileLeaf(
     routeLines.push(`${methodPrefix}${suffix}`)
   }
 
-  if (ENDPOINTS_AS_SUBGRAPH) {
-    // v1.2.41 원복 경로: BE-DIAGRAM-STANDARD R-T1.6 (endpoints = subgraph) 유지.
-    // 단점: mermaid v11 nested subgraph 내부 노드 Y간격이 init/initialize 옵션으로 통제 불가 (실측 확정).
-    lines.push(`${indent}subgraph ${epSgId}["endpoints"]`)
-    lines.push(`${indent}  direction TB`)
-    for (let i = 0; i < routes.length; i++) {
-      lines.push(`${indent}  ${routeIds[i]}["${routeLines[i]}"]:::ssr`)
-    }
-    for (let i = 0; i < routeIds.length - 1; i++) {
-      lines.push(`${indent}  ${routeIds[i]} --- ${routeIds[i + 1]}`)
-    }
-    lines.push(`${indent}end`)
-    lines.push(`${indent}${leafId} --> ${epSgId}`)
-  } else {
-    // v1.2.41 ST-FIX-3: endpoints subgraph 제거. leaf → route_0 → route_1 → ... vertical chain.
-    // 외부 노드와 동일한 dagre rank로 처리되어 rankSpacing 8 적용 보장. 표준 R-T1.6 정정 필요.
-    // 화살표는 controller → endpoint handle 관계로 해석되어 시각 의미 직관적.
-    for (let i = 0; i < routes.length; i++) {
-      lines.push(`${indent}${routeIds[i]}["${routeLines[i]}"]:::ssr`)
-    }
-    lines.push(`${indent}${leafId} --> ${routeIds[0]}`)
-    for (let i = 0; i < routeIds.length - 1; i++) {
-      lines.push(`${indent}${routeIds[i]} --> ${routeIds[i + 1]}`)
-    }
+  // BE-DIAGRAM-STANDARD R-T1.6 (endpoints = subgraph). mermaid v11 nested subgraph 내부 노드 Y간격은
+  // init/initialize 옵션으로 통제 불가 — deferred to v1.3.x BE Phase 2.
+  lines.push(`${indent}subgraph ${epSgId}["endpoints"]`)
+  lines.push(`${indent}  direction TB`)
+  for (let i = 0; i < routes.length; i++) {
+    lines.push(`${indent}  ${routeIds[i]}["${routeLines[i]}"]:::ssr`)
   }
+  for (let i = 0; i < routeIds.length - 1; i++) {
+    lines.push(`${indent}  ${routeIds[i]} --- ${routeIds[i + 1]}`)
+  }
+  lines.push(`${indent}end`)
+  lines.push(`${indent}${leafId} --> ${epSgId}`)
   return { leafId, lines }
 }
 
@@ -718,10 +648,10 @@ function buildBeRenderingDiagram(graph: IRGraph): string {
   }))
 
   const emitChunk = (chunkTree: PkgTreeNode, headerSegs: string[]): string[] => {
-    // v1.2.41 ST-FIX: HDR_PKG subgraph wrapper + dagre layout. v1.2.40 ELK mrtree pragma 제거 —
+    // HDR_PKG subgraph wrapper + dagre layout. v1.2.40 ELK mrtree pragma 제거 —
     // mrtree가 cluster wrapper 내부에서 top-level pkg 노드를 floating root로 인식하여 좌상단 모서리에 박는 결함 야기.
     // invisible link `~~~` 폴백도 실패. dagre fallback 시각 검증으로 cluster 정렬 정상 동작 확인.
-    // v1.2.41 ST-FIX-2: BE_RENDERING_INIT 사용 — flowchart.nodeSpacing/rankSpacing 축소로 DI 체인 간격 조밀.
+    // BE_RENDERING_INIT 사용 — flowchart.nodeSpacing/rankSpacing 축소로 DI 체인 간격 조밀.
     const lines: string[] = [BE_RENDERING_INIT, 'graph TD', CLASS_DEFS]
     const hdrOpen = buildPackageHeaderOpen(headerSegs)
     const isCluster = hdrOpen.length > 0
@@ -777,8 +707,8 @@ function buildRenderingDiagram(graph: IRGraph): string {
     branchingGroups.length > GROUPS_PER_ROW &&
     routeNodes.length > SINGLE_DIAGRAM_ROUTE_THRESHOLD
   ) {
-    // v1.1.6: 1 top-level branch = 1 chunk (의미 단위 청크).
-    // v1.1.53: routeCount 게이트 추가 — 작은 프로젝트는 single-diagram로 유지.
+    // 1 top-level branch = 1 chunk (의미 단위 청크).
+    // routeCount 게이트 추가 — 작은 프로젝트는 single-diagram로 유지.
     return joinChunks(branchingGroups.map(g => buildRouteRowDiagram([g])))
   }
 
@@ -788,14 +718,14 @@ function buildRenderingDiagram(graph: IRGraph): string {
   const backends = graph.metadata?.backends ?? []
   const allCSR = routeNodes.length > 0 && routeNodes.every(r => r.renderingMode === 'CSR')
 
-  // v1.2.45 (Playwright 검증): FE Tab1은 outer `graph LR` 사용.
+  // (Playwright 검증): FE Tab1은 outer `graph LR` 사용.
   // 표준 1 R-T1.2 "동일 Depth = X축"을 mermaid가 형제 subgraph 자동 가로 배치로 충족.
   // 외부 edge가 어느 컨테이너에 incoming해도 LR이 영향받지 않음 (TD + nested direction LR은 무시됨).
   const lines: string[] = [RENDERING_INIT, 'graph LR', CLASS_DEFS]
 
   // ── 1. FRONTEND LAYER ────────────────────────────────────────────────────
   // frontendRef: outermost wrapper subgraph ID — 외부 data layer edge source.
-  // v1.2.45 #19 (회귀 해소 P2): mermaid v11 공식 명세 "subgraph 노드 중 하나라도 외부 edge 가지면
+  // mermaid v11 공식 명세 "subgraph 노드 중 하나라도 외부 edge 가지면
   // 그 subgraph direction 무시"에 따라, 외부 edge는 반드시 *outermost* wrapper에서 발사해야
   // inner sub-cluster의 direction(LR + ~~~ chain)이 보존됨. middle/inner wrapper(REACT, VUE 등)에서
   // 외부 edge 발사하면 부모 direction 상속 연쇄로 top-level sibling이 Y축 stack됨.
@@ -806,7 +736,7 @@ function buildRenderingDiagram(graph: IRGraph): string {
     lines.push(`    subgraph RUNTIME["⚙ Node.js · Server Runtime"]`)
     lines.push(`      subgraph FRAMEWORK["▲ Next.js · App Router"]`)
     lines.push(`        subgraph REACT["⚛ React · SSR Engine"]`)
-    // v1.2.45 #19: SSR_FETCH 더미 노드 제거 — REACT subgraph 내부 노드가 외부 edge 가지면
+    // SSR_FETCH 더미 노드 제거 — REACT subgraph 내부 노드가 외부 edge 가지면
     // REACT direction이 무력화되어 top-level sibling Y축 회귀. 외부 edge는 frontendRef(INFRA)에서 발사.
     for (const l of buildNestedSubgraphLines(routeGroups, '          ')) lines.push(l)
     const topChainSsr = emitTopLevelSiblingChain(routeGroups, '          ')
@@ -913,7 +843,7 @@ function buildRenderingDiagram(graph: IRGraph): string {
       if (frontendRef !== undefined) lines.push(`  ${frontendRef} -.->|"REST"| ${beId}`)
     }
   } else if (infra.hasSupabase) {
-    // v1.2.45 #19: fetchSrc도 frontendRef(outermost wrapper) 사용 — middle wrapper에서 외부 edge 발사 금지.
+    // fetchSrc도 frontendRef(outermost wrapper) 사용 — middle wrapper에서 외부 edge 발사 금지.
     const fetchSrc = frontendRef ?? 'BROWSER'
     lines.push(`  subgraph DATALAYER["🗄 DATA LAYER"]`)
     lines.push(`    subgraph SUPABASE_G["⚡ Supabase · BaaS"]`)
@@ -946,7 +876,7 @@ function buildRenderingDiagram(graph: IRGraph): string {
     lines.push('    end\n  end')
     if (frontendRef !== undefined) lines.push(`  ${frontendRef} -.->|"REST"| API_SVC`)
   } else {
-    // v1.2.43 ST1: FE 어댑터에서 axios/fetch/react-query 호출(api-call edges)이 감지됐고
+    // ST1: FE 어댑터에서 axios/fetch/react-query 호출(api-call edges)이 감지됐고
     // 위 모든 데이터 레이어 분기(backends/Supabase/Dexie/Firebase/Prisma/hasExternalAPI)에 해당 없으면
     // 외부 REST API Gateway 노드를 표시. React Router SPA + 다른 SPA들이 주 대상.
     // LLM enabled에서 backends가 채워지면 line 765의 `if backends.length > 0` 분기가 우선이라 충돌 없음.
@@ -974,7 +904,7 @@ function isBeRepository(name: string): boolean {
   return name.endsWith('Repository') || name.endsWith('Dao') || name.endsWith('Mapper')
 }
 
-// v1.2.40 ST2: BE Tab2 = Tab1 동일 패키지 트리 + leaf에 Controller→Service→Repository 수직 DI 체인 subgraph.
+// ST2: BE Tab2 = Tab1 동일 패키지 트리 + leaf에 Controller→Service→Repository 수직 DI 체인 subgraph.
 // 표준: docs/design/BE-DIAGRAM-STANDARD.md §3 (R-T2.1~6).
 // - 트리: emitTreeNodes (R-T2.1, Tab1 동일 정책)
 // - leaf DI 체인: di_<Ctrl> subgraph, 수직 verified --> 또는 inferred -.->
@@ -1094,8 +1024,8 @@ function buildBeArchitectureDiagram(graph: IRGraph): string {
   }
 
   const emitChunk = (chunkTree: PkgTreeNode, chunkPath: string[], headerSegs: string[]): string[] => {
-    // v1.2.41 ST-FIX: HDR_PKG subgraph wrapper + dagre layout. v1.2.40 ELK mrtree pragma 제거 (Tab1과 동일 이유).
-    // v1.2.41 ST-FIX-2: BE_RENDERING_INIT — DI 체인 간격 조밀.
+    // HDR_PKG subgraph wrapper + dagre layout. v1.2.40 ELK mrtree pragma 제거 (Tab1과 동일 이유).
+    // BE_RENDERING_INIT — DI 체인 간격 조밀.
     const lines: string[] = [BE_RENDERING_INIT, 'graph TD', CLASS_DEFS]
     const hdrOpen = buildPackageHeaderOpen(headerSegs)
     const isCluster = hdrOpen.length > 0
@@ -1104,8 +1034,6 @@ function buildBeArchitectureDiagram(graph: IRGraph): string {
     if (!isCluster) lines.push(`  ${rootId}["(root)"]:::hdr`)
     const treeEmit = emitTreeNodes(chunkTree, rootId, chunkPath, { clusterRoot: isCluster })
     lines.push(...treeEmit.lines)
-    // 본 chunk에서 emit된 component ID 추적 — cross-pkg edge 필터에 사용
-    const emittedNodeIds = new Set<string>()
     // Leaf Controllers: 부모 패키지 노드에서 leaf로 edge 연결. cluster root의 직접 leaf는 edge 생략 (HDR_PKG wrapper가 외곽).
     const walkFiles = (node: PkgTreeNode, parentId: string, pathSegs: string[], depth: number): void => {
       for (const [seg, child] of node.children) {
@@ -1122,14 +1050,6 @@ function buildBeArchitectureDiagram(graph: IRGraph): string {
         const leafTargetId = hasAnyDi ? `di_${sanitizeId(ctrl.id)}` : sanitizeId(ctrl.id)
         if (!(isCluster && depth === 0)) {
           lines.push(`  ${parentId} --> ${leafTargetId}`)
-        }
-        // 본 chunk에서 in-chain으로 실제 emit된 컴포넌트만 추적 (cross-pkg edge 필터용)
-        emittedNodeIds.add(ctrl.id)
-        if (chain?.svc !== undefined && (compIdToPkg.get(ctrl.id) ?? []).join('.') === (compIdToPkg.get(chain.svc.id) ?? []).join('.')) {
-          emittedNodeIds.add(chain.svc.id)
-        }
-        if (chain?.repo !== undefined && chain.svc !== undefined && (compIdToPkg.get(chain.svc.id) ?? []).join('.') === (compIdToPkg.get(chain.repo.id) ?? []).join('.')) {
-          emittedNodeIds.add(chain.repo.id)
         }
       }
     }
@@ -1155,8 +1075,7 @@ function buildBeArchitectureDiagram(graph: IRGraph): string {
     walkFiles(final, rootId, chunkPath, 0)
 
     // R-T2.4 cross-pkg edge: leaf DI subgraph 안의 dashed 화살표에 인라인 라벨로 표시 (renderControllerLeaf 참조).
-    // 외부 별도 edge 미emit — ghost-node 회피 + 중복 화살표 방지. emittedNodeIds는 향후 확장 용도.
-    void emittedNodeIds
+    // 외부 별도 edge 미emit — ghost-node 회피 + 중복 화살표 방지.
     lines.push(...buildPackageHeaderClose(headerSegs))
     return lines
   }
@@ -1233,15 +1152,15 @@ function buildScreenComponentDiagram(graph: IRGraph): string {
     branchingGroups.length > TAB2_GROUPS_PER_ROW &&
     pageRoutes.length > SINGLE_DIAGRAM_ROUTE_THRESHOLD
   ) {
-    // v1.1.6: 1 top-level branch = 1 chunk (Tab1과 동일 정책)
-    // v1.1.53: routeCount 게이트 추가 — 작은 프로젝트는 single-diagram로 유지.
-    // v1.2.42 scope: chunked 경로는 react-router 분기 미적용 (v1.2.43+ 평가).
+    // 1 top-level branch = 1 chunk (Tab1과 동일 정책)
+    // routeCount 게이트 추가 — 작은 프로젝트는 single-diagram로 유지.
+    // scope: chunked 경로는 react-router 분기 미적용 (v1.2.43+ 평가).
     return joinChunks(branchingGroups.map(g =>
       renderScreenSection([g], rendersEdges, importsEdges, componentNodes)
     ))
   }
 
-  // v1.2.42 → v1.2.43 ST2: file-based 어댑터(Next/NextPages/Nuxt/SvelteKit/Remix/ReactRouter)는
+  // → v1.2.43 ST2: file-based 어댑터(Next/NextPages/Nuxt/SvelteKit/Remix/ReactRouter)는
   // 라우트 → 디렉터리 트리 → 파일 leaf 표현으로 분기. Vue SPA·Angular(config-based)는 현행 유지.
   // BE 어댑터는 위에서 별도 분기 (회귀 0).
   if (isFileTreeTab2Eligible(graph.metadata)) {
@@ -1251,7 +1170,7 @@ function buildScreenComponentDiagram(graph: IRGraph): string {
   return renderScreenSection(branchingGroups, rendersEdges, importsEdges, componentNodes)
 }
 
-// v1.2.42 ST3 → v1.2.43 ST2: file-based FE 어댑터 Tab2 표준.
+// ST3 → v1.2.43 ST2: file-based FE 어댑터 Tab2 표준.
 // 라우트 nested 트리 + 각 라우트 leaf 옆에 컴포넌트의 filePath를 별도 노드로 emit.
 // 도메인/디렉터리 nested subgraph는 Tab1과 일관 + leaf = 디렉터리 + 파일명.
 // - file-based 라우팅 어댑터 6종(Next.js App·Pages, Nuxt, SvelteKit, Remix, React Router) 공통 적용
@@ -1270,7 +1189,7 @@ function buildFeFileTreeScreenDiagram(
 
   emitFeFileTreeLines(routeGroups, '  ', compById, rendersEdges, importsEdges, lines, edges, fileNodeRendered)
 
-  // v1.2.45 #17 Tab2 top-level ~~~ chain — leaf composite node ID 또는 subgraph ID 혼합 가능.
+  // #17 Tab2 top-level ~~~ chain — leaf composite node ID 또는 subgraph ID 혼합 가능.
   const topIds = collectChildIds(routeGroups, compById, rendersEdges)
   if (topIds.length >= 2) lines.push(`  ${topIds.join(' ~~~ ')}`)
 
@@ -1278,7 +1197,7 @@ function buildFeFileTreeScreenDiagram(
   return lines.join('\n')
 }
 
-// v1.2.45 결함 #17 (회귀 해소): leaf cluster(children=0 + routes=1) + 매칭 file_leaf 있으면 subgraph 대신
+// leaf cluster(children=0 + routes=1) + 매칭 file_leaf 있으면 subgraph 대신
 // 단일 합성 노드(route 라벨 + 파일경로) emit. subgraph가 사라져 mermaid v11 외부 edge direction
 // inheritance 문제(규칙 B 위반) 자동 회피. sibling은 노드 ~~~ chain로 X축 강제(규칙 A 만족).
 function tryComposeLeafGroup(
@@ -1346,7 +1265,7 @@ function emitFeFileTreeLines(
       }
       continue
     }
-    // v1.2.45 결함 #17 (회귀 해소): leaf composite 가능한 group은 subgraph 없이 단일 노드만 emit.
+    // leaf composite 가능한 group은 subgraph 없이 단일 노드만 emit.
     const composite = tryComposeLeafGroup(group, compById, rendersEdges)
     if (composite !== undefined) {
       lines.push(`${indent}${composite.line}`)
@@ -1390,7 +1309,7 @@ function emitFeFileTreeLines(
   }
 }
 
-// v1.2.44 A5-B-1·A5-B-2: 1-depth import child component leaf + Y축 edge.
+// A5-B-1·A5-B-2: 1-depth import child component leaf + Y축 edge.
 // Sub-1 (shared component): 단일 노드 + fan-in edges (fileNodeRendered Set 가드 활용).
 // Sub-2 (page → page import): 표현 포함 (1-hop import edge 동일 처리).
 // from 가드: routeFileKind === 'page' Route의 renders target ComponentNode만 (layout/loading 차단).
@@ -1423,11 +1342,11 @@ function emitRouteAndFileLeaf(
     const label = dir.length > 0 ? `📂 ${dir}<br/>📄 ${fileName}` : `📄 ${fileName}`
     lines.push(`${indent}${fileId}["${label}"]:::pkg`)
   }
-  // v1.2.45 결함 #9: edge를 cluster 안에 emit해야 graph LR에서 cluster width 영향이 형제 X축 layout 방해를 안 함
+  // edge를 cluster 안에 emit해야 graph LR에서 cluster width 영향이 형제 X축 layout 방해를 안 함
   // (advisor 권고 — edge가 root level에 있으면 mermaid가 cluster를 자동 Y로 쌓음).
   lines.push(`${indent}${sanitizeId(r.id)} --> ${fileId}`)
 
-  // v1.2.44 A5-B-2: page 컴포넌트의 1-depth imports child component leaf + Y축 edge
+  // A5-B-2: page 컴포넌트의 1-depth imports child component leaf + Y축 edge
   // routeFileKind === 'page' 가드 (layout/loading 차단)
   if (r.routeFileKind !== 'page') return
   const childImports = importsEdges.filter(e => e.from === comp.id && e.importDepth === 1)
@@ -1462,7 +1381,7 @@ function getSourceLabel(node: IRNode): string | undefined {
   return undefined
 }
 
-// v1.2.42 ST5: React Router Tab3 = Route별 API 호출 다이어그램.
+// ST5: React Router Tab3 = Route별 API 호출 다이어그램.
 // - 도메인 subgraph (Tab1·Tab2와 일관)
 // - 각 라우트 leaf → rendersEdge로 매핑된 Page Component → api-call edges
 // - API endpoint 노드는 method+path를 라벨로 합성 (graph.nodes에 미등록, edge.to NodeId로만 식별)
@@ -1579,7 +1498,7 @@ function emitRouteApiCalls(
 function buildDbScreenDiagram(graph: IRGraph): string {
   const tableNodes = graph.nodes.filter(isTableNode)
 
-  // v1.2.42 ST5: Tab3 분기
+  // ST5: Tab3 분기
   //   1. BE 어댑터 → 현행 ER + Repository 합성 (이 함수 하단 'adapterCategory==='BE'' 블록 유지)
   //   2. react-router FE + tables===0 → 신규 FE API 호출 다이어그램 (axios/fetch/react-query)
   //   3. 그 외(Next.js+Supabase·Vite·Nuxt·SvelteKit·Vue SPA 등 FE+tables>0) → 현행 ER 다이어그램 (회귀 0)

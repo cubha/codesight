@@ -1,5 +1,71 @@
 # Changelog
 
+## [1.2.46] — 2026-05-26
+
+### Refactoring — 전체 src 코드 품질 정리 (98 파일 review · 36건 수정 · 회귀 0)
+
+`/refactoring` 파이프라인으로 전체 src를 5개 그룹 병렬 review → 48건 이슈 발견 → Critical 9 + Important 27 일괄 처리. 기능 변경 없이 코드 품질·정확성·일관성 개선만 수행.
+
+### Critical — 데이터 정확성·동작 버그 (9건)
+
+- **ANALYZER_VERSION 통일** — `@codebase-viz/types/analyzer-version.ts`로 이동 + cli/extension 모두 import. 기존 5곳 하드코딩 (`'codebase-viz@0.1.0'` 등) 정정 → IR Provenance가 실제 버전과 일치, CLI 캐시가 extension에서 무효화되지 않음.
+- **nextjs/nuxt/sveltekit parseRoutes·parseComponents** — `analyzerVersion: string` 필수 인자화 (이전 default `'codebase-viz@0.1.0'` 또는 누락 → 영구히 stale 버전). Evidence-First 원칙 위반 해소.
+- **flyway-parser analyzerVersion 인자화** — django/springboot 어댑터에서 명시 전달.
+- **nestjs/adapter.ts EMPTY_ADAPTER_RESULT 적용** — `...EMPTY_ADAPTER_RESULT` spread로 향후 필드 추가 시 누락 컴파일 검출.
+- **extension.ts setApiKey race condition** — `showInputBox` 사이 `getProvider()` 두 번 호출 → 1회 캡처 변수 재사용 (잘못된 provider 슬롯에 키 저장 차단).
+- **sveltekit/component-parser dirCache 지역화** — 모듈 스코프 mutable → 함수 지역 변수 (동시 호출·테스트 격리·reanalyze 정확성).
+- **webview setReanalyzeCallback silent failure** — 등록되지 않던 callback 제거, 'reanalyze' 메시지가 `vscode.commands.executeCommand('codesight.reanalyze')` 직접 호출.
+
+### Dead code 제거 (10건)
+
+- `mermaid-renderer.ts`: `ELK_MRTREE_PRAGMA`, `buildSectionsFromRoutes` 클러스터 3함수, `ENDPOINTS_AS_SUBGRAPH=true` 고정 + dead else 브랜치, `emittedNodeIds` Set `void` 처리
+- `url-grouper.ts`: `minGroupSize` 사용되지 않는 옵션 파라미터
+- `extension/analyzer.ts`: `getCacheDir` export 호출처 0
+- `extension/webview.ts`: `setReanalyzeCallback` 등록되지 않던 callback
+- `extension/i18n/dict.ts`: `msg.languageChanged`·`reloadNow`·`setApiKeyPlaceholder*` 5키 × 4 로케일 미사용
+- `llm/converter.ts`: `void repoRoot` 미사용 파라미터
+- `fastapi/orm-parser.ts`: `pyFiles.filter(f => true)` 무효 필터
+- `extension/analyzer.ts`: 레거시 `LLMOptions` 유니온 hack 분기
+
+### 중복 제거 (5건)
+
+- **`findTsFiles` 단일 traverse 옵션화** — `_shared/file-finder.ts`에 `FindTsFilesOptions` (`includeTsx`, `excludeDeclarations`, `excludeTests`) 추가. drizzle/typeorm 후처리 filter 제거, 트리 traverse 1회로 단축.
+- **`pathExists` 추출** — `_shared/file-finder.ts`. `fs.access().then(true).catch(false)` 패턴 2곳 (supabase-parser, nextjs/db-parser) 통합. TOCTOU 회피.
+- **`getDynamicSegmentType` _shared 통합** — `_shared/url-path-normalizer.ts`. fastapi/nestjs/springboot 3곳 inline 정의 제거.
+
+### 주석 정리 (10건)
+
+- `mermaid-renderer.ts`: 버전 prefix(`v1.2.X 결함 #N (회귀 해소):`) 41건 일괄 제거
+- `extension/analyzer.ts`·`webview.ts`·`llm/converter.ts`: v1.2.45 버전 스탬프 주석 정정
+- `django/adapter.ts`·`springboot/adapter.ts`·`nextjs/component-parser.ts`: WHAT-not-WHY 주석 제거
+- `_shared/mapper-utils.ts`·`tree-sitter-loader.ts`·`cross-graph-matcher.ts`: 파일 헤더·brittle 경로 주석·빈 wrapper 정리
+
+### 부수 정리 (4건)
+
+- `db/index.ts`: `detectTsOrmTables` 범위 주석 명시 (TS ORM 전용, Flyway/Supabase 미포함)
+- `db/supabase-parser.ts`·`nextjs/db-parser.ts`: `node:fs` 동기 → `node:fs/promises` + `pathExists` 통일
+- `springboot/di-parser.ts`: Interface→Impl fallback 사용 시 `inferenceChain`에 명시 기록 (Evidence-First)
+- `screen-mapper.test.ts`: 6 it 개별 `{ timeout: 30000 }` → describe-level 1회
+
+### Tested
+
+- `verify.sh` **703 PASS** / 1 skipped · 회귀 0
+- BE Tab1/Tab2 snapshot 영향 0건
+- FE fixture snapshot 변경 0건
+- 수정 파일 42개 · `+285 / -437` 라인 (-152 net)
+
+### 후속 사이클 권장 (12건)
+
+광범위 영향으로 별도 처리:
+- walkDir / EXCLUDE_DIRS 약 9중 복제 (FE 어댑터 8종)
+- loadTsConfigPaths 4중 복제 (nextjs/nextjs-pages/remix/vue-spa)
+- Vue SFC 정규식 2중 / importMap 3중 / rendersEdge 2중
+- getDynamicSegmentType 추가 5곳 (angular/django/flask/nextjs-pages/nextjs)
+- cli/extension runAnalysis 파이프라인 중복
+- `analyzWithLLM` → `analyzeWithLLM` 오타 rename (breaking change)
+- mermaid-renderer.ts 1842라인 → 4 모듈 분리
+- `buildRenderingDiagram` FW별 7 if-else 통합 + emit 함수 Context 객체화
+
 ## [1.2.45] — 2026-05-23
 
 ### Changed — FE 표준 v1.1 amendment (R-T1.2 X축 보장 범위 정정)

@@ -8,31 +8,13 @@ import {
   type ColumnDef,
   type Provenance,
 } from '@codebase-viz/types'
+import { findTsFiles } from '../adapters/_shared/file-finder.js'
 
-const EXCLUDE_DIRS = new Set(['.git', 'node_modules', '.next', 'dist', 'build'])
 const COLUMN_DECORATORS = new Set([
   'Column', 'PrimaryColumn', 'PrimaryGeneratedColumn',
   'CreateDateColumn', 'UpdateDateColumn', 'DeleteDateColumn',
 ])
 const RELATION_DECORATORS = new Set(['ManyToOne', 'OneToOne'])
-
-async function findTsFiles(repoRoot: string): Promise<string[]> {
-  const results: string[] = []
-  async function recurse(dir: string): Promise<void> {
-    const entries = await fs.readdir(dir, { withFileTypes: true }).catch(() => null)
-    if (entries === null) return
-    for (const entry of entries) {
-      if (entry.isDirectory()) {
-        if (!EXCLUDE_DIRS.has(entry.name)) await recurse(path.join(dir, entry.name))
-      } else if (entry.isFile() && entry.name.endsWith('.ts') && !entry.name.endsWith('.d.ts')
-        && !entry.name.endsWith('.test.ts')) {
-        results.push(path.join(dir, entry.name))
-      }
-    }
-  }
-  await recurse(repoRoot)
-  return results
-}
 
 function resolveColumnNullable(
   prop: import('ts-morph').PropertyDeclaration,
@@ -87,7 +69,7 @@ export async function parseTypeOrmEntities(
   repoRoot: string,
   analyzerVersion: string,
 ): Promise<TableNode[]> {
-  const allFiles = await findTsFiles(repoRoot)
+  const allFiles = await findTsFiles(repoRoot, { includeTsx: false, excludeDeclarations: true, excludeTests: true })
 
   const entityFiles: string[] = []
   for (const f of allFiles) {

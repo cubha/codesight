@@ -134,7 +134,7 @@ function splitTopLevel(body: string): string[] {
   return parts
 }
 
-export async function parseFlywayMigrations(repoRoot: string): Promise<TableNode[]> {
+export async function parseFlywayMigrations(repoRoot: string, analyzerVersion: string): Promise<TableNode[]> {
   const files = await collectFlywayFiles(repoRoot)
   const tableMap = new Map<string, TableNode>()
 
@@ -155,7 +155,7 @@ export async function parseFlywayMigrations(repoRoot: string): Promise<TableNode
             file: relPath,
             line,
             adapter: 'flyway-parser@0.1',
-            analyzerVersion: 'codebase-viz@0.1.0',
+            analyzerVersion,
           },
           confidence: 'verified',
         }),

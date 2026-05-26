@@ -105,7 +105,7 @@ async function findAppDir(repoRoot: string): Promise<{ dir: string; prefix: stri
   return null
 }
 
-export async function parseRoutes(repoRoot: string): Promise<RouteNode[]> {
+export async function parseRoutes(repoRoot: string, analyzerVersion: string): Promise<RouteNode[]> {
   const appDirInfo = await findAppDir(repoRoot)
   if (appDirInfo === null) return []
 
@@ -142,7 +142,7 @@ export async function parseRoutes(repoRoot: string): Promise<RouteNode[]> {
       file: repoRelativeFile,
       line: 1,
       adapter: 'nextjs-app-router@0.1',
-      analyzerVersion: 'codebase-viz@0.1.0',
+      analyzerVersion,
     }
 
     const urlPath = buildUrlPath(dirRelToApp)

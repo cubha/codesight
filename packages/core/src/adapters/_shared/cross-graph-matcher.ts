@@ -53,12 +53,6 @@ function normalizeUrl(url: string): string {
   return withoutHash.toLowerCase()
 }
 
-function normalizeRoutePath(routePath: string): string {
-  // Next.js / NestJS / Spring Boot all use different dynamic syntax.
-  // Normalise to lowercase for exact matching.
-  return routePath.toLowerCase()
-}
-
 function makeDanglingEdge(feCall: FeCall, analyzerVersion: string): IREdge {
   const fromId = makeNodeId('component', feCall.filePath, feCall.url)
   const edge = createEdge({
@@ -105,7 +99,7 @@ export function matchFeCallsToBeRoutes(
   // Pre-compute patterns for BE routes
   const bePatterns = beRouteNodes.map((route) => ({
     route,
-    normalized: normalizeRoutePath(route.path),
+    normalized: route.path.toLowerCase(),
     regex: routePatternToRegex(route.path),
   }))
 

@@ -11,9 +11,10 @@ import { createIRGraph, createTableNode, makeNodeId } from '@codebase-viz/types'
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const FIXTURE = path.resolve(__dirname, '../../../../../../fixtures/mini-next-app')
 
-describe('mapScreenToTable', () => {
+// ts-morph parseComponents 무거운 로딩 + 전체 동시 실행 시 5s 초과 가능 — 타임아웃 상향.
+describe('mapScreenToTable', { timeout: 30000 }, () => {
   it('PostList.tsx → posts 테이블 queries 엣지를 생성한다', async () => {
-    const { nodes: componentNodes, edges: componentEdges } = await parseComponents(FIXTURE)
+    const { nodes: componentNodes, edges: componentEdges } = await parseComponents(FIXTURE, 'test-analyzer@1.0.0')
     const tableNodes = await parseTables(FIXTURE)
 
     const graph = createIRGraph({
@@ -41,7 +42,7 @@ describe('mapScreenToTable', () => {
   })
 
   it('테이블 없는 컴포넌트는 엣지를 생성하지 않는다', async () => {
-    const { nodes: componentNodes, edges: componentEdges } = await parseComponents(FIXTURE)
+    const { nodes: componentNodes, edges: componentEdges } = await parseComponents(FIXTURE, 'test-analyzer@1.0.0')
 
     const graph = createIRGraph({
       analyzerVersion: 'codebase-viz@0.1.0',
@@ -55,7 +56,7 @@ describe('mapScreenToTable', () => {
   })
 
   it('routeNode 파일의 supabase.from() 호출도 queries 엣지를 생성한다', async () => {
-    const routeNodes = await (await import('../parsers/route-parser.js')).parseRoutes(FIXTURE)
+    const routeNodes = await (await import('../parsers/route-parser.js')).parseRoutes(FIXTURE, 'test-analyzer@1.0.0')
     const tableNodes = await parseTables(FIXTURE)
 
     const graph = createIRGraph({
@@ -79,7 +80,7 @@ describe('mapScreenToTable', () => {
   })
 
   it('같은 컴포넌트-테이블 쌍은 중복 엣지를 생성하지 않는다', async () => {
-    const { nodes: componentNodes, edges: componentEdges } = await parseComponents(FIXTURE)
+    const { nodes: componentNodes, edges: componentEdges } = await parseComponents(FIXTURE, 'test-analyzer@1.0.0')
     const tableNodes = await parseTables(FIXTURE)
 
     const graph = createIRGraph({
