@@ -1,6 +1,13 @@
 import * as fs from 'node:fs/promises'
 import * as path from 'node:path'
-import { createDefaultRegistry, extractFeCalls, matchFeCallsToBeRoutes, remapCrossEdgeFromIds } from '@codebase-viz/core'
+import {
+  buildIRGraph,
+  createDefaultRegistry,
+  extractFeCalls,
+  matchFeCallsToBeRoutes,
+  remapCrossEdgeFromIds,
+  type LLMOptions,
+} from '@codebase-viz/core'
 import {
   renderMermaid,
   buildDiagrams,
@@ -9,20 +16,9 @@ import {
   type GroupingOptions,
 } from '@codebase-viz/renderer'
 import { ANALYZER_VERSION, createIRGraph, EMPTY_ADAPTER_RESULT, isComponentNode, isRouteNode, type IREdge, type IRGraph } from '@codebase-viz/types'
-import {
-  detectStack,
-  collectFiles,
-  analyzWithLLM,
-  convertToIR,
-  verifyNodes,
-  mergeGraphs,
-} from '@codebase-viz/llm'
+import { detectStack } from '@codebase-viz/llm'
 
-export interface LLMOptions {
-  apiKey: string
-  provider?: 'anthropic' | 'google' | 'openai'
-  model?: string
-}
+export type { LLMOptions }
 
 export interface AnalysisResult {
   graph: IRGraph
@@ -51,97 +47,17 @@ export async function runAnalysis(
     }
   }
 
-  const stack = await detectStack(repoRoot)
-  const registry = createDefaultRegistry()
-
-  if (stack.adapterId === undefined && stack.llmRecommended && llmOptions === undefined) {
-    throw new Error(
-      `이 프레임워크(${stack.framework})는 LLM 분석이 필요합니다. API Key를 설정해 주세요.`,
-    )
-  }
-
-  const adapter = registry.get(stack.adapterId)
-
-  const result = adapter !== undefined
-    ? await adapter.analyze({ repoRoot, stack, analyzerVersion: ANALYZER_VERSION })
-    : EMPTY_ADAPTER_RESULT
-
-  let finalGraph: IRGraph = createIRGraph({
-    analyzerVersion: ANALYZER_VERSION,
-    repoRoot,
-    projectName: path.basename(repoRoot),
-    metadata: {
-      framework: stack.framework,
-      hasSupabase: stack.hasSupabase,
-      hasPrisma: stack.hasPrisma,
-      hasDexie: stack.hasDexie,
-      hasFirebase: false,
-      ...(adapter !== undefined ? { adapterCategory: adapter.category } : {}),
-    },
-    nodes: [
-      ...result.routeNodes,
-      ...result.componentNodes,
-      ...result.tableNodes,
-      ...(result.serverNodes ?? []),
-    ],
-    edges: [
-      ...result.componentEdges,
-      ...result.mapperEdges,
-      ...(result.serverEdges ?? []),
-    ],
-  })
-
-  if (llmOptions !== undefined) {
-    const fileContents = await collectFiles(repoRoot, stack)
-
-    let llmResult
-    try {
-      llmResult = await analyzWithLLM(llmOptions, {
-        projectName: path.basename(repoRoot),
-        framework: stack.framework,
-        fileContents,
-      })
-    } catch (err) {
-      // LLM 호출 실패 시 provider/model 컨텍스트와 raw 에러를 한 번에 surface
-      const provider = llmOptions.provider ?? 'anthropic'
-      const model = llmOptions.model ?? '(default)'
-      const errMsg = err instanceof Error ? err.message : String(err)
-      const errName = err instanceof Error ? err.name : 'Unknown'
+  // llmRecommended 가드 — adapter 없고 LLM 미지정이면 명시적 에러 surface.
+  if (llmOptions === undefined) {
+    const stack = await detectStack(repoRoot)
+    if (stack.adapterId === undefined && stack.llmRecommended) {
       throw new Error(
-        `LLM 호출 실패 [provider=${provider} model=${model}]: ${errName}: ${errMsg}. ` +
-        `keyword Not Found이면 모델 ID 또는 API endpoint 확인, 401/403이면 API 키 권한 확인.`,
+        `이 프레임워크(${stack.framework})는 LLM 분석이 필요합니다. API Key를 설정해 주세요.`,
       )
     }
-
-    // config-based 어댑터에서 LLM/static dirname mismatch로 dedup 실패 → LLM component skip.
-    // adapter 존재 여부가 아닌 component 생성 여부로 분기 (monorepo NextAdapter는 단일 appDir만 보므로
-    // 0 component 생성 가능 → adapter !== undefined만 보면 LLM까지 차단).
-    const adapterHasComponents = result.componentNodes.length > 0
-    const { routeNodes: llmRoutes, componentNodes: llmComponents, tableNodes: llmTables, edges: llmEdges } =
-      convertToIR(llmResult, ANALYZER_VERSION, { skipComponents: adapterHasComponents })
-
-    const allLLMNodes = [...llmRoutes, ...llmComponents, ...llmTables]
-    const { verified } = await verifyNodes(allLLMNodes, repoRoot)
-
-    const llmMeta = {
-      // 정적 어댑터가 결정한 framework는 LLM이 덮어쓰지 못한다 (isFileTreeTab2Eligible 화이트리스트
-      // 우회로 Tab2 file-tree 표준 손실되는 문제 방지).
-      framework: adapter !== undefined ? stack.framework : (llmResult.framework || stack.framework),
-      hasSupabase: llmResult.hasSupabase ?? stack.hasSupabase,
-      hasPrisma: llmResult.hasPrisma ?? stack.hasPrisma,
-      hasDexie: llmResult.hasDexie ?? stack.hasDexie,
-      hasFirebase: llmResult.hasFirebase ?? false,
-      ...(adapter !== undefined ? { adapterCategory: adapter.category } : {}),
-      ...(llmResult.deployTarget !== undefined ? { deployTarget: llmResult.deployTarget } : {}),
-      ...(llmResult.backendServices !== undefined && llmResult.backendServices.length > 0
-        ? { backends: llmResult.backendServices }
-        : {}),
-    }
-    finalGraph = {
-      ...mergeGraphs(finalGraph, verified, llmEdges),
-      metadata: llmMeta,
-    }
   }
+
+  const finalGraph = await buildIRGraph(repoRoot, llmOptions)
 
   const outputDir = path.join(repoRoot, '.codebase-viz')
   await renderMermaid(finalGraph, outputDir).catch(() => { /* best-effort */ })

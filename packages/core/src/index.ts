@@ -11,3 +11,5 @@ export {
   type FeCall,
   type CrossGraphMatcherOpts,
 } from './adapters/index.js'
+
+export { buildIRGraph, type LLMOptions } from './pipeline.js'

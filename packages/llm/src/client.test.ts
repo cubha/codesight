@@ -23,7 +23,7 @@ beforeEach(() => {
   vi.clearAllMocks()
 })
 
-describe('analyzWithLLM', () => {
+describe('analyzeWithLLM', () => {
   it('LLM 응답에서 JSON을 파싱하여 LLMAnalysisResult를 반환한다', async () => {
     const mockResult: LLMAnalysisResult = {
       framework: 'nextjs-app-router',
@@ -34,8 +34,8 @@ describe('analyzWithLLM', () => {
 
     mockGenerateText.mockResolvedValue({ text: JSON.stringify(mockResult) })
 
-    const { analyzWithLLM } = await import('./client.js')
-    const result = await analyzWithLLM(
+    const { analyzeWithLLM } = await import('./client.js')
+    const result = await analyzeWithLLM(
       { apiKey: 'test-key' },
       { projectName: 'test', framework: 'nextjs-app-router', fileContents: { 'app/blog/page.tsx': 'export default function Blog() {}' } },
     )
@@ -58,8 +58,8 @@ describe('analyzWithLLM', () => {
       text: `Here is the analysis:\n\`\`\`json\n${JSON.stringify(mockResult)}\n\`\`\``,
     })
 
-    const { analyzWithLLM } = await import('./client.js')
-    const result = await analyzWithLLM(
+    const { analyzeWithLLM } = await import('./client.js')
+    const result = await analyzeWithLLM(
       { apiKey: 'test-key' },
       { projectName: 'test', framework: 'vite-react', fileContents: {} },
     )
@@ -70,9 +70,9 @@ describe('analyzWithLLM', () => {
   it('JSON이 없는 응답이면 에러를 던진다', async () => {
     mockGenerateText.mockResolvedValue({ text: 'No JSON content here' })
 
-    const { analyzWithLLM } = await import('./client.js')
+    const { analyzeWithLLM } = await import('./client.js')
     await expect(
-      analyzWithLLM({ apiKey: 'test-key' }, { projectName: 'test', framework: 'unknown', fileContents: {} }),
+      analyzeWithLLM({ apiKey: 'test-key' }, { projectName: 'test', framework: 'unknown', fileContents: {} }),
     ).rejects.toThrow('LLM response does not contain valid JSON')
   })
 })

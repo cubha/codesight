@@ -5,10 +5,10 @@ import {
   type IRGraph,
   type IRNode,
   type IREdge,
-  type RouteNode,
   type NodeId,
 } from '@codebase-viz/types'
-import { groupRoutesByUrl, type NestedGroup } from '../url-grouper.js'
+import { groupRoutesByUrl } from '../url-grouper.js'
+import { chunkGroups, collectNestedRoutes } from '../helpers/layout.js'
 
 export const DEFAULT_CHUNK_THRESHOLD = 5_000_000
 export const DEFAULT_NODE_THRESHOLD = 300
@@ -48,23 +48,6 @@ function sliceGraph(parent: IRGraph, nodes: IRNode[]): IRGraph {
   }
 }
 
-function chunkArray<T>(items: T[], size: number): T[][] {
-  if (size <= 0) return [items]
-  const result: T[][] = []
-  for (let i = 0; i < items.length; i += size) {
-    result.push(items.slice(i, i + size))
-  }
-  return result
-}
-
-function collectGroupRoutes(group: NestedGroup): RouteNode[] {
-  const result: RouteNode[] = [...group.routes]
-  for (const child of group.children) {
-    result.push(...collectGroupRoutes(child))
-  }
-  return result
-}
-
 export function chunkByGroups(graph: IRGraph, opts: ChunkOptions): IRGraph[] {
   if (graph.nodes.length === 0) return [graph]
 
@@ -76,8 +59,8 @@ export function chunkByGroups(graph: IRGraph, opts: ChunkOptions): IRGraph[] {
     const groups = groupRoutesByUrl(routes)
     const subGraphs: IRGraph[] = []
     for (const group of groups) {
-      const groupRoutes = collectGroupRoutes(group)
-      const routeChunks = chunkArray(groupRoutes, opts.maxNodesPerGroup)
+      const groupRoutes = collectNestedRoutes([group])
+      const routeChunks = chunkGroups(groupRoutes, opts.maxNodesPerGroup)
       for (const chunk of routeChunks) {
         const routeIds = new Set<NodeId>(chunk.map(r => r.id))
         const reachableComponentIds = new Set<NodeId>()
@@ -100,12 +83,12 @@ export function chunkByGroups(graph: IRGraph, opts: ChunkOptions): IRGraph[] {
 
   // No routes — chunk by tables (Tab3-only graphs)
   if (tables.length > 0) {
-    const tableChunks = chunkArray(tables, opts.maxNodesPerGroup)
+    const tableChunks = chunkGroups(tables, opts.maxNodesPerGroup)
     return tableChunks.map(chunk => sliceGraph(graph, chunk))
   }
 
   // Fallback: chunk all nodes
-  const allChunks = chunkArray(graph.nodes, opts.maxNodesPerGroup)
+  const allChunks = chunkGroups(graph.nodes, opts.maxNodesPerGroup)
   return allChunks.map(chunk => sliceGraph(graph, chunk))
 }
 

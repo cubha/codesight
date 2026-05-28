@@ -11,55 +11,14 @@ import {
   type NodeId,
   type Provenance,
 } from '@codebase-viz/types'
+import { loadTsConfigPaths, type PathsMap } from '../../_shared/ts-config-loader.js'
+import { walkDir } from '../../_shared/file-finder.js'
+import { componentNameFromPath } from '../../_shared/component-name.js'
 
 const EXCLUDE_DIRS = new Set(['node_modules', '.next', '.git', 'dist'])
 
-// aliasPrefix → absolute resolved dir  (e.g. "@/" → "/repo/src")
-type PathsMap = Map<string, string>
-
-async function loadTsConfigPaths(repoRoot: string): Promise<PathsMap> {
-  for (const name of ['tsconfig.json', 'jsconfig.json']) {
-    try {
-      const raw = await fs.readFile(path.join(repoRoot, name), 'utf-8')
-      const parsed = JSON.parse(raw) as { compilerOptions?: { paths?: Record<string, string[]> } }
-      const tsPathsRecord = parsed.compilerOptions?.paths
-      if (tsPathsRecord == null) continue
-      const map: PathsMap = new Map()
-      for (const [alias, targets] of Object.entries(tsPathsRecord)) {
-        const firstTarget = targets[0]
-        if (firstTarget === undefined) continue
-        const aliasPrefix = alias.endsWith('/*') ? alias.slice(0, -2) : alias
-        const targetDir = firstTarget.endsWith('/*') ? firstTarget.slice(0, -2) : firstTarget
-        map.set(aliasPrefix, path.resolve(repoRoot, targetDir))
-      }
-      return map
-    } catch {
-      // not found or unparseable — try next
-    }
-  }
-  return new Map()
-}
-
 async function collectTsxFiles(dir: string): Promise<string[]> {
-  const results: string[] = []
-
-  async function recurse(current: string): Promise<void> {
-    const entries = await fs.readdir(current, { withFileTypes: true }).catch(() => null)
-    if (entries === null) return
-    for (const entry of entries) {
-      const fullPath = path.join(current, entry.name)
-      if (entry.isDirectory()) {
-        if (!EXCLUDE_DIRS.has(entry.name)) {
-          await recurse(fullPath)
-        }
-      } else if (entry.isFile() && entry.name.endsWith('.tsx')) {
-        results.push(fullPath)
-      }
-    }
-  }
-
-  await recurse(dir)
-  return results
+  return walkDir(dir, { extensions: new Set(['.tsx']), excludeDirs: EXCLUDE_DIRS })
 }
 
 function resolveModuleSpecifier(
@@ -146,8 +105,8 @@ export async function parseComponents(
 
     const name =
       defaultExport !== undefined
-        ? path.basename(filePath, path.extname(filePath))
-        : (exportKeys[0] ?? path.basename(filePath, path.extname(filePath)))
+        ? componentNameFromPath(filePath)
+        : (exportKeys[0] ?? componentNameFromPath(filePath))
 
     const nodeId = makeNodeId('component', relPath, name)
     fileNodeMap.set(relPath, { nodeId, name })

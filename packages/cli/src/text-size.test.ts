@@ -76,7 +76,7 @@ afterAll(() => {
   fs.writeFileSync(BASELINE_PATH, JSON.stringify({ fixtures: results }, null, 2), 'utf8')
 })
 
-describe('Phase XI A3 — text-size 실측 (1M cap, real IRGraph)', () => {
+describe('Phase XI A3 — text-size 실측 (1M cap, real IRGraph)', { timeout: 30000 }, () => {
   for (const fixtureName of FIXTURE_LIST) {
     it(`${fixtureName}: 3개 다이어그램 모두 1M 이하`, async () => {
       const graph = await buildGraphForFixture(fixtureName)

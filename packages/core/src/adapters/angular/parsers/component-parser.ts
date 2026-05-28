@@ -10,28 +10,13 @@ import {
   type IREdge,
   type Provenance,
 } from '@codebase-viz/types'
-
-const EXCLUDE_DIRS = new Set(['.git', 'node_modules', 'dist', '.angular'])
+import { walkDir, ANGULAR_EXCLUDE_DIRS } from '../../_shared/file-finder.js'
 
 async function findComponentFiles(repoRoot: string): Promise<string[]> {
-  const results: string[] = []
-  async function recurse(dir: string): Promise<void> {
-    const entries = await fs.readdir(dir, { withFileTypes: true }).catch(() => null)
-    if (entries === null) return
-    for (const entry of entries) {
-      if (entry.isDirectory()) {
-        if (!EXCLUDE_DIRS.has(entry.name)) await recurse(path.join(dir, entry.name))
-      } else if (
-        entry.isFile() &&
-        entry.name.endsWith('.component.ts') &&
-        !entry.name.endsWith('.spec.ts')
-      ) {
-        results.push(path.join(dir, entry.name))
-      }
-    }
-  }
-  await recurse(repoRoot)
-  return results
+  return walkDir(repoRoot, {
+    excludeDirs: ANGULAR_EXCLUDE_DIRS,
+    nameFilter: n => n.endsWith('.component.ts') && !n.endsWith('.spec.ts'),
+  })
 }
 
 export async function parseAngularComponents(

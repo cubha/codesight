@@ -334,3 +334,178 @@ export const router = createBrowserRouter([
     }
   })
 })
+
+// v1.2.47 Phase 1 ST3 — 사용자 케이스(REPO-SHARED-B2B-WINA-APP-FE) 1:1 reproducer.
+// path alias(@/) + named import rename(as) + nested 2겹 Routes + appRoutes.map + <Suspense> wrapper.
+// Phase 1 종료 시점에는 4 RouteNode는 PASS, 4 ComponentNode/4 rendersEdge는 FAIL (root cause 박제).
+// Phase 2 ST4~ST6 통합 resolver 적용 후 전체 PASS로 전환되는 것이 회귀 가드.
+const ALIAS_FIXTURE = path.resolve(process.cwd(), 'fixtures/mini-react-router-alias-app')
+
+describe('parseReactRoutes — path alias + as rename (mini-react-router-alias-app)', () => {
+  it('appRoutes 4개 + MobileLoginRoute 1개 + catch-all = 6개 라우트 추출', async () => {
+    const routes = await parseReactRoutes(ALIAS_FIXTURE, 'test@0.1')
+    const paths = routes.map(r => r.path)
+    expect(paths).toContain('/home')
+    expect(paths).toContain('/system/code')
+    expect(paths).toContain('/system/menu')
+    expect(paths).toContain('/system/api')
+    expect(paths).toContain('/mobile/login')
+    expect(paths).toContain('/*')
+  })
+})
+
+// v1.2.47 Phase 2 활성화: ST4 component-resolver + ST5 JSX 분기 적용 후 PASS 전환.
+// 회귀 가드: alias(@/) + as rename + 외부 sf importMap + JsxExpression(MobileLoginRoute) 모두 매핑.
+describe('parseReactRouterFull — @/ alias + as rename rendersEdge (mini-react-router-alias-app)', () => {
+  it('appRoutes 4개 컴포넌트 ComponentNode 생성 (alias resolve + rename 인식 필요)', async () => {
+    const { componentNodes } = await parseReactRouterFull(ALIAS_FIXTURE, 'test@0.1')
+    const names = componentNodes.map(n => n.name)
+    expect(names).toContain('HomePage')
+    expect(names).toContain('CodePage')
+    expect(names).toContain('MenuManagePage')
+    expect(names).toContain('ApiPage')
+  })
+
+  it('각 라우트 → 매칭 컴포넌트 rendersEdge 존재 (특히 MenuManagePage rename fix 박제)', async () => {
+    const { routeNodes, rendersEdges, componentNodes } = await parseReactRouterFull(ALIAS_FIXTURE, 'test@0.1')
+    const cases: Array<[string, string]> = [
+      ['/home', 'HomePage'],
+      ['/system/code', 'CodePage'],
+      ['/system/menu', 'MenuManagePage'],
+      ['/system/api', 'ApiPage'],
+    ]
+    for (const [urlPath, compName] of cases) {
+      const route = routeNodes.find(r => r.path === urlPath)
+      const comp = componentNodes.find(c => c.name === compName)
+      expect(route, `route ${urlPath}`).toBeDefined()
+      expect(comp, `component ${compName}`).toBeDefined()
+      const edge = rendersEdges.find(e => e.from === route?.id && e.to === comp?.id)
+      expect(edge, `rendersEdge ${urlPath} → ${compName}`).toBeDefined()
+    }
+  })
+
+  it('MobileLoginRoute(단일 JsxExpression)도 컴포넌트 매핑됨', async () => {
+    const { routeNodes, rendersEdges, componentNodes } = await parseReactRouterFull(ALIAS_FIXTURE, 'test@0.1')
+    const route = routeNodes.find(r => r.path === '/mobile/login')
+    const comp = componentNodes.find(c => c.name === 'MobileLoginPage')
+    expect(route).toBeDefined()
+    expect(comp).toBeDefined()
+    expect(rendersEdges.some(e => e.from === route?.id && e.to === comp?.id)).toBe(true)
+  })
+})
+
+// v1.2.47 ST6b — createBrowserRouter 분기 외부 import 1-hop + @/ alias + as rename 회귀 가드
+const CREATEBROWSER_ALIAS_FIXTURE = path.resolve(
+  process.cwd(),
+  'fixtures/mini-react-router-createbrowser-alias-app',
+)
+
+// v1.2.47 ST7 — extractMapElementPropName이 callback 파라미터 기반으로 매칭하는지 검증.
+// Suspense wrapper 안쪽 <route.X /> 매칭 + 비표준 propName(`view`/`el` 등) 인식.
+describe('extractMapElementPropName — callback param 기반 매칭 (ST7)', () => {
+  it('Suspense wrapper 안 <route.view /> 패턴에서 lowercase view propName으로 매칭', async () => {
+    const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'cv-rr-st7-view-'))
+    try {
+      await fs.mkdir(path.join(tmpDir, 'src'), { recursive: true })
+      await fs.writeFile(
+        path.join(tmpDir, 'src', 'HomePage.tsx'),
+        `export default function HomePage() { return <div/> }`,
+      )
+      await fs.writeFile(
+        path.join(tmpDir, 'src', 'routes.tsx'),
+        `import React from 'react'
+import { Routes, Route } from 'react-router-dom'
+import HomePage from './HomePage'
+
+const items = [
+  { path: '/', view: HomePage },
+]
+
+const RouteList = items.map((route) => (
+  <Route key={route.path} path={route.path} element={
+    <React.Suspense fallback={null}>
+      <route.view />
+    </React.Suspense>
+  } />
+))
+
+export default function App() {
+  return <Routes>{RouteList}</Routes>
+}`,
+      )
+      const { componentNodes, rendersEdges } = await parseReactRouterFull(tmpDir, 'test@0.1')
+      const homeComp = componentNodes.find(c => c.name === 'HomePage')
+      expect(homeComp, 'HomePage component').toBeDefined()
+      expect(rendersEdges.some(e => e.to === homeComp?.id), 'rendersEdge → HomePage').toBe(true)
+    } finally {
+      await fs.rm(tmpDir, { recursive: true, force: true })
+    }
+  })
+})
+
+// v1.2.47 ST8 — barrel re-export 1-hop 회귀 가드
+const BARREL_FIXTURE = path.resolve(process.cwd(), 'fixtures/mini-react-router-barrel-app')
+
+describe('parseReactRouterFull — barrel re-export 1-hop (mini-react-router-barrel-app)', () => {
+  it('default → named (export { default as HomePage } from)와 named pass-through 모두 ComponentNode 생성', async () => {
+    const { componentNodes } = await parseReactRouterFull(BARREL_FIXTURE, 'test@0.1')
+    const names = componentNodes.map(n => n.name)
+    expect(names).toContain('HomePage')
+    expect(names).toContain('AboutPage')
+  })
+
+  it('barrel 추적 후 각 페이지 파일로 rendersEdge 연결', async () => {
+    const { routeNodes, componentNodes, rendersEdges } = await parseReactRouterFull(BARREL_FIXTURE, 'test@0.1')
+    const homeRoute = routeNodes.find(r => r.path === '/')
+    const homeComp = componentNodes.find(c => c.name === 'HomePage')
+    expect(homeRoute).toBeDefined()
+    expect(homeComp).toBeDefined()
+    expect(homeComp?.filePath).toContain('HomePage')
+    expect(rendersEdges.some(e => e.from === homeRoute?.id && e.to === homeComp?.id)).toBe(true)
+
+    const aboutRoute = routeNodes.find(r => r.path === '/about')
+    const aboutComp = componentNodes.find(c => c.name === 'AboutPage')
+    expect(aboutRoute).toBeDefined()
+    expect(aboutComp).toBeDefined()
+    expect(aboutComp?.filePath).toContain('AboutPage')
+    expect(rendersEdges.some(e => e.from === aboutRoute?.id && e.to === aboutComp?.id)).toBe(true)
+  })
+})
+
+describe('parseReactRouterFull — createBrowserRouter + @/ alias + as rename (mini-react-router-createbrowser-alias-app)', () => {
+  it('외부 import된 appRoutes 배열을 1-hop으로 추적하여 4개 라우트 추출', async () => {
+    const { routeNodes } = await parseReactRouterFull(CREATEBROWSER_ALIAS_FIXTURE, 'test@0.1')
+    const paths = routeNodes.map(r => r.path).sort()
+    expect(paths).toContain('/home')
+    expect(paths).toContain('/system/code')
+    expect(paths).toContain('/system/menu')
+    expect(paths).toContain('/system/api')
+  })
+
+  it('4개 페이지 ComponentNode 생성 (alias resolve + as rename 인식)', async () => {
+    const { componentNodes } = await parseReactRouterFull(CREATEBROWSER_ALIAS_FIXTURE, 'test@0.1')
+    const names = componentNodes.map(n => n.name)
+    expect(names).toContain('HomePage')
+    expect(names).toContain('CodePage')
+    expect(names).toContain('MenuManagePage')
+    expect(names).toContain('ApiPage')
+  })
+
+  it('각 라우트 → 매칭 컴포넌트 rendersEdge 존재 (MenuManagePage rename 포함)', async () => {
+    const { routeNodes, rendersEdges, componentNodes } = await parseReactRouterFull(CREATEBROWSER_ALIAS_FIXTURE, 'test@0.1')
+    const cases: Array<[string, string]> = [
+      ['/home', 'HomePage'],
+      ['/system/code', 'CodePage'],
+      ['/system/menu', 'MenuManagePage'],
+      ['/system/api', 'ApiPage'],
+    ]
+    for (const [urlPath, compName] of cases) {
+      const route = routeNodes.find(r => r.path === urlPath)
+      const comp = componentNodes.find(c => c.name === compName)
+      expect(route, `route ${urlPath}`).toBeDefined()
+      expect(comp, `component ${compName}`).toBeDefined()
+      const edge = rendersEdges.find(e => e.from === route?.id && e.to === comp?.id)
+      expect(edge, `rendersEdge ${urlPath} → ${compName}`).toBeDefined()
+    }
+  })
+})

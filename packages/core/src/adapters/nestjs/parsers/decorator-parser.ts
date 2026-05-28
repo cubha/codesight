@@ -14,26 +14,15 @@ import {
   type Provenance,
 } from '@codebase-viz/types'
 import { getDynamicSegmentType } from '../../_shared/url-path-normalizer.js'
+import { walkDir, NESTJS_EXCLUDE_DIRS } from '../../_shared/file-finder.js'
 
-const EXCLUDE_DIRS = new Set(['node_modules', '.git', 'dist', 'build', '.next'])
 const HTTP_METHOD_DECORATORS = new Set(['Get', 'Post', 'Put', 'Delete', 'Patch', 'All', 'Options', 'Head'])
 
 async function collectTsFiles(dir: string): Promise<string[]> {
-  const results: string[] = []
-  async function recurse(current: string): Promise<void> {
-    const entries = await fs.readdir(current, { withFileTypes: true }).catch(() => null)
-    if (entries === null) return
-    for (const entry of entries) {
-      const fullPath = path.join(current, entry.name)
-      if (entry.isDirectory()) {
-        if (!EXCLUDE_DIRS.has(entry.name)) await recurse(fullPath)
-      } else if (entry.isFile() && entry.name.endsWith('.ts') && !entry.name.endsWith('.d.ts')) {
-        results.push(fullPath)
-      }
-    }
-  }
-  await recurse(dir)
-  return results
+  return walkDir(dir, {
+    excludeDirs: NESTJS_EXCLUDE_DIRS,
+    nameFilter: n => n.endsWith('.ts') && !n.endsWith('.d.ts'),
+  })
 }
 
 function getStringArg(decorator: Decorator): string {

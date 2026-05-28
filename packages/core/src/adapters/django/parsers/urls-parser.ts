@@ -9,47 +9,22 @@ import {
   type DynamicSegmentType,
 } from '@codebase-viz/types'
 import { createPythonParser } from '../../_shared/tree-sitter-loader.js'
-
-const EXCLUDE_DIRS = new Set(['__pycache__', '.git', 'node_modules', 'venv', '.venv', 'env'])
+import { walkDir, PY_EXCLUDE_DIRS } from '../../_shared/file-finder.js'
 
 async function findUrlFiles(repoRoot: string): Promise<string[]> {
-  const results: string[] = []
-  async function recurse(dir: string): Promise<void> {
-    const entries = await fs.readdir(dir, { withFileTypes: true }).catch(() => null)
-    if (entries === null) return
-    for (const entry of entries) {
-      const fullPath = path.join(dir, entry.name)
-      if (entry.isDirectory()) {
-        if (!EXCLUDE_DIRS.has(entry.name)) await recurse(fullPath)
-      } else if (
-        entry.isFile() &&
-        (entry.name === 'urls.py' ||
-          (entry.name === '__init__.py' && path.basename(dir) === 'urls'))
-      ) {
-        results.push(fullPath)
-      }
-    }
-  }
-  await recurse(repoRoot)
-  return results
+  const files = await walkDir(repoRoot, { excludeDirs: PY_EXCLUDE_DIRS })
+  return files.filter(f => {
+    const name = path.basename(f)
+    if (name === 'urls.py') return true
+    return name === '__init__.py' && path.basename(path.dirname(f)) === 'urls'
+  })
 }
 
 async function findViewFiles(repoRoot: string): Promise<string[]> {
-  const results: string[] = []
-  async function recurse(dir: string): Promise<void> {
-    const entries = await fs.readdir(dir, { withFileTypes: true }).catch(() => null)
-    if (entries === null) return
-    for (const entry of entries) {
-      const fullPath = path.join(dir, entry.name)
-      if (entry.isDirectory()) {
-        if (!EXCLUDE_DIRS.has(entry.name)) await recurse(fullPath)
-      } else if (entry.isFile() && (entry.name === 'views.py' || entry.name.includes('views'))) {
-        results.push(fullPath)
-      }
-    }
-  }
-  await recurse(repoRoot)
-  return results
+  return walkDir(repoRoot, {
+    excludeDirs: PY_EXCLUDE_DIRS,
+    nameFilter: n => n === 'views.py' || n.includes('views'),
+  })
 }
 
 // views.py에서 @api_view([...]) 데코레이터가 있는 함수 → HTTP methods 맵 생성

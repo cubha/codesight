@@ -1,4 +1,4 @@
-export { analyzWithLLM } from './client.js'
+export { analyzeWithLLM } from './client.js'
 export type { LLMClientOptions, AnalyzeOptions } from './client.js'
 export type { LLMAnalysisResult, LLMRouteEntry, LLMTableEntry, FrameworkKind } from './schema.js'
 export { convertToIR } from './converter.js'

@@ -8,9 +8,9 @@ import {
   type RenderingMode,
   type Provenance,
 } from '@codebase-viz/types'
+import { walkDir, NEXTJS_EXCLUDE_DIRS } from '../../_shared/file-finder.js'
 
 const PAGE_EXTENSIONS = new Set(['.tsx', '.ts', '.jsx', '.js'])
-const EXCLUDE_DIRS = new Set(['.git', 'node_modules', '.next', 'dist', 'build'])
 
 function fileToRoute(relToPages: string): {
   urlPath: string
@@ -65,21 +65,7 @@ function detectRenderingMode(source: string): RenderingMode {
 }
 
 async function walkPages(pagesDir: string): Promise<string[]> {
-  const results: string[] = []
-  async function recurse(dir: string): Promise<void> {
-    const entries = await fs.readdir(dir, { withFileTypes: true }).catch(() => null)
-    if (entries === null) return
-    for (const entry of entries) {
-      const fullPath = path.join(dir, entry.name)
-      if (entry.isDirectory()) {
-        if (!EXCLUDE_DIRS.has(entry.name)) await recurse(fullPath)
-      } else if (entry.isFile()) {
-        results.push(fullPath)
-      }
-    }
-  }
-  await recurse(pagesDir)
-  return results
+  return walkDir(pagesDir, { excludeDirs: NEXTJS_EXCLUDE_DIRS })
 }
 
 export async function parseNextPagesRoutes(

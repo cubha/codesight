@@ -9,7 +9,8 @@ import {
   type RenderingMode,
   type Provenance,
 } from '@codebase-viz/types'
-import { normalizeSegment } from '../../_shared/url-path-normalizer.js'
+import { normalizeSegment, getDynamicSegmentTypeFromSegments } from '../../_shared/url-path-normalizer.js'
+import { walkDir } from '../../_shared/file-finder.js'
 
 const ROUTE_FILES: Record<string, RouteFileKind> = {
   'page.tsx': 'page',
@@ -44,29 +45,6 @@ function extractHttpMethods(content: string): string[] {
   return methods
 }
 
-async function walkDir(dir: string): Promise<string[]> {
-  const entries = await fs.readdir(dir, { withFileTypes: true })
-  const results: string[] = []
-  for (const entry of entries) {
-    const fullPath = path.join(dir, entry.name)
-    if (entry.isDirectory()) {
-      const nested = await walkDir(fullPath)
-      results.push(...nested)
-    } else if (entry.isFile()) {
-      results.push(fullPath)
-    }
-  }
-  return results
-}
-
-// Priority order: optional-catch-all > catch-all > dynamic > static
-// Applied across ALL segments (not first-match per segment).
-function getDynamicSegmentType(segments: string[]): DynamicSegmentType {
-  if (segments.some(s => s.startsWith('[[...'))) return 'optional-catch-all'
-  if (segments.some(s => s.startsWith('[...'))) return 'catch-all'
-  if (segments.some(s => s.startsWith('['))) return 'dynamic'
-  return 'static'
-}
 
 function buildUrlPath(dirRelToApp: string): string {
   if (dirRelToApp === '') return '/'
@@ -146,7 +124,7 @@ export async function parseRoutes(repoRoot: string, analyzerVersion: string): Pr
     }
 
     const urlPath = buildUrlPath(dirRelToApp)
-    const dynType = getDynamicSegmentType(segments)
+    const dynType = getDynamicSegmentTypeFromSegments(segments)
     const isGroup = segments.some(s => /^\(.*\)$/.test(s))
 
     if (routeFileKind === 'route-handler') {

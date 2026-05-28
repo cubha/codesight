@@ -10,34 +10,14 @@ import {
   type IREdge,
   type Provenance,
 } from '@codebase-viz/types'
-
-const EXCLUDE_DIRS = new Set(['.git', 'node_modules', '.nuxt', 'dist', '.output'])
-const VUE_SCRIPT_RE = /<script(?:\s[^>]*)?>(?<content>[\s\S]*?)<\/script>/
-const VUE_TEMPLATE_RE = /<template(?:\s[^>]*)?>(?<content>[\s\S]*?)<\/template>/
-const COMPONENT_TAG_RE = /<([A-Z][A-Za-z0-9]*)/g
-
-async function findVueFiles(repoRoot: string): Promise<string[]> {
-  const results: string[] = []
-  async function recurse(dir: string): Promise<void> {
-    const entries = await fs.readdir(dir, { withFileTypes: true }).catch(() => null)
-    if (entries === null) return
-    for (const entry of entries) {
-      if (entry.isDirectory()) {
-        if (!EXCLUDE_DIRS.has(entry.name)) await recurse(path.join(dir, entry.name))
-      } else if (entry.isFile() && entry.name.endsWith('.vue')) {
-        results.push(path.join(dir, entry.name))
-      }
-    }
-  }
-  await recurse(repoRoot)
-  return results
-}
+import { NUXT_EXCLUDE_DIRS } from '../../_shared/file-finder.js'
+import { VUE_SCRIPT_RE, VUE_TEMPLATE_RE, COMPONENT_TAG_RE, findVueFiles } from '../../_shared/vue-sfc-utils.js'
 
 export async function parseNuxtComponents(
   repoRoot: string,
   analyzerVersion: string,
 ): Promise<{ nodes: ComponentNode[]; edges: IREdge[] }> {
-  const vueFiles = await findVueFiles(repoRoot)
+  const vueFiles = await findVueFiles(repoRoot, NUXT_EXCLUDE_DIRS)
   if (vueFiles.length === 0) return { nodes: [], edges: [] }
 
   const vueRelSet = new Set(vueFiles.map(f => path.relative(repoRoot, f).replace(/\\/g, '/')))

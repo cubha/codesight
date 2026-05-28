@@ -9,7 +9,8 @@ import {
   type RenderingMode,
   type Provenance,
 } from '@codebase-viz/types'
-import { normalizeSegment } from '../../_shared/url-path-normalizer.js'
+import { normalizeSegment, getDynamicSegmentTypeFromSegments } from '../../_shared/url-path-normalizer.js'
+import { walkDir } from '../../_shared/file-finder.js'
 
 const ROUTE_FILES: Record<string, RouteFileKind> = {
   '+page.svelte': 'page',
@@ -19,28 +20,6 @@ const ROUTE_FILES: Record<string, RouteFileKind> = {
   '+error.svelte': 'error',
 }
 
-async function walkDir(dir: string): Promise<string[]> {
-  const entries = await fs.readdir(dir, { withFileTypes: true })
-  const results: string[] = []
-  for (const entry of entries) {
-    const fullPath = path.join(dir, entry.name)
-    if (entry.isDirectory()) {
-      const nested = await walkDir(fullPath)
-      results.push(...nested)
-    } else if (entry.isFile()) {
-      results.push(fullPath)
-    }
-  }
-  return results
-}
-
-// Priority: optional-catch-all > catch-all > dynamic > static
-function getDynamicSegmentType(segments: string[]): DynamicSegmentType {
-  if (segments.some(s => s.startsWith('[[...'))) return 'optional-catch-all'
-  if (segments.some(s => s.startsWith('[...'))) return 'catch-all'
-  if (segments.some(s => s.startsWith('['))) return 'dynamic'
-  return 'static'
-}
 
 // SvelteKit URL path: strip (group) segments, normalize [param] → :param
 function buildUrlPath(dirRelToRoutes: string): string {
@@ -131,7 +110,7 @@ export async function parseRoutes(repoRoot: string, analyzerVersion: string): Pr
         path: buildUrlPath(dirRelToRoutes),
         filePath: repoRelativeFile,
         routeFileKind,
-        dynamicSegmentType: getDynamicSegmentType(segments),
+        dynamicSegmentType: getDynamicSegmentTypeFromSegments(segments),
         isGroupRoute,
         renderingMode: await detectRenderingMode(absFilePath),
         provenance,
