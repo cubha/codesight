@@ -108,7 +108,7 @@ function createModel(opts: LLMClientOptions) {
   return createAnthropic({ apiKey: opts.apiKey })(modelId)
 }
 
-export async function analyzWithLLM(
+export async function analyzeWithLLM(
   options: LLMClientOptions,
   analyzeOptions: AnalyzeOptions,
 ): Promise<LLMAnalysisResult> {

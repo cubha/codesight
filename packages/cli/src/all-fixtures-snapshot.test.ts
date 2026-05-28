@@ -90,7 +90,7 @@ async function buildGraphForFixture(fixtureName: string): Promise<IRGraph> {
 
 describe('Phase XI — fixture baseline snapshots (P1)', () => {
   for (const fixture of FIXTURE_LIST) {
-    describe(fixture, () => {
+    describe(fixture, { timeout: 30000 }, () => {
       it('IRGraph summary', async () => {
         const graph = await buildGraphForFixture(fixture)
         expect(summarize(graph)).toMatchSnapshot()

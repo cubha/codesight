@@ -27,7 +27,18 @@ export function normalizeUrlPath(rawPath: string): string {
 }
 
 // 정규화된 URL path가 `:param` 형태의 dynamic segment를 포함하는지 판정.
-// normalizeUrlPath() 통과 후 사용.
+// normalizeUrlPath() 통과 후 사용. BE 어댑터(fastapi/nestjs/springboot) 전용.
 export function getDynamicSegmentType(urlPath: string): 'dynamic' | 'static' {
   return urlPath.includes(':') ? 'dynamic' : 'static'
+}
+
+// File-based FE 어댑터(nextjs/sveltekit) segments[] 기반 4-variant 판정.
+// Priority: optional-catch-all > catch-all > dynamic > static.
+export function getDynamicSegmentTypeFromSegments(
+  segments: string[],
+): 'static' | 'dynamic' | 'catch-all' | 'optional-catch-all' {
+  if (segments.some(s => s.startsWith('[[...'))) return 'optional-catch-all'
+  if (segments.some(s => s.startsWith('[...'))) return 'catch-all'
+  if (segments.some(s => s.startsWith('['))) return 'dynamic'
+  return 'static'
 }

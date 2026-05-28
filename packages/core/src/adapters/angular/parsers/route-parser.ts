@@ -8,25 +8,17 @@ import {
   type DynamicSegmentType,
   type Provenance,
 } from '@codebase-viz/types'
-
-const EXCLUDE_DIRS = new Set(['.git', 'node_modules', 'dist', '.angular'])
+import { buildImportMap } from '../../_shared/ts-morph-utils.js'
+import { walkDir, ANGULAR_EXCLUDE_DIRS } from '../../_shared/file-finder.js'
 
 async function findTsFiles(repoRoot: string): Promise<string[]> {
-  const results: string[] = []
-  async function recurse(dir: string): Promise<void> {
-    const entries = await fs.readdir(dir, { withFileTypes: true }).catch(() => null)
-    if (entries === null) return
-    for (const entry of entries) {
-      if (entry.isDirectory()) {
-        if (!EXCLUDE_DIRS.has(entry.name)) await recurse(path.join(dir, entry.name))
-      } else if (entry.isFile() && entry.name.endsWith('.ts') && !entry.name.endsWith('.d.ts')
-        && !entry.name.endsWith('.test.ts') && !entry.name.endsWith('.spec.ts')) {
-        results.push(path.join(dir, entry.name))
-      }
-    }
-  }
-  await recurse(repoRoot)
-  return results
+  return walkDir(repoRoot, {
+    excludeDirs: ANGULAR_EXCLUDE_DIRS,
+    nameFilter: n => n.endsWith('.ts')
+      && !n.endsWith('.d.ts')
+      && !n.endsWith('.test.ts')
+      && !n.endsWith('.spec.ts'),
+  })
 }
 
 function extractLoadComponentClass(
@@ -277,13 +269,8 @@ export async function parseAngularRoutes(
       const componentSpecMap = new Map<string, ComponentSpecEntry>()
       const extractedPaths = extractPathsFromRoutesArray(routesArray, '', project, routesArrayDir, rawPathMap, componentSpecMap)
 
-      // v1.2.44 A1-2: sync Identifier resolve용 importMap (routesArray의 sourceFile)
-      const importMap = new Map<string, string>()
-      for (const decl of routesArraySf.getImportDeclarations()) {
-        const di = decl.getDefaultImport()
-        if (di !== undefined) importMap.set(di.getText(), decl.getModuleSpecifierValue())
-        for (const ni of decl.getNamedImports()) importMap.set(ni.getName(), decl.getModuleSpecifierValue())
-      }
+      // sync Identifier resolve용 importMap (routesArray의 sourceFile)
+      const importMap = buildImportMap(routesArraySf)
 
       // v1.2.44 A1-2: routesArray가 외부 파일이면 fallback도 그 파일로 변경
       // (provideRouter 호출 파일이 아닌, routes 정의 파일이 라우트의 원본)

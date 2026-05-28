@@ -10,50 +10,14 @@ import {
   type IREdge,
   type Provenance,
 } from '@codebase-viz/types'
+import { loadTsConfigPaths } from '../../_shared/ts-config-loader.js'
+import { walkDir, REMIX_EXCLUDE_DIRS } from '../../_shared/file-finder.js'
+import { componentNameFromPath } from '../../_shared/component-name.js'
 
 const JSX_EXTENSIONS = new Set(['.tsx', '.jsx'])
-const EXCLUDE_DIRS = new Set(['.git', 'node_modules', 'build', '.cache'])
 
-type PathsMap = Map<string, string>
-
-async function loadTsConfigPaths(repoRoot: string): Promise<PathsMap> {
-  for (const name of ['tsconfig.json', 'jsconfig.json']) {
-    try {
-      const raw = await fs.readFile(path.join(repoRoot, name), 'utf-8')
-      const parsed = JSON.parse(raw) as { compilerOptions?: { paths?: Record<string, string[]> } }
-      const tsPathsRecord = parsed.compilerOptions?.paths
-      if (tsPathsRecord == null) continue
-      const map: PathsMap = new Map()
-      for (const [alias, targets] of Object.entries(tsPathsRecord)) {
-        const firstTarget = targets[0]
-        if (firstTarget === undefined) continue
-        const aliasPrefix = alias.endsWith('/*') ? alias.slice(0, -2) : alias
-        const targetDir = firstTarget.endsWith('/*') ? firstTarget.slice(0, -2) : firstTarget
-        map.set(aliasPrefix, path.resolve(repoRoot, targetDir))
-      }
-      return map
-    } catch {
-      // not found or unparseable
-    }
-  }
-  return new Map()
-}
-
-async function walkDir(dir: string): Promise<string[]> {
-  const results: string[] = []
-  async function recurse(d: string): Promise<void> {
-    const entries = await fs.readdir(d, { withFileTypes: true }).catch(() => null)
-    if (entries === null) return
-    for (const entry of entries) {
-      if (entry.isDirectory()) {
-        if (!EXCLUDE_DIRS.has(entry.name)) await recurse(path.join(d, entry.name))
-      } else if (entry.isFile() && JSX_EXTENSIONS.has(path.extname(entry.name))) {
-        results.push(path.join(d, entry.name))
-      }
-    }
-  }
-  await recurse(dir)
-  return results
+async function findJsxFiles(dir: string): Promise<string[]> {
+  return walkDir(dir, { extensions: JSX_EXTENSIONS, excludeDirs: REMIX_EXCLUDE_DIRS })
 }
 
 export async function parseRemixComponents(
@@ -67,7 +31,7 @@ export async function parseRemixComponents(
 
   if (routesDir === null) return { nodes: [], edges: [] }
 
-  const files = await walkDir(routesDir)
+  const files = await findJsxFiles(routesDir)
   if (files.length === 0) return { nodes: [], edges: [] }
 
   const relFileSet = new Set(files.map(f => path.relative(repoRoot, f).replace(/\\/g, '/')))
@@ -85,7 +49,7 @@ export async function parseRemixComponents(
   for (const sourceFile of project.getSourceFiles()) {
     const filePath = sourceFile.getFilePath()
     const relPath = path.relative(repoRoot, filePath).replace(/\\/g, '/')
-    const name = path.basename(filePath, path.extname(filePath))
+    const name = componentNameFromPath(filePath)
 
     const provenance: Provenance = {
       file: relPath,

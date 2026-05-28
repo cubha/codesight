@@ -5,9 +5,10 @@
     "rootDir": "./src",
     "outDir": "./dist",
     "paths": {
-      "@codebase-viz/types": ["../types/src/index.ts"]
+      "@codebase-viz/types": ["../types/src/index.ts"],
+      "@codebase-viz/llm": ["../llm/src/index.ts"]
     }
   },
-  "references": [{ "path": "../types" }],
+  "references": [{ "path": "../types" }, { "path": "../llm" }],
   "include": ["src"]
 }

@@ -14,26 +14,19 @@ import {
   type Provenance,
   type NodeId,
 } from '@codebase-viz/types'
+import { buildImportMap } from '../../_shared/ts-morph-utils.js'
+import { walkDir, REACTROUTER_EXCLUDE_DIRS } from '../../_shared/file-finder.js'
+import { loadTsConfigPaths, resolveModuleSpecWithPaths, type PathsMap } from '../../_shared/ts-config-loader.js'
+import { resolveComponentToAbsBase, type ResolveContext } from '../../_shared/component-resolver.js'
 
-const EXCLUDE_DIRS = new Set(['.git', 'node_modules', 'dist', 'build', '.vite'])
+const TSX_EXTENSIONS = new Set(['.tsx', '.ts', '.jsx', '.js'])
 
 async function findTsxFiles(repoRoot: string): Promise<string[]> {
-  const results: string[] = []
-  async function recurse(dir: string): Promise<void> {
-    const entries = await fs.readdir(dir, { withFileTypes: true }).catch(() => null)
-    if (entries === null) return
-    for (const entry of entries) {
-      if (entry.isDirectory()) {
-        if (!EXCLUDE_DIRS.has(entry.name)) await recurse(path.join(dir, entry.name))
-      } else if (entry.isFile() && (entry.name.endsWith('.tsx') || entry.name.endsWith('.ts') || entry.name.endsWith('.jsx') || entry.name.endsWith('.js'))) {
-        if (!entry.name.endsWith('.d.ts') && !entry.name.endsWith('.test.ts') && !entry.name.endsWith('.test.tsx')) {
-          results.push(path.join(dir, entry.name))
-        }
-      }
-    }
-  }
-  await recurse(repoRoot)
-  return results
+  return walkDir(repoRoot, {
+    extensions: TSX_EXTENSIONS,
+    excludeDirs: REACTROUTER_EXCLUDE_DIRS,
+    nameFilter: n => !n.endsWith('.d.ts') && !n.endsWith('.test.ts') && !n.endsWith('.test.tsx'),
+  })
 }
 
 function normalizePath(rawPath: string): { urlPath: string; dynamicSegmentType: DynamicSegmentType } {
@@ -251,11 +244,14 @@ interface JsxRouteRaw {
 }
 
 // v1.1.6 T1: JsxExpression child를 resolve하기 위한 컨텍스트. 1-hop 추적용.
+// v1.2.47: paths(tsconfig) + repoRoot 주입 — alias(@/...) 인식
 interface ResolverCtx {
   sourceFile: import('ts-morph').SourceFile
   project: import('ts-morph').Project
   importMap: Map<string, string>
   routerDir: string
+  paths: PathsMap
+  repoRoot: string
   unresolved: string[]
 }
 
@@ -263,25 +259,34 @@ interface ResolverCtx {
 // .map() 콜백 JSX의 <Route path={...}> 속성에서 정적 prefix 추출.
 // 지원: BinaryExpression('prefix' + id) / TemplateLiteral(`prefix${id}`).
 // 추출 실패 시 '' 반환.
-// v1.2.44 A0-4 (F-Route-3): map callback의 element={<paramName.propName />} 패턴에서
-// propName 추출. propName을 entries 키로 사용하여 elementComponent를 매핑한다.
-// 미발견 시 undefined 반환 (callback이 정적 JSX 태그면 entries 단계에서 이미 매핑됨).
+// v1.2.44 A0-4 (F-Route-3): map callback의 element={<paramName.propName />} 패턴에서 propName 추출.
+// v1.2.47 ST7: callback 첫 파라미터 이름을 추출하고, callback 전체 JSX descend로
+// `<paramName.X />` 형태의 PropertyAccessExpression 태그만 매칭한다.
+// 이전 구현은 element JsxAttribute의 outer tag만 검사 → `<React.Suspense>` wrapper에서
+// outer가 PropertyAccessExpression(left='React')이라 `Suspense` 잘못 반환. lowercase 'component'
+// fallback이 가려주었지만 다른 컨벤션 사용자 프로젝트에선 곧장 누락으로 전파.
 function extractMapElementPropName(callback: import('ts-morph').Node): string | undefined {
-  const jsxAttrs = callback.getDescendantsOfKind(SyntaxKind.JsxAttribute)
-    .filter(a => a.getNameNode().getText() === 'element')
-  for (const attr of jsxAttrs) {
-    const init = attr.getInitializer()
-    if (!init?.isKind(SyntaxKind.JsxExpression)) continue
-    const expr = init.asKindOrThrow(SyntaxKind.JsxExpression).getExpression()
-    let tagNode: import('ts-morph').Node | undefined
-    if (expr?.isKind(SyntaxKind.JsxSelfClosingElement)) {
-      tagNode = expr.asKindOrThrow(SyntaxKind.JsxSelfClosingElement).getTagNameNode()
-    } else if (expr?.isKind(SyntaxKind.JsxElement)) {
-      tagNode = expr.asKindOrThrow(SyntaxKind.JsxElement).getOpeningElement().getTagNameNode()
-    }
-    if (tagNode === undefined) continue
-    if (tagNode.isKind(SyntaxKind.PropertyAccessExpression)) {
-      return tagNode.asKindOrThrow(SyntaxKind.PropertyAccessExpression).getName()
+  let paramName: string | undefined
+  if (callback.isKind(SyntaxKind.ArrowFunction)) {
+    paramName = callback.asKindOrThrow(SyntaxKind.ArrowFunction).getParameters()[0]?.getName()
+  } else if (callback.isKind(SyntaxKind.FunctionExpression)) {
+    paramName = callback.asKindOrThrow(SyntaxKind.FunctionExpression).getParameters()[0]?.getName()
+  }
+  if (paramName === undefined) return undefined
+
+  const tagNodes: import('ts-morph').Node[] = []
+  for (const el of callback.getDescendantsOfKind(SyntaxKind.JsxSelfClosingElement)) {
+    tagNodes.push(el.getTagNameNode())
+  }
+  for (const el of callback.getDescendantsOfKind(SyntaxKind.JsxOpeningElement)) {
+    tagNodes.push(el.getTagNameNode())
+  }
+  for (const tagNode of tagNodes) {
+    if (!tagNode.isKind(SyntaxKind.PropertyAccessExpression)) continue
+    const pae = tagNode.asKindOrThrow(SyntaxKind.PropertyAccessExpression)
+    const left = pae.getExpression()
+    if (left.isKind(SyntaxKind.Identifier) && left.getText() === paramName) {
+      return pae.getName()
     }
   }
   return undefined
@@ -329,8 +334,10 @@ function resolveArrayLiteralFromIdentifier(
     return { arrayNode: sameFileInit, external: false, sourceFile: ctx.sourceFile }
   }
   const moduleSpec = ctx.importMap.get(identifierName)
-  if (moduleSpec === undefined || !moduleSpec.startsWith('.')) return undefined
-  const absBase = path.resolve(ctx.routerDir, moduleSpec)
+  if (moduleSpec === undefined) return undefined
+  // v1.2.47: relative + tsconfig paths alias 둘 다 지원 (이전엔 relative만)
+  const absBase = resolveModuleSpecWithPaths(moduleSpec, ctx.routerDir, ctx.paths)
+  if (absBase === undefined) return undefined
   let importedSf: import('ts-morph').SourceFile | undefined
   for (const ext of ['.tsx', '.ts', '.jsx', '.js']) {
     const candidate = absBase + ext
@@ -352,27 +359,14 @@ function resolveArrayLiteralFromIdentifier(
   return undefined
 }
 
-// v1.2.44 A0-2: 식별자(예: 'Home')를 sourceFile의 importMap에서 resolve하여 abs base(확장자 미포함) 반환.
-// elementComponent가 외부 파일에서 import된 경우 parseReactRouterFull이 abs base에 4개 ext 후보로 검증.
+// v1.2.47: component-resolver로 위임. tsconfig paths alias + named import alias rename(as) + barrel + lazy 일괄 처리.
+// 호출자는 ResolverCtx에서 paths/project/repoRoot를 전달해야 한다.
 function resolveElementComponentAbsBase(
   componentName: string,
   sf: import('ts-morph').SourceFile,
+  ctx: ResolveContext,
 ): string | undefined {
-  const sfDir = path.dirname(sf.getFilePath())
-  for (const decl of sf.getImportDeclarations()) {
-    const di = decl.getDefaultImport()
-    if (di !== undefined && di.getText() === componentName) {
-      const spec = decl.getModuleSpecifierValue()
-      if (spec.startsWith('.')) return path.resolve(sfDir, spec)
-    }
-    for (const ni of decl.getNamedImports()) {
-      if (ni.getName() === componentName) {
-        const spec = decl.getModuleSpecifierValue()
-        if (spec.startsWith('.')) return path.resolve(sfDir, spec)
-      }
-    }
-  }
-  return undefined
+  return resolveComponentToAbsBase(componentName, sf, ctx)?.absBase
 }
 
 // Case A: 동일 파일 const 변수 (array literal of JSX 또는 .map() 결과)
@@ -412,6 +406,7 @@ function resolveIdentifierToJsxChildren(
                 const propName = callback !== undefined ? extractMapElementPropName(callback) : undefined
                 const entries = extractRoutesFromArray(resolved.arrayNode, propName)
                 const sourceTag = resolved.external ? ` (외부 모듈 import 1-hop)` : ''
+                const resolveCtx: ResolveContext = { project: ctx.project, repoRoot: ctx.repoRoot, paths: ctx.paths }
                 return entries.map(e => {
                   const raw: JsxRouteRaw = {
                     routePath: pathPrefix + e.path,
@@ -422,7 +417,7 @@ function resolveIdentifierToJsxChildren(
                       : [`${target.getText()}${sourceTag} 배열의 path 프로퍼티를 정적 평가`],
                   }
                   if (e.elementComponent !== undefined) {
-                    const absBase = resolveElementComponentAbsBase(e.elementComponent, resolved.sourceFile)
+                    const absBase = resolveElementComponentAbsBase(e.elementComponent, resolved.sourceFile, resolveCtx)
                     if (absBase !== undefined) raw.elementComponentAbsBase = absBase
                   }
                   return raw
@@ -436,11 +431,16 @@ function resolveIdentifierToJsxChildren(
   }
   // Case B: named/default import → 1-hop 파일 추가
   const moduleSpec = ctx.importMap.get(identifierName)
-  if (moduleSpec === undefined || !moduleSpec.startsWith('.')) {
+  if (moduleSpec === undefined) {
     ctx.unresolved.push(identifierName)
     return []
   }
-  const absBase = path.resolve(ctx.routerDir, moduleSpec)
+  // v1.2.47: relative + tsconfig paths alias 둘 다 지원
+  const absBase = resolveModuleSpecWithPaths(moduleSpec, ctx.routerDir, ctx.paths)
+  if (absBase === undefined) {
+    ctx.unresolved.push(identifierName)
+    return []
+  }
   let importedAbsPath: string | undefined
   for (const ext of ['.tsx', '.ts', '.jsx', '.js']) {
     const candidate = absBase + ext
@@ -455,19 +455,27 @@ function resolveIdentifierToJsxChildren(
     return []
   }
   const importedSf = ctx.project.getSourceFile(importedAbsPath)!
-  // v1.2.44 A0-2: 외부 파일 ctx — 외부 모듈 내부의 X.map(...) 추적을 위해 importMap을 새로 build
-  const importedImportMap = new Map<string, string>()
-  for (const decl of importedSf.getImportDeclarations()) {
-    const di = decl.getDefaultImport()
-    if (di !== undefined) importedImportMap.set(di.getText(), decl.getModuleSpecifierValue())
-    for (const ni of decl.getNamedImports()) importedImportMap.set(ni.getName(), decl.getModuleSpecifierValue())
-  }
+  // 외부 파일 ctx — 외부 모듈 내부의 X.map(...) 추적을 위해 importMap을 새로 build
+  const importedImportMap = buildImportMap(importedSf)
   const importedCtx: ResolverCtx = {
     sourceFile: importedSf,
     project: ctx.project,
     importMap: importedImportMap,
     routerDir: path.dirname(importedAbsPath),
+    paths: ctx.paths,
+    repoRoot: ctx.repoRoot,
     unresolved: ctx.unresolved,
+  }
+  // Case B에서 emit된 JsxRouteRaw에 외부 sf 기준 elementComponentAbsBase를 채우기 위한 helper.
+  // advisor 권고: Case B(JsxElement/JsxFragment 직접 export)도 absBase 전파 필요.
+  const importedResolveCtx: ResolveContext = { project: ctx.project, repoRoot: ctx.repoRoot, paths: ctx.paths }
+  const attachAbsBaseFromImportedSf = (rs: JsxRouteRaw[]): JsxRouteRaw[] => {
+    for (const r of rs) {
+      if (r.elementComponent === undefined || r.elementComponentAbsBase !== undefined) continue
+      const ab = resolveElementComponentAbsBase(r.elementComponent, importedSf, importedResolveCtx)
+      if (ab !== undefined) r.elementComponentAbsBase = ab
+    }
+    return rs
   }
   // export const X = <>...</> 또는 export const X = [<Route../>, ...] 패턴 검색.
   // `export const X = ( <>...</> )` 같이 ParenthesizedExpression으로 감싸진 경우도 unwrap.
@@ -487,18 +495,24 @@ function resolveIdentifierToJsxChildren(
     if (initRaw === undefined) continue
     const init = unwrapParen(initRaw)
     if (init.isKind(SyntaxKind.JsxFragment)) {
-      return extractJsxRouteChildren(init.asKindOrThrow(SyntaxKind.JsxFragment).getJsxChildren(), parentPath, ctx)
+      return attachAbsBaseFromImportedSf(
+        extractJsxRouteChildren(init.asKindOrThrow(SyntaxKind.JsxFragment).getJsxChildren(), parentPath, importedCtx),
+      )
     }
     if (init.isKind(SyntaxKind.JsxElement)) {
-      return extractJsxRouteChildren([init as import('ts-morph').JsxChild], parentPath, ctx)
+      return attachAbsBaseFromImportedSf(
+        extractJsxRouteChildren([init as import('ts-morph').JsxChild], parentPath, importedCtx),
+      )
     }
     if (init.isKind(SyntaxKind.JsxSelfClosingElement)) {
-      return extractJsxRouteChildren([init as import('ts-morph').JsxChild], parentPath, ctx)
+      return attachAbsBaseFromImportedSf(
+        extractJsxRouteChildren([init as import('ts-morph').JsxChild], parentPath, importedCtx),
+      )
     }
     if (init.isKind(SyntaxKind.ArrayLiteralExpression)) {
       const jsxChildren = init.asKindOrThrow(SyntaxKind.ArrayLiteralExpression).getElements()
         .filter(el => el.isKind(SyntaxKind.JsxElement) || el.isKind(SyntaxKind.JsxSelfClosingElement)) as import('ts-morph').JsxChild[]
-      return extractJsxRouteChildren(jsxChildren, parentPath, ctx)
+      return attachAbsBaseFromImportedSf(extractJsxRouteChildren(jsxChildren, parentPath, importedCtx))
     }
     // v1.2.44 A0-2 (F-Route-1): 외부 export가 X.map((p) => <Route .../>) 패턴인 경우
     // importedCtx로 swap하여 X(외부 파일 또는 그 다음 hop의 import)를 resolve
@@ -527,7 +541,7 @@ function resolveIdentifierToJsxChildren(
                     : [`${target.getText()}${sourceTag} 배열의 path 프로퍼티를 정적 평가`],
                 }
                 if (e.elementComponent !== undefined) {
-                  const absBase = resolveElementComponentAbsBase(e.elementComponent, resolved.sourceFile)
+                  const absBase = resolveElementComponentAbsBase(e.elementComponent, resolved.sourceFile, importedResolveCtx)
                   if (absBase !== undefined) raw.elementComponentAbsBase = absBase
                 }
                 return raw
@@ -542,10 +556,14 @@ function resolveIdentifierToJsxChildren(
   for (const exportAssign of importedSf.getExportAssignments()) {
     const expr = exportAssign.getExpression()
     if (expr.isKind(SyntaxKind.JsxFragment)) {
-      return extractJsxRouteChildren(expr.asKindOrThrow(SyntaxKind.JsxFragment).getJsxChildren(), parentPath, ctx)
+      return attachAbsBaseFromImportedSf(
+        extractJsxRouteChildren(expr.asKindOrThrow(SyntaxKind.JsxFragment).getJsxChildren(), parentPath, importedCtx),
+      )
     }
     if (expr.isKind(SyntaxKind.JsxElement)) {
-      return extractJsxRouteChildren([expr as import('ts-morph').JsxChild], parentPath, ctx)
+      return attachAbsBaseFromImportedSf(
+        extractJsxRouteChildren([expr as import('ts-morph').JsxChild], parentPath, importedCtx),
+      )
     }
   }
   ctx.unresolved.push(identifierName)
@@ -644,6 +662,9 @@ export async function parseReactRouterFull(
   })
   for (const f of routerFiles) project.addSourceFileAtPath(f)
 
+  // v1.2.47: tsconfig paths 1회 로드 (양 분기 공유)
+  const tsConfigPaths = await loadTsConfigPaths(repoRoot)
+
   const routeNodes: RouteNode[] = []
   const componentNodes: ComponentNode[] = []
   const rendersEdges: IREdge[] = []
@@ -654,13 +675,9 @@ export async function parseReactRouterFull(
     const relPath = path.relative(repoRoot, filePath).replace(/\\/g, '/')
     const routerDir = path.dirname(filePath)
 
-    const importMap = new Map<string, string>()
-    for (const importDecl of sourceFile.getImportDeclarations()) {
-      const defaultImport = importDecl.getDefaultImport()
-      if (defaultImport !== undefined) {
-        importMap.set(defaultImport.getText(), importDecl.getModuleSpecifierValue())
-      }
-    }
+    // v1.2.47: createBrowserRouter 분기도 named import 수집(이전엔 default만 수집)
+    const importMap = buildImportMap(sourceFile)
+    const resolveCtx: ResolveContext = { project, repoRoot, paths: tsConfigPaths }
 
     for (const callExpr of sourceFile.getDescendantsOfKind(SyntaxKind.CallExpression)) {
       const calleeName = callExpr.getExpression().getText()
@@ -669,14 +686,43 @@ export async function parseReactRouterFull(
       const args = callExpr.getArguments()
       if (args.length === 0) continue
 
+      // v1.2.47 ST6: createBrowserRouter 분기 외부 import 1-hop 추가 + JSX 분기와 일관성.
+      // 라우트 배열이 외부 sf에 있을 때 그 sf의 elementComponent absBase 추적용으로 originSf 보존.
       let routesArrayNode: import('ts-morph').Node | undefined
+      let originSf: import('ts-morph').SourceFile = sourceFile
       const firstArg = args[0]!
       if (firstArg.isKind(SyntaxKind.ArrayLiteralExpression)) {
         routesArrayNode = firstArg
       } else if (firstArg.isKind(SyntaxKind.Identifier)) {
+        const idName = firstArg.getText()
         const varDecls = sourceFile.getVariableDeclarations()
-        const varDecl = varDecls.find(v => v.getName() === firstArg.getText())
-        routesArrayNode = varDecl?.getInitializer()
+        const varDecl = varDecls.find(v => v.getName() === idName)
+        const sameFileInit = varDecl?.getInitializer()
+        if (sameFileInit !== undefined && sameFileInit.isKind(SyntaxKind.ArrayLiteralExpression)) {
+          routesArrayNode = sameFileInit
+        } else {
+          const spec = importMap.get(idName)
+          if (spec !== undefined) {
+            const extAbsBase = resolveModuleSpecWithPaths(spec, routerDir, tsConfigPaths)
+            if (extAbsBase !== undefined) {
+              for (const ext of ['.tsx', '.ts', '.jsx', '.js']) {
+                const candidate = extAbsBase + ext
+                let extSf = project.getSourceFile(candidate)
+                if (extSf === undefined) {
+                  try { extSf = project.addSourceFileAtPath(candidate) } catch { continue }
+                }
+                if (extSf === undefined) continue
+                const extVar = extSf.getVariableDeclarations().find(v => v.getName() === idName && v.isExported())
+                const extInit = extVar?.getInitializer()
+                if (extInit !== undefined && extInit.isKind(SyntaxKind.ArrayLiteralExpression)) {
+                  routesArrayNode = extInit
+                  originSf = extSf
+                  break
+                }
+              }
+            }
+          }
+        }
       }
 
       if (routesArrayNode === undefined) continue
@@ -707,9 +753,16 @@ export async function parseReactRouterFull(
         routeNodes.push(routeNode)
 
         if (elementComponent !== undefined) {
-          const moduleSpec = importMap.get(elementComponent) ?? lazyModuleSpec
-          if (moduleSpec !== undefined && moduleSpec.startsWith('.')) {
-            const absBase = path.resolve(routerDir, moduleSpec)
+          // v1.2.47: component-resolver 위임 — alias + as rename + barrel + lazy 일괄.
+          // originSf(외부 라우트 배열 정의 파일 또는 동일 파일)의 import 기준으로 추적.
+          let absBase: string | undefined
+          const compResolved = resolveComponentToAbsBase(elementComponent, originSf, resolveCtx)
+          if (compResolved !== undefined) {
+            absBase = compResolved.absBase
+          } else if (lazyModuleSpec !== undefined) {
+            absBase = resolveModuleSpecWithPaths(lazyModuleSpec, path.dirname(originSf.getFilePath()), tsConfigPaths)
+          }
+          if (absBase !== undefined) {
             let compAbsPath: string | undefined
             for (const ext of ['.tsx', '.ts', '.jsx', '.js']) {
               try {
@@ -742,8 +795,9 @@ export async function parseReactRouterFull(
                 if (compSf !== undefined) {
                   for (const imp of compSf.getImportDeclarations()) {
                     const spec = imp.getModuleSpecifierValue()
-                    if (!spec.startsWith('.')) continue
-                    const subBase = path.resolve(path.dirname(compAbsPath), spec)
+                    // v1.2.47: tsconfig paths alias 인식 (이전엔 relative만)
+                    const subBase = resolveModuleSpecWithPaths(spec, path.dirname(compAbsPath), tsConfigPaths)
+                    if (subBase === undefined) continue
                     let subAbsPath: string | undefined
                     for (const ext of ['.tsx', '.ts', '.jsx', '.js']) {
                       try { await fs.access(subBase + ext); subAbsPath = subBase + ext; break } catch { /* skip */ }
@@ -802,18 +856,9 @@ export async function parseReactRouterFull(
     for (const f of jsxRouterFiles) jsxProject.addSourceFileAtPath(f)
 
     // Pass 1: build import maps + detect sub-router files (referenced via element prop)
-    // v1.1.6 T1: named import도 수집 (이전 버전은 default import만 수집 → {MobileRoutes} 등 누락)
     const fileImportMaps2 = new Map<string, Map<string, string>>()
     for (const sf of jsxProject.getSourceFiles()) {
-      const imap = new Map<string, string>()
-      for (const decl of sf.getImportDeclarations()) {
-        const di = decl.getDefaultImport()
-        if (di !== undefined) imap.set(di.getText(), decl.getModuleSpecifierValue())
-        for (const ni of decl.getNamedImports()) {
-          imap.set(ni.getName(), decl.getModuleSpecifierValue())
-        }
-      }
-      fileImportMaps2.set(sf.getFilePath(), imap)
+      fileImportMaps2.set(sf.getFilePath(), buildImportMap(sf))
     }
 
     const subRouterParentPaths2 = new Map<string, string>()
@@ -821,14 +866,16 @@ export async function parseReactRouterFull(
     for (const sf of jsxProject.getSourceFiles()) {
       const routerDir2 = path.dirname(sf.getFilePath())
       const importMap2 = fileImportMaps2.get(sf.getFilePath()) ?? new Map()
-      const ctx2: ResolverCtx = { sourceFile: sf, project: jsxProject, importMap: importMap2, routerDir: routerDir2, unresolved: unresolvedExprs }
+      const ctx2: ResolverCtx = { sourceFile: sf, project: jsxProject, importMap: importMap2, routerDir: routerDir2, paths: tsConfigPaths, repoRoot, unresolved: unresolvedExprs }
       for (const jsxEl of sf.getDescendantsOfKind(SyntaxKind.JsxElement)) {
         if (jsxEl.getOpeningElement().getTagNameNode().getText() !== 'Routes') continue
         for (const item of extractJsxRouteChildren(jsxEl.getJsxChildren(), '', ctx2)) {
           if (item.elementComponent === undefined) continue
           const moduleSpec2 = importMap2.get(item.elementComponent)
-          if (moduleSpec2 === undefined || !moduleSpec2.startsWith('.')) continue
-          const absBase2 = path.resolve(routerDir2, moduleSpec2)
+          if (moduleSpec2 === undefined) continue
+          // v1.2.47: tsconfig paths alias 인식
+          const absBase2 = resolveModuleSpecWithPaths(moduleSpec2, routerDir2, tsConfigPaths)
+          if (absBase2 === undefined) continue
           for (const ext of ['.tsx', '.ts', '.jsx', '.js']) {
             const candidate = absBase2 + ext
             if (jsxProject.getSourceFile(candidate) !== undefined && !subRouterParentPaths2.has(candidate)) {
@@ -847,7 +894,8 @@ export async function parseReactRouterFull(
       const routerDir = path.dirname(filePath)
       const parentPath = subRouterParentPaths2.get(filePath) ?? ''
       const importMap = fileImportMaps2.get(filePath) ?? new Map()
-      const ctx: ResolverCtx = { sourceFile, project: jsxProject, importMap, routerDir, unresolved: unresolvedExprs }
+      const ctx: ResolverCtx = { sourceFile, project: jsxProject, importMap, routerDir, paths: tsConfigPaths, repoRoot, unresolved: unresolvedExprs }
+      const jsxResolveCtx: ResolveContext = { project: jsxProject, repoRoot, paths: tsConfigPaths }
 
       for (const jsxEl of sourceFile.getDescendantsOfKind(SyntaxKind.JsxElement)) {
         const tagName = jsxEl.getOpeningElement().getTagNameNode().getText()
@@ -880,16 +928,14 @@ export async function parseReactRouterFull(
           routeNodes.push(routeNode)
 
           if (item.elementComponent !== undefined) {
-            // v1.2.44 A0-2: elementComponentAbsBase가 있으면 외부 import 1-hop으로 미리 resolve된 abs base 사용.
-            // 없으면 현재 파일 importMap에서 lookup (기존 동작).
+            // v1.2.47: 우선순위 (1) elementComponentAbsBase 미리 resolve된 외부 sf 결과 →
+            //          (2) resolveComponentToAbsBase로 현재 sf에서 alias + as rename + barrel + lazy 일괄 추적.
             let absBase: string | undefined
             if (item.elementComponentAbsBase !== undefined) {
               absBase = item.elementComponentAbsBase
             } else {
-              const moduleSpec = importMap.get(item.elementComponent)
-              if (moduleSpec !== undefined && moduleSpec.startsWith('.')) {
-                absBase = path.resolve(routerDir, moduleSpec)
-              }
+              const compResolved = resolveComponentToAbsBase(item.elementComponent, sourceFile, jsxResolveCtx)
+              if (compResolved !== undefined) absBase = compResolved.absBase
             }
             if (absBase !== undefined) {
               let compAbsPath: string | undefined
@@ -964,11 +1010,16 @@ export async function parseReactRoutes(
   })
   for (const f of routerFiles) project.addSourceFileAtPath(f)
 
+  // v1.2.47: tsconfig paths 1회 로드
+  const tsConfigPaths = await loadTsConfigPaths(repoRoot)
+
   const routes: RouteNode[] = []
 
   for (const sourceFile of project.getSourceFiles()) {
     const filePath = sourceFile.getFilePath()
     const relPath = path.relative(repoRoot, filePath).replace(/\\/g, '/')
+    const routerDir = path.dirname(filePath)
+    const importMap = buildImportMap(sourceFile)
 
     for (const callExpr of sourceFile.getDescendantsOfKind(SyntaxKind.CallExpression)) {
       const calleeName = callExpr.getExpression().getText()
@@ -977,14 +1028,40 @@ export async function parseReactRoutes(
       const args = callExpr.getArguments()
       if (args.length === 0) continue
 
+      // v1.2.47: 외부 import 1-hop 추가 (createBrowserRouter 분기)
       let routesArrayNode: import('ts-morph').Node | undefined
       const firstArg = args[0]!
       if (firstArg.isKind(SyntaxKind.ArrayLiteralExpression)) {
         routesArrayNode = firstArg
       } else if (firstArg.isKind(SyntaxKind.Identifier)) {
+        const idName = firstArg.getText()
         const varDecls = sourceFile.getVariableDeclarations()
-        const varDecl = varDecls.find(v => v.getName() === firstArg.getText())
-        routesArrayNode = varDecl?.getInitializer()
+        const varDecl = varDecls.find(v => v.getName() === idName)
+        const sameFileInit = varDecl?.getInitializer()
+        if (sameFileInit !== undefined && sameFileInit.isKind(SyntaxKind.ArrayLiteralExpression)) {
+          routesArrayNode = sameFileInit
+        } else {
+          const spec = importMap.get(idName)
+          if (spec !== undefined) {
+            const extAbsBase = resolveModuleSpecWithPaths(spec, routerDir, tsConfigPaths)
+            if (extAbsBase !== undefined) {
+              for (const ext of ['.tsx', '.ts', '.jsx', '.js']) {
+                const candidate = extAbsBase + ext
+                let extSf = project.getSourceFile(candidate)
+                if (extSf === undefined) {
+                  try { extSf = project.addSourceFileAtPath(candidate) } catch { continue }
+                }
+                if (extSf === undefined) continue
+                const extVar = extSf.getVariableDeclarations().find(v => v.getName() === idName && v.isExported())
+                const extInit = extVar?.getInitializer()
+                if (extInit !== undefined && extInit.isKind(SyntaxKind.ArrayLiteralExpression)) {
+                  routesArrayNode = extInit
+                  break
+                }
+              }
+            }
+          }
+        }
       }
 
       if (routesArrayNode === undefined) continue
@@ -1026,18 +1103,9 @@ export async function parseReactRoutes(
     for (const f of jsxRouterFiles) jsxProject.addSourceFileAtPath(f)
 
     // Pass 1: build import maps + detect sub-router files (referenced via element prop)
-    // v1.1.6 T1: named import도 수집
     const fileImportMaps = new Map<string, Map<string, string>>()
     for (const sf of jsxProject.getSourceFiles()) {
-      const imap = new Map<string, string>()
-      for (const decl of sf.getImportDeclarations()) {
-        const di = decl.getDefaultImport()
-        if (di !== undefined) imap.set(di.getText(), decl.getModuleSpecifierValue())
-        for (const ni of decl.getNamedImports()) {
-          imap.set(ni.getName(), decl.getModuleSpecifierValue())
-        }
-      }
-      fileImportMaps.set(sf.getFilePath(), imap)
+      fileImportMaps.set(sf.getFilePath(), buildImportMap(sf))
     }
 
     const subRouterParentPaths = new Map<string, string>()
@@ -1045,14 +1113,16 @@ export async function parseReactRoutes(
     for (const sf of jsxProject.getSourceFiles()) {
       const routerDir = path.dirname(sf.getFilePath())
       const importMap = fileImportMaps.get(sf.getFilePath()) ?? new Map()
-      const ctx: ResolverCtx = { sourceFile: sf, project: jsxProject, importMap, routerDir, unresolved: unresolvedExprs }
+      const ctx: ResolverCtx = { sourceFile: sf, project: jsxProject, importMap, routerDir, paths: tsConfigPaths, repoRoot, unresolved: unresolvedExprs }
       for (const jsxEl of sf.getDescendantsOfKind(SyntaxKind.JsxElement)) {
         if (jsxEl.getOpeningElement().getTagNameNode().getText() !== 'Routes') continue
         for (const item of extractJsxRouteChildren(jsxEl.getJsxChildren(), '', ctx)) {
           if (item.elementComponent === undefined) continue
           const moduleSpec = importMap.get(item.elementComponent)
-          if (moduleSpec === undefined || !moduleSpec.startsWith('.')) continue
-          const absBase = path.resolve(routerDir, moduleSpec)
+          if (moduleSpec === undefined) continue
+          // v1.2.47: tsconfig paths alias 인식
+          const absBase = resolveModuleSpecWithPaths(moduleSpec, routerDir, tsConfigPaths)
+          if (absBase === undefined) continue
           for (const ext of ['.tsx', '.ts', '.jsx', '.js']) {
             const candidate = absBase + ext
             if (jsxProject.getSourceFile(candidate) !== undefined && !subRouterParentPaths.has(candidate)) {
@@ -1071,7 +1141,7 @@ export async function parseReactRoutes(
       const parentPath = subRouterParentPaths.get(filePath) ?? ''
       const importMap = fileImportMaps.get(filePath) ?? new Map()
       const routerDir = path.dirname(filePath)
-      const ctx: ResolverCtx = { sourceFile, project: jsxProject, importMap, routerDir, unresolved: unresolvedExprs }
+      const ctx: ResolverCtx = { sourceFile, project: jsxProject, importMap, routerDir, paths: tsConfigPaths, repoRoot, unresolved: unresolvedExprs }
 
       for (const jsxEl of sourceFile.getDescendantsOfKind(SyntaxKind.JsxElement)) {
         const tagName = jsxEl.getOpeningElement().getTagNameNode().getText()

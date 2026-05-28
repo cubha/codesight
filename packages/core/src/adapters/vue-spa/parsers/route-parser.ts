@@ -8,6 +8,7 @@ import {
   type DynamicSegmentType,
   type Provenance,
 } from '@codebase-viz/types'
+import { buildImportMap } from '../../_shared/ts-morph-utils.js'
 
 const EXCLUDE_DIRS = new Set(['.git', 'node_modules', 'dist', '.nuxt'])
 
@@ -185,13 +186,7 @@ export async function parseVueRoutes(
       const extractedEntries = extractRoutesFromArray(routesArray)
 
       // sourceFile importMap (sync component Identifier resolve용)
-      const sourceFileForImports = routesArray.getSourceFile()
-      const importMap = new Map<string, string>()
-      for (const decl of sourceFileForImports.getImportDeclarations()) {
-        const di = decl.getDefaultImport()
-        if (di !== undefined) importMap.set(di.getText(), decl.getModuleSpecifierValue())
-        for (const ni of decl.getNamedImports()) importMap.set(ni.getName(), decl.getModuleSpecifierValue())
-      }
+      const importMap = buildImportMap(routesArray.getSourceFile())
 
       for (const entry of extractedEntries) {
         const { urlPath, dynamicSegmentType } = normalizePath(entry.urlPath)

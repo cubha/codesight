@@ -1,5 +1,43 @@
 # Changelog
 
+## [1.2.47] — 2026-05-28
+
+두 사이클 통합 릴리스 — **/refactoring 후속 12건** + **React Router 외부 import 라우트 추적 일반화**. verify.sh **737 PASS** · 회귀 0 · snapshot byte-identical · obsolete 0.
+
+### Refactoring 후속 — /refactoring 사이클 후속 12건 (PR-A~D + POLISH 8건)
+
+v1.2.46 `/refactoring` 사이클이 권장한 후속 12건을 4 PR + POLISH로 일괄 처리. **34 modified + 11 new files**, +346 / -1956 라인 (-1610 net). 외부 export 표면 변경 0 · 순수 책임 분리.
+
+- **PR-A (M9·M2·M4·M10)** — `analyzWithLLM → analyzeWithLLM` rename(6 파일) · `_shared/ts-config-loader.ts` 신규(nextjs·nextjs-pages·remix·vue-spa 4 어댑터 통합) · `_shared/ts-morph-utils.ts` 신규 + `buildImportMap` 6 위치 통합(angular·reactrouter×3·vue-spa) · `docs/design/NODE-ID-CONVENTIONS.md` 12 컨벤션 분류표.
+- **PR-B (M1·M3·M6)** — `_shared/file-finder.ts`에 `walkDir({extensions, excludeDirs, nameFilter})` + 어댑터별 EXCLUDE 상수 7종 export. 11곳 walkDir 통합. `_shared/vue-sfc-utils.ts` 신규(정규식 3개 + findVueFiles). `getDynamicSegmentTypeFromSegments(segments[])` _shared 통합(nextjs+sveltekit).
+- **PR-C (M8 8단계)** — `mermaid-renderer.ts` **1760 → 472 라인 (-72%, -1288줄)**. 신규 디렉토리 `helpers/`(constants/ids/layout), `fe/`(labels/infra/nested/tab2/tab2-file/tab3-api), `be/`(pkg-tree/leaf/tab1/tab2), `erd/`(db-diagram). 외부 export 표면 0 변경 / 순수 이동 / snapshot byte-identical.
+- **PR-D (M7·M12 + CLI 잠복 회귀 hotfix)** — `packages/core/src/pipeline.ts` 신규 `buildIRGraph(repoRoot, llmOptions?)`. cli `analyze` 87→11줄, extension `runAnalysis` 115→60줄. **v1.2.43/v1.2.45 hotfix가 CLI에 미반영이었음을 자동 흡수** (skipComponents · framework override · LLM 에러 wrap). 3 파일 5 함수에 Context 객체(`ScreenCtx`/`FileTreeCtx`/`ApiCallCtx`) — T1 lookup table·T4 시퀀스 신규 빌더가 ctx 필드 1개 추가만으로 주입 가능.
+- **POLISH 8건** — R8(reactrouter:1003 인라인 buildImportMap 잔여) · R2/R3(wrap-fallback chunkArray·collectGroupRoutes 제거 → 단일 출처 helpers/layout) · D1/R9(tab2-file 파일 라벨 4중 → formatFileLeafLabel) · D2(LLMOptions = LLMClientOptions alias) · E-2/E-3(BE Tab2 O(C×E) Map화) · D6(`_shared/component-name.ts` 신규 — 4 호출 `path.basename(...)` → `componentNameFromPath()`).
+- **사용자 결정 보류** — M11(7+1 FW 분기 config화)은 v1.2.48 격상(21 snapshot 영향). M5/M10은 폐기/docs only로 결정(통합 부적합·필연적 차이).
+
+### React Router 외부 import 라우트 추적 일반화 — 추가 사이클
+
+사용자 보고 회귀: REPO-SHARED-B2B-WINA-APP-FE에서 `appRoutes.map()` 패턴 라우트 다수의 `rendersEdge` 누락. 진짜 root cause는 v1.2.44 hotfix가 다루지 못한 **3종 결함** + 1건 잠복 결함 (advisor 정정 거침).
+
+- **Root cause 3건** — (1) `resolveElementComponentAbsBase`의 `spec.startsWith('.')` 가드가 **path alias(`@/...`) 차단** · (2) `buildImportMap`이 `ni.getName()`(원본명)을 키로 써서 **named import rename(`as`)** 미인식 · (3) `createBrowserRouter` 분기가 **외부 import 라우트 배열 추적 부재** (JSX `<Routes>` 분기와 비대칭, advisor 지적).
+- **신규 `_shared/component-resolver.ts`** — `resolveComponentToAbsBase(name, sf, ctx)` 통합 resolver. (a) ImportDeclaration default/named + alias rename, (b) tsconfig paths alias 해석, (c) barrel re-export 1-hop (`export { X as Y } from`, directory index 포함), (d) `lazy(() => import('...'))` / 단일 Identifier alias-chain, depth=2 cycle 가드. 반환 메타 `{absBase, hops: 'direct'|'barrel'|'lazy'|'alias-chain', inferenceChain?}` — Evidence-First 원칙 준수.
+- **route-parser 가드 7곳 일괄 alias 인식** — `resolveModuleSpecWithPaths` 적용 위치: 외부 배열 1-hop(322) · element 컴포넌트 추적(357·362) · 외부 JsxExpression 1-hop(430) · createBrowserRouter element resolution(692) · sub-component recursion(726) · JSX Pass 2 직접 fallback(862) · sub-router 감지 Pass(1017).
+- **양 분기 일관성 (advisor 권고)** — `createBrowserRouter` 분기에 외부 import 1-hop 추가(`resolveArrayLiteralFromIdentifier` 동등). ComponentNode 매핑 통합 resolver 위임 (`lazyModuleSpec` 분기 자동 흡수).
+- **부수 결함 1건** — `extractMapElementPropName`이 `<React.Suspense>` wrapper의 outer tag를 PropertyAccess로 잘못 매칭. 정정: ArrowFunction/FunctionExpression 첫 파라미터 이름(`route`) 추출 후 callback 전체 JSX descend로 `paramName.X` 형태만 매칭. lowercase 'component' fallback이 가려주던 잠복 결함 표면화.
+- **신규 fixture 3종** — `mini-react-router-alias-app`(사용자 케이스 1:1 reproducer, @/ alias + as rename + nested 2겹 Routes + appRoutes.map + Suspense wrapper) · `mini-react-router-createbrowser-alias-app`(createBrowserRouter 분기 회귀 가드) · `mini-react-router-barrel-app`(barrel re-export 회귀 가드).
+- **단위 테스트 +19건** — component-resolver 9 · ts-config-loader 9 · ts-morph-utils 6 · route-parser describe 박제 활성화 3 · ST6b 3 · ST7 1 · ST8 2.
+
+### 영향 어댑터 회귀 검증 (buildImportMap consumer)
+
+- angular · vue-spa · reactrouter · nestjs 4 어댑터 일괄 검증 161 PASS · 회귀 0
+- 영향 범위: `buildImportMap`이 `getAliasNode()?.getText() ?? getName()` 정정으로 `import { X as Y }`에서 Y가 키로 등록 — 기존 어댑터가 원본명을 키로 lookup하면 누락이 발생할 수 있으나 회귀 0 (실제 import 후 rename 사용 케이스가 reactrouter 외엔 없음).
+
+### 후속 (v1.2.48+)
+
+- M11 FW 분기 config화 + POLISH 잔여 6건(R4·R5·R6·R7·R10·E-1)
+- BE 모듈 위계 정정(D3·D4·D5·R1)
+
+
 ## [1.2.46] — 2026-05-26
 
 ### Refactoring — 전체 src 코드 품질 정리 (98 파일 review · 36건 수정 · 회귀 0)

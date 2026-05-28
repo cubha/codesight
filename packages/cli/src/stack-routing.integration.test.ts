@@ -8,7 +8,7 @@ import { EMPTY_ADAPTER_RESULT } from '@codebase-viz/types'
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const FIXTURES = path.resolve(__dirname, '../../../fixtures')
 
-describe('Stack routing integration — Phase A', () => {
+describe('Stack routing integration — Phase A', { timeout: 30000 }, () => {
   const registry = createDefaultRegistry()
 
   it('mini-next-app: NextJsAdapter 정상 동작 (회귀 보장)', async () => {

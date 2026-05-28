@@ -9,6 +9,7 @@
     }
   },
   "dependencies": {
+    "@codebase-viz/llm": "workspace:*",
     "@codebase-viz/types": "workspace:*",
     "@mrleebo/prisma-ast": "^0.15.0",
     "tree-sitter-wasms": "^0.1.13",

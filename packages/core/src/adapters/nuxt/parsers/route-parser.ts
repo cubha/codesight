@@ -8,6 +8,7 @@ import {
   type Provenance,
   type RenderingMode,
 } from '@codebase-viz/types'
+import { walkDir } from '../../_shared/file-finder.js'
 
 const NUXT_EXTENSIONS = new Set(['.vue', '.ts', '.tsx', '.js', '.jsx'])
 
@@ -20,21 +21,6 @@ async function getVueRenderingMode(absFilePath: string): Promise<RenderingMode> 
   const match = DEFINE_PAGE_META_SSR_RE.exec(content)
   if (match === null) return 'SSR'
   return match[1] === 'false' ? 'CSR' : 'SSR'
-}
-
-async function walkDir(dir: string): Promise<string[]> {
-  const entries = await fs.readdir(dir, { withFileTypes: true })
-  const results: string[] = []
-  for (const entry of entries) {
-    const fullPath = path.join(dir, entry.name)
-    if (entry.isDirectory()) {
-      const nested = await walkDir(fullPath)
-      results.push(...nested)
-    } else if (entry.isFile()) {
-      results.push(fullPath)
-    }
-  }
-  return results
 }
 
 // Nuxt: pages/index.vue → /, pages/about.vue → /about
