@@ -8,9 +8,9 @@ import {
   type DynamicSegmentType,
   type Provenance,
 } from '@codebase-viz/types'
+import { REMIX_EXCLUDE_DIRS } from '../../_shared/file-finder.js'
 
 const PAGE_EXTENSIONS = new Set(['.tsx', '.ts', '.jsx', '.js'])
-const EXCLUDE_DIRS = new Set(['.git', 'node_modules', 'build', '.cache'])
 
 async function walkRoutesDir(
   dir: string,
@@ -27,7 +27,7 @@ async function walkRoutesDir(
   for (const entry of entries) {
     const fullPath = path.join(dir, entry.name as string)
     if (entry.isDirectory()) {
-      if (EXCLUDE_DIRS.has(entry.name)) continue
+      if (REMIX_EXCLUDE_DIRS.has(entry.name)) continue
       const nested = await walkRoutesDir(fullPath, baseDir)
       results.push(...nested)
     } else if (entry.isFile()) {

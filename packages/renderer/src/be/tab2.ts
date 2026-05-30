@@ -180,26 +180,7 @@ export function buildBeArchitectureDiagram(graph: IRGraph): string {
         }
       }
     }
-    // build a wrapper PkgTreeNode with files attached at correct depths
-    const filesTree = buildPkgTree(trimmed.map(b => ({ filePath: b.filePath, segments: b.segments, routes: [] })))
-    // intersect filesTree paths with chunkTree paths so each chunk only renders its own leaves
-    const intersect = (a: PkgTreeNode, b: PkgTreeNode): PkgTreeNode => {
-      const out: PkgTreeNode = { children: new Map(), files: a.files.filter(f => f) }
-      for (const [seg, sub] of a.children) {
-        const matched = b.children.get(seg)
-        if (matched !== undefined) out.children.set(seg, intersect(sub, matched))
-      }
-      return out
-    }
-    // chunkTree was sub-rooted at headerSegs+chunkPath; align filesTree
-    let alignedFiles: PkgTreeNode = filesTree
-    for (const seg of chunkPath) {
-      const next = alignedFiles.children.get(seg)
-      if (next === undefined) { alignedFiles = { children: new Map(), files: [] }; break }
-      alignedFiles = next
-    }
-    const final = intersect(alignedFiles, chunkTree)
-    walkFiles(final, rootId, chunkPath, 0)
+    walkFiles(chunkTree, rootId, chunkPath, 0)
 
     // R-T2.4 cross-pkg edge: leaf DI subgraph 안의 dashed 화살표에 인라인 라벨로 표시 (renderControllerLeaf 참조).
     // 외부 별도 edge 미emit — ghost-node 회피 + 중복 화살표 방지.

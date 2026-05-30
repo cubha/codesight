@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.2.48] — 2026-05-30
+
+### POLISH 잔여 6건 + M11 FW 분기 config화 — 코드 품질 정리 (회귀 0 · snapshot byte-identical)
+
+v1.2.47에서 격상·보류된 잔여 POLISH 6건과 M11을 일괄 처리. 기능 변경 없음 · 외부 동작 보존. verify.sh **737 PASS** · snapshot byte-identical · 회귀 0.
+
+- **E-1 (BE Tab2)** — `buildBeArchitectureDiagram` `emitChunk` 내부 `buildPkgTree` 재구축 제거. `chunkTree`가 항등 intersect임을 증명(`emitTreeNodes` nodeIdByPath 키 정합성 검증)하여 `intersect()` 함수 및 `alignedFiles` 탐색 로직 일괄 제거. `walkFiles(chunkTree, ...)` 직접 호출.
+- **R4 (nextjs/component-parser)** — 로컬 `EXCLUDE_DIRS`(build 누락) → `file-finder.ts`의 `NEXTJS_EXCLUDE_DIRS` 참조. `build/` 디렉토리 스캔 방지.
+- **R6 (remix/route-parser)** — 로컬 `EXCLUDE_DIRS` → `REMIX_EXCLUDE_DIRS` 참조. `walkRoutesDir` 구조(relToRoutes 반환 패턴) 유지.
+- **R5 (vue-spa/route-parser)** — inline `findTsFiles` recurse 루프 → `walkDir(VUE_SPA_EXCLUDE_DIRS)`. `.nuxt/.vite/build` 제외 강화.
+- **R7 (sveltekit/component-parser)** — inline `collectSvelteAndServerFiles` recurse 루프 → `walkDir(SVELTEKIT_EXCLUDE_DIRS)` + `nameFilter`. `file-finder.ts`에 `VUE_SPA_EXCLUDE_DIRS`·`SVELTEKIT_EXCLUDE_DIRS` 상수 추가.
+- **M11 (mermaid-renderer — buildRenderingDiagram config화)** — 7+1 FW if-else 체인 → `FW_CONFIGS: readonly FwConfig[]` 배열. `FwWrapper`·`FwConfig` 인터페이스 추가. 출력 문자열 7개 FW 케이스 수치 검증으로 byte-identical 확인. 신규 FW 어댑터 추가 시 config 항목 1개 추가만으로 확장 가능.
+
 ## [1.2.47] — 2026-05-28
 
 두 사이클 통합 릴리스 — **/refactoring 후속 12건** + **React Router 외부 import 라우트 추적 일반화**. verify.sh **737 PASS** · 회귀 0 · snapshot byte-identical · obsolete 0.

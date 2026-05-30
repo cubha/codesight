@@ -10,8 +10,8 @@ import {
   type IREdge,
   type Provenance,
 } from '@codebase-viz/types'
+import { walkDir, SVELTEKIT_EXCLUDE_DIRS } from '../../_shared/file-finder.js'
 
-const EXCLUDE_DIRS = new Set(['.git', 'node_modules', '.svelte-kit', 'dist', 'build'])
 const SVELTE_SCRIPT_RE = /<script(?:\s(?!context)[^>]*)?>(?<content>[\s\S]*?)<\/script>/
 const SERVER_FILE_RE = /^(\+(?:page|layout))\.server\.(ts|js)$/
 
@@ -21,27 +21,14 @@ interface CollectedFiles {
 }
 
 async function collectSvelteAndServerFiles(repoRoot: string): Promise<CollectedFiles> {
-  const svelteFiles: string[] = []
-  const serverFiles: string[] = []
-
-  async function recurse(dir: string): Promise<void> {
-    const entries = await fs.readdir(dir, { withFileTypes: true }).catch(() => null)
-    if (entries === null) return
-    for (const entry of entries) {
-      if (entry.isDirectory()) {
-        if (!EXCLUDE_DIRS.has(entry.name)) await recurse(path.join(dir, entry.name))
-      } else if (entry.isFile()) {
-        if (entry.name.endsWith('.svelte')) {
-          svelteFiles.push(path.join(dir, entry.name))
-        } else if (SERVER_FILE_RE.test(entry.name)) {
-          serverFiles.push(path.join(dir, entry.name))
-        }
-      }
-    }
+  const allFiles = await walkDir(repoRoot, {
+    excludeDirs: SVELTEKIT_EXCLUDE_DIRS,
+    nameFilter: (name) => name.endsWith('.svelte') || SERVER_FILE_RE.test(name),
+  })
+  return {
+    svelteFiles: allFiles.filter(f => f.endsWith('.svelte')),
+    serverFiles: allFiles.filter(f => SERVER_FILE_RE.test(path.basename(f))),
   }
-
-  await recurse(repoRoot)
-  return { svelteFiles, serverFiles }
 }
 
 async function readSvelteAliases(repoRoot: string): Promise<Map<string, string>> {

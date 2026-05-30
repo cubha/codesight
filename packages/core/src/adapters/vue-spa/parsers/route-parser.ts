@@ -8,26 +8,15 @@ import {
   type DynamicSegmentType,
   type Provenance,
 } from '@codebase-viz/types'
+import { walkDir, VUE_SPA_EXCLUDE_DIRS } from '../../_shared/file-finder.js'
 import { buildImportMap } from '../../_shared/ts-morph-utils.js'
 
-const EXCLUDE_DIRS = new Set(['.git', 'node_modules', 'dist', '.nuxt'])
-
 async function findTsFiles(repoRoot: string): Promise<string[]> {
-  const results: string[] = []
-  async function recurse(dir: string): Promise<void> {
-    const entries = await fs.readdir(dir, { withFileTypes: true }).catch(() => null)
-    if (entries === null) return
-    for (const entry of entries) {
-      if (entry.isDirectory()) {
-        if (!EXCLUDE_DIRS.has(entry.name)) await recurse(path.join(dir, entry.name))
-      } else if (entry.isFile() && (entry.name.endsWith('.ts') || entry.name.endsWith('.js'))
-        && !entry.name.endsWith('.d.ts') && !entry.name.endsWith('.test.ts')) {
-        results.push(path.join(dir, entry.name))
-      }
-    }
-  }
-  await recurse(repoRoot)
-  return results
+  return walkDir(repoRoot, {
+    extensions: new Set(['.ts', '.js']),
+    excludeDirs: VUE_SPA_EXCLUDE_DIRS,
+    nameFilter: (name) => !name.endsWith('.d.ts') && !name.endsWith('.test.ts'),
+  })
 }
 
 // v1.2.44 A1-1: path + componentSpec 추출.
