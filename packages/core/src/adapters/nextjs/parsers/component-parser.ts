@@ -12,13 +12,11 @@ import {
   type Provenance,
 } from '@codebase-viz/types'
 import { loadTsConfigPaths, type PathsMap } from '../../_shared/ts-config-loader.js'
-import { walkDir } from '../../_shared/file-finder.js'
+import { walkDir, NEXTJS_EXCLUDE_DIRS } from '../../_shared/file-finder.js'
 import { componentNameFromPath } from '../../_shared/component-name.js'
 
-const EXCLUDE_DIRS = new Set(['node_modules', '.next', '.git', 'dist'])
-
 async function collectTsxFiles(dir: string): Promise<string[]> {
-  return walkDir(dir, { extensions: new Set(['.tsx']), excludeDirs: EXCLUDE_DIRS })
+  return walkDir(dir, { extensions: new Set(['.tsx']), excludeDirs: NEXTJS_EXCLUDE_DIRS })
 }
 
 function resolveModuleSpecifier(

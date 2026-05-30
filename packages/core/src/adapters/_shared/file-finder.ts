@@ -17,6 +17,8 @@ export const VITE_EXCLUDE_DIRS = new Set(['.git', 'node_modules', 'dist', '.vite
 export const REMIX_EXCLUDE_DIRS = new Set(['.git', 'node_modules', 'build', '.cache'])
 export const REACTROUTER_EXCLUDE_DIRS = new Set(['.git', 'node_modules', 'dist', 'build', '.vite'])
 export const NESTJS_EXCLUDE_DIRS = new Set(['node_modules', '.git', 'dist', 'build', '.next'])
+export const VUE_SPA_EXCLUDE_DIRS = new Set(['.git', 'node_modules', 'dist', '.nuxt', '.vite', 'build'])
+export const SVELTEKIT_EXCLUDE_DIRS = new Set(['.git', 'node_modules', '.svelte-kit', 'dist', 'build'])
 
 // 범용 디렉토리 traverse. extensions·excludeDirs·nameFilter로 어댑터별 분기 흡수.
 export interface WalkDirOptions {

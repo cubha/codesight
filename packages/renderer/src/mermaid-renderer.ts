@@ -21,13 +21,88 @@ import {
 import { RENDERING_INIT, CLASS_DEFS } from './helpers/constants.js'
 import { sanitizeId } from './helpers/ids.js'
 import { findBranchingGroups, chunkGroups, GROUPS_PER_ROW, TAB2_GROUPS_PER_ROW, SINGLE_DIAGRAM_ROUTE_THRESHOLD } from './helpers/layout.js'
-import { metadataToInfra, isFileTreeTab2Eligible } from './fe/infra.js'
+import { metadataToInfra, isFileTreeTab2Eligible, type InfraInfo } from './fe/infra.js'
 import { emitTopLevelSiblingChain, buildNestedSubgraphLines, buildRouteRowDiagram } from './fe/nested.js'
 import { renderScreenSection } from './fe/tab2.js'
 import { buildFeFileTreeScreenDiagram } from './fe/tab2-file.js'
 import { buildBeRenderingDiagram } from './be/tab1.js'
 import { buildBeArchitectureDiagram } from './be/tab2.js'
 import { buildDbScreenDiagram } from './erd/db-diagram.js'
+
+interface FwWrapper { id: string; label: string }
+interface FwConfig {
+  check: (infra: InfraInfo, allCSR: boolean) => boolean
+  frontendRefId: string
+  wrappers: readonly FwWrapper[]
+}
+
+// FE Tab1 wrapper 레이어 config. 외부 edge 발사는 항상 frontendRefId(outermost) — mermaid v11 명세.
+// check 우선순위: nextjs-SSR > nextjs-CSR > vite > expo > react-router > vue-spa > angular > bare(fallback).
+const FW_CONFIGS: readonly FwConfig[] = [
+  {
+    check: (infra, allCSR) => infra.hasNextjs && !allCSR,
+    frontendRefId: 'INFRA',
+    wrappers: [
+      { id: 'INFRA', label: '☁ VERCEL · Edge Network' },
+      { id: 'RUNTIME', label: '⚙ Node.js · Server Runtime' },
+      { id: 'FRAMEWORK', label: '▲ Next.js · App Router' },
+      { id: 'REACT', label: '⚛ React · SSR Engine' },
+    ],
+  },
+  {
+    check: (infra, allCSR) => infra.hasNextjs && allCSR,
+    frontendRefId: 'BROWSER',
+    wrappers: [
+      { id: 'BROWSER', label: '🌐 Browser · Client-Side App' },
+      { id: 'FRAMEWORK', label: '▲ Next.js · App Router' },
+      { id: 'REACT', label: '⚛ React · CSR Engine' },
+    ],
+  },
+  {
+    check: (infra) => infra.hasVite,
+    frontendRefId: 'BROWSER',
+    wrappers: [
+      { id: 'BROWSER', label: '🌐 Browser · Client-Side App' },
+      { id: 'BUNDLER', label: '⚡ Vite · Dev/Build' },
+      { id: 'REACT', label: '⚛ React · CSR Engine' },
+    ],
+  },
+  {
+    check: (infra) => infra.hasExpo,
+    frontendRefId: 'MOBILE',
+    wrappers: [
+      { id: 'MOBILE', label: '📱 Mobile · iOS / Android' },
+      { id: 'RN', label: '⚛ React Native · Expo' },
+    ],
+  },
+  {
+    check: (infra) => infra.hasReactRouter,
+    frontendRefId: 'BROWSER',
+    wrappers: [
+      { id: 'BROWSER', label: '🌐 Browser · Client-Side App' },
+      { id: 'ROUTER', label: '🧭 React Router · SPA' },
+      { id: 'REACT', label: '⚛ React · CSR Engine' },
+    ],
+  },
+  {
+    check: (infra) => infra.hasVueSpa,
+    frontendRefId: 'BROWSER',
+    wrappers: [
+      { id: 'BROWSER', label: '🌐 Browser · Client-Side App' },
+      { id: 'ROUTER', label: '🧭 Vue Router · SPA' },
+      { id: 'VUE', label: '💚 Vue · CSR Engine' },
+    ],
+  },
+  {
+    check: (infra) => infra.hasAngular,
+    frontendRefId: 'BROWSER',
+    wrappers: [
+      { id: 'BROWSER', label: '🌐 Browser · Client-Side App' },
+      { id: 'ROUTER', label: '🧭 Angular Router · SPA' },
+      { id: 'ANGULAR', label: '🅰 Angular · CSR Engine' },
+    ],
+  },
+]
 
 function buildRenderingDiagram(graph: IRGraph): string {
   if (graph.metadata?.adapterCategory === 'BE') return buildBeRenderingDiagram(graph)
@@ -66,82 +141,21 @@ function buildRenderingDiagram(graph: IRGraph): string {
   // inner sub-cluster의 direction(LR + ~~~ chain)이 보존됨. middle/inner wrapper(REACT, VUE 등)에서
   // 외부 edge 발사하면 부모 direction 상속 연쇄로 top-level sibling이 Y축 stack됨.
   let frontendRef: string | undefined
-  if (infra.hasNextjs && !allCSR) {
-    frontendRef = 'INFRA'
-    lines.push(`  subgraph INFRA["☁ VERCEL · Edge Network"]`)
-    lines.push(`    subgraph RUNTIME["⚙ Node.js · Server Runtime"]`)
-    lines.push(`      subgraph FRAMEWORK["▲ Next.js · App Router"]`)
-    lines.push(`        subgraph REACT["⚛ React · SSR Engine"]`)
-    // SSR_FETCH 더미 노드 제거 — REACT subgraph 내부 노드가 외부 edge 가지면
-    // REACT direction이 무력화되어 top-level sibling Y축 회귀. 외부 edge는 frontendRef(INFRA)에서 발사.
-    for (const l of buildNestedSubgraphLines(routeGroups, '          ')) lines.push(l)
-    const topChainSsr = emitTopLevelSiblingChain(routeGroups, '          ')
-    if (topChainSsr !== undefined) lines.push(topChainSsr)
-
-    lines.push('        end\n      end\n    end\n  end')
-  } else if (infra.hasNextjs && allCSR) {
-    frontendRef = 'BROWSER'
-    lines.push(`  subgraph BROWSER["🌐 Browser · Client-Side App"]`)
-    lines.push(`    subgraph FRAMEWORK["▲ Next.js · App Router"]`)
-    lines.push(`      subgraph REACT["⚛ React · CSR Engine"]`)
-    for (const l of buildNestedSubgraphLines(routeGroups, '        ')) lines.push(l)
-    const topChainCsr = emitTopLevelSiblingChain(routeGroups, '        ')
-    if (topChainCsr !== undefined) lines.push(topChainCsr)
-
-    lines.push('      end\n    end\n  end')
-  } else if (infra.hasVite) {
-    // Vite는 화면 프레임워크가 아닌 빌드 도구. framework='vite-react'(LLM-only)인 SPA용 Tab1 메타 표현.
-    // Vite + React + react-router 조합은 react-router 어댑터 분기가 우선됨(stack-detector 우선순위).
-    frontendRef = 'BROWSER'
-    lines.push(`  subgraph BROWSER["🌐 Browser · Client-Side App"]`)
-    lines.push(`    subgraph BUNDLER["⚡ Vite · Dev/Build"]`)
-    lines.push(`      subgraph REACT["⚛ React · CSR Engine"]`)
-    for (const l of buildNestedSubgraphLines(routeGroups, '        ')) lines.push(l)
-    const topChainVite = emitTopLevelSiblingChain(routeGroups, '        ')
-    if (topChainVite !== undefined) lines.push(topChainVite)
-
-    lines.push('      end\n    end\n  end')
-  } else if (infra.hasExpo) {
-    // Expo는 화면 프레임워크가 아닌 RN 모바일 플랫폼. framework='expo'(LLM-only) 또는 deployTarget='mobile' Tab1 메타.
-    // 실제 화면은 React Native 컴포넌트. 정적 어댑터 미등록 — routes는 LLM 결과로만 채워짐.
-    frontendRef = 'MOBILE'
-    lines.push(`  subgraph MOBILE["📱 Mobile · iOS / Android"]`)
-    lines.push(`    subgraph RN["⚛ React Native · Expo"]`)
-    for (const l of buildNestedSubgraphLines(routeGroups, '      ')) lines.push(l)
-    const topChainExpo = emitTopLevelSiblingChain(routeGroups, '      ')
-    if (topChainExpo !== undefined) lines.push(topChainExpo)
-
-    lines.push('    end\n  end')
-  } else if (infra.hasReactRouter) {
-    frontendRef = 'BROWSER'
-    lines.push(`  subgraph BROWSER["🌐 Browser · Client-Side App"]`)
-    lines.push(`    subgraph ROUTER["🧭 React Router · SPA"]`)
-    lines.push(`      subgraph REACT["⚛ React · CSR Engine"]`)
-    for (const l of buildNestedSubgraphLines(routeGroups, '        ')) lines.push(l)
-    const topChainRR = emitTopLevelSiblingChain(routeGroups, '        ')
-    if (topChainRR !== undefined) lines.push(topChainRR)
-
-    lines.push('      end\n    end\n  end')
-  } else if (infra.hasVueSpa) {
-    frontendRef = 'BROWSER'
-    lines.push(`  subgraph BROWSER["🌐 Browser · Client-Side App"]`)
-    lines.push(`    subgraph ROUTER["🧭 Vue Router · SPA"]`)
-    lines.push(`      subgraph VUE["💚 Vue · CSR Engine"]`)
-    for (const l of buildNestedSubgraphLines(routeGroups, '        ')) lines.push(l)
-    const topChainVue = emitTopLevelSiblingChain(routeGroups, '        ')
-    if (topChainVue !== undefined) lines.push(topChainVue)
-
-    lines.push('      end\n    end\n  end')
-  } else if (infra.hasAngular) {
-    frontendRef = 'BROWSER'
-    lines.push(`  subgraph BROWSER["🌐 Browser · Client-Side App"]`)
-    lines.push(`    subgraph ROUTER["🧭 Angular Router · SPA"]`)
-    lines.push(`      subgraph ANGULAR["🅰 Angular · CSR Engine"]`)
-    for (const l of buildNestedSubgraphLines(routeGroups, '        ')) lines.push(l)
-    const topChainAng = emitTopLevelSiblingChain(routeGroups, '        ')
-    if (topChainAng !== undefined) lines.push(topChainAng)
-
-    lines.push('      end\n    end\n  end')
+  const fwConfig = FW_CONFIGS.find(cfg => cfg.check(infra, allCSR))
+  if (fwConfig !== undefined) {
+    frontendRef = fwConfig.frontendRefId
+    let depth = 0
+    for (const w of fwConfig.wrappers) {
+      lines.push(`${'  '.repeat(depth + 1)}subgraph ${w.id}["${w.label}"]`)
+      depth++
+    }
+    const innerIndent = '  '.repeat(depth + 1)
+    for (const l of buildNestedSubgraphLines(routeGroups, innerIndent)) lines.push(l)
+    const topChain = emitTopLevelSiblingChain(routeGroups, innerIndent)
+    if (topChain !== undefined) lines.push(topChain)
+    const closeParts: string[] = []
+    while (depth > 0) { closeParts.push(`${'  '.repeat(depth)}end`); depth-- }
+    lines.push(closeParts.join('\n'))
   } else {
     for (const l of buildNestedSubgraphLines(routeGroups, '  ')) lines.push(l)
     const topChainBare = emitTopLevelSiblingChain(routeGroups, '  ')
