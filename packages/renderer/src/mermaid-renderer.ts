@@ -20,7 +20,7 @@ import {
 } from './_shared/wrap-fallback.js'
 import { RENDERING_INIT, CLASS_DEFS } from './helpers/constants.js'
 import { sanitizeId } from './helpers/ids.js'
-import { findBranchingGroups, chunkGroups, splitGroupsByNodeBound, CHUNK_ROUTE_BUDGET, SINGLE_DIAGRAM_ROUTE_THRESHOLD } from './helpers/layout.js'
+import { findBranchingGroups, chunkGroups, splitGroupsByNodeBound, CHUNK_ROUTE_BUDGET, SINGLE_DIAGRAM_ROUTE_THRESHOLD, GROUPS_PER_ROW } from './helpers/layout.js'
 import { metadataToInfra, isFileTreeTab2Eligible, type InfraInfo } from './fe/infra.js'
 import { emitTopLevelSiblingChain, buildNestedSubgraphLines, buildRouteRowDiagram } from './fe/nested.js'
 import { renderScreenSection } from './fe/tab2.js'
@@ -115,12 +115,14 @@ function buildRenderingDiagram(graph: IRGraph): string {
 
   const routeGroups = groupRoutesByUrl(routeNodes)
   const branchingGroups = findBranchingGroups(routeGroups)
-  if (routeNodes.length > SINGLE_DIAGRAM_ROUTE_THRESHOLD) {
-    // v1.2.49 B-6: routeCount 단독 게이트(branchingGroups>5 AND 제거) — 소수 브랜치에
-    //   깊게 중첩된 대형 라우트도 청킹되도록. 작은 프로젝트는 여전히 single-diagram.
-    // v1.2.49 B-7: 청크 입자를 노드 수 바운드로 — 거대 단일 브랜치가 단일 다이어그램으로
-    //   메인 스레드를 점유해 webview가 freeze되던 결함 해소.
-    const chunks = splitGroupsByNodeBound(branchingGroups, CHUNK_ROUTE_BUDGET)
+  // v1.2.49 B-6: routeCount 단독 게이트 — 소수 브랜치에 깊게 중첩된 대형 라우트도 청킹.
+  // v1.2.51 C2: top-level 형제 그룹>GROUPS_PER_ROW면 route 수 무관 청킹. 소형-다도메인이
+  //   단일 graph LR로 강제돼 형제를 한 가로줄에 깔아 20:1 띠로 압축되던 결함 해소.
+  //   viewer row-mode CSS 그리드가 청크를 다중 행/열로 배치 → 전 도메인 readable.
+  //   (v1.1.53 'Y축 단조 나열' 우려는 v1.1.6 T3 grid 도입으로 이미 해소 — 실측 확인).
+  if (routeNodes.length > SINGLE_DIAGRAM_ROUTE_THRESHOLD || branchingGroups.length > GROUPS_PER_ROW) {
+    // v1.2.49 B-7: 청크 입자를 노드 수 바운드(거대 단일 브랜치 freeze 해소) + v1.2.51 형제 수 바운드.
+    const chunks = splitGroupsByNodeBound(branchingGroups, CHUNK_ROUTE_BUDGET, GROUPS_PER_ROW)
     return joinChunks(chunks.map(gs => buildRouteRowDiagram(gs)))
   }
 

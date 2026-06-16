@@ -28,6 +28,7 @@ const FIXTURE_LIST = [
   'mini-react-router-app',
   'mini-react-partner-mock-app',
   'mini-react-router-domain-app',
+  'mini-react-router-wina-app',
   'mini-nextpages-app',
 ] as const
 

@@ -2,8 +2,13 @@
 
 ## Project Overview
 
-CLI tool that analyzes Next.js 15 App Router + Supabase (ORM-less) codebases
-and produces 3-axis visualizations (.md + .mmd output).
+CLI tool that analyzes multi-stack codebases and produces 3-axis
+visualizations (.md + .mmd output). Started with Next.js 15 App Router +
+Supabase (ORM-less); now supports multiple frameworks via per-stack adapters.
+
+**Multi-stack rule:** new stacks are added as an `IAdapter` implementation.
+Do NOT widen the shared IR or overwrite via LLM merger
+(rejected: LLM merger 덮어쓰기 · ComponentNode.kind 추가 — Evidence-First/IR 변경금지 위반).
 
 **Absolute Principles:**
 1. **Less is More** — emit only high-confidence, meaningful edges. Noise is worse than silence.
@@ -60,5 +65,3 @@ Key factories:
 ```bash
 bash verify.sh   # tsc --build + vitest run
 ```
-
-Wave 2 DONE criteria: `fixtures/mini-next-app` 대상 각 파서 단위 테스트 PASS

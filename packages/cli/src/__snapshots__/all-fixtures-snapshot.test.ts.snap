@@ -1351,6 +1351,374 @@ graph LR
   route_src_router_tsx__perf_trans --> ep_GET__api_partner_perf_trans"
 `;
 
+exports[`Phase XI — fixture baseline snapshots (P1) > mini-react-router-wina-app > IRGraph summary 1`] = `
+{
+  "edgeIds": [
+    "renders:route:src/routers/Router.tsx:/*:component:src/pages/layouts.tsx:RootRedirect",
+    "renders:route:src/routers/Router.tsx:/:component:src/pages/layouts.tsx:RootRedirect",
+    "renders:route:src/routers/Router.tsx:/headOffice/alloc/regionalRank/regional-rank:component:src/pages/headOffice/alloc/regional-rank-page.tsx:RegionalRankPage",
+    "renders:route:src/routers/Router.tsx:/headOffice/order/orderChange/order-cancel-change-mgmt:component:src/pages/headOffice/order/order-cancel-change-mgmt-page.tsx:OrderCancelChangeMgmtPage",
+    "renders:route:src/routers/Router.tsx:/home:component:src/pages/home-page.tsx:HomePage",
+    "renders:route:src/routers/Router.tsx:/login:component:src/pages/layouts.tsx:RootRedirect",
+    "renders:route:src/routers/Router.tsx:/mobile/board/notice/detail/:noticeNo:component:src/pages/mobile/board/mobile-notice-detail-page.tsx:MobileNoticeDetailPage",
+    "renders:route:src/routers/Router.tsx:/mobile/home:component:src/pages/mobile/mobile-home-page.tsx:MobileHomePage",
+    "renders:route:src/routers/Router.tsx:/mobile/login:component:src/pages/common/mobile-login-page.tsx:MobileLoginPage",
+    "renders:route:src/routers/Router.tsx:/mobile:component:src/pages/layouts.tsx:RootRedirect",
+    "renders:route:src/routers/Router.tsx:/model/base-info/fnsh-prod/detail/:sapProdCd/:sn:component:src/pages/model/baseInfo/sap-prod-detail-page.tsx:SapProdDetailPage",
+    "renders:route:src/routers/Router.tsx:/not-found:component:src/pages/layouts.tsx:RootRedirect",
+    "renders:route:src/routers/Router.tsx:/partner/matMgmt/decoSheet:component:src/pages/partner/matMgmt/deco-sheet-page.tsx:DecoSheetPage",
+    "renders:route:src/routers/Router.tsx:/partner/materialMgmt/cuttingPlan:component:src/pages/partner/materialMgmt/cutting-plan-page.tsx:CuttingPlanPage",
+    "renders:route:src/routers/Router.tsx:/partner/ordProdPlanMgmt/ordRcvMgmt/ordRcvSearch/detail/:ordNo:component:src/pages/partner/ordProdPlanMgmt/ord-rcv-detail-page.tsx:OrdRcvDetailPage",
+    "renders:route:src/routers/Router.tsx:/partner/ordProdPlanMgmt/prodOrdSpec:component:src/pages/partner/ordProdPlanMgmt/prod-ord-spec-page.tsx:ProdOrdSpecPage",
+    "renders:route:src/routers/Router.tsx:/system/code:component:src/pages/system/code/code-page.tsx:CodePage",
+    "renders:route:src/routers/Router.tsx:/system/message:component:src/pages/system/message/message-page.tsx:MessagePage",
+    "renders:route:src/routers/Router.tsx:/system/notice/:noticeTpCd/list:component:src/pages/system/notice/notice-list-page.tsx:NoticeListPage",
+  ],
+  "edgesByKind": {
+    "renders": 19,
+  },
+  "nodeIds": [
+    "component:src/pages/common/mobile-login-page.tsx:MobileLoginPage",
+    "component:src/pages/headOffice/alloc/regional-rank-page.tsx:RegionalRankPage",
+    "component:src/pages/headOffice/order/order-cancel-change-mgmt-page.tsx:OrderCancelChangeMgmtPage",
+    "component:src/pages/home-page.tsx:HomePage",
+    "component:src/pages/layouts.tsx:RootRedirect",
+    "component:src/pages/mobile/board/mobile-notice-detail-page.tsx:MobileNoticeDetailPage",
+    "component:src/pages/mobile/mobile-home-page.tsx:MobileHomePage",
+    "component:src/pages/model/baseInfo/sap-prod-detail-page.tsx:SapProdDetailPage",
+    "component:src/pages/partner/matMgmt/deco-sheet-page.tsx:DecoSheetPage",
+    "component:src/pages/partner/materialMgmt/cutting-plan-page.tsx:CuttingPlanPage",
+    "component:src/pages/partner/ordProdPlanMgmt/ord-rcv-detail-page.tsx:OrdRcvDetailPage",
+    "component:src/pages/partner/ordProdPlanMgmt/prod-ord-spec-page.tsx:ProdOrdSpecPage",
+    "component:src/pages/system/code/code-page.tsx:CodePage",
+    "component:src/pages/system/message/message-page.tsx:MessagePage",
+    "component:src/pages/system/notice/notice-list-page.tsx:NoticeListPage",
+    "route:src/routers/Router.tsx:/",
+    "route:src/routers/Router.tsx:/*",
+    "route:src/routers/Router.tsx:/agency/agencyFactory/masterMgmt/customerMgmt",
+    "route:src/routers/Router.tsx:/agency/agencyFactory/masterMgmt/jobsMgmt",
+    "route:src/routers/Router.tsx:/agency/agencyFactory/quotationWork/quotationContract",
+    "route:src/routers/Router.tsx:/headOffice/alloc/regionalRank/regional-rank",
+    "route:src/routers/Router.tsx:/headOffice/order/orderChange/order-cancel-change-mgmt",
+    "route:src/routers/Router.tsx:/home",
+    "route:src/routers/Router.tsx:/login",
+    "route:src/routers/Router.tsx:/mobile",
+    "route:src/routers/Router.tsx:/mobile/board/notice/detail/:noticeNo",
+    "route:src/routers/Router.tsx:/mobile/home",
+    "route:src/routers/Router.tsx:/mobile/login",
+    "route:src/routers/Router.tsx:/model/base-info/fnsh-prod/detail/:sapProdCd/:sn",
+    "route:src/routers/Router.tsx:/not-found",
+    "route:src/routers/Router.tsx:/partner/matMgmt/decoSheet",
+    "route:src/routers/Router.tsx:/partner/materialMgmt/cuttingPlan",
+    "route:src/routers/Router.tsx:/partner/ordProdPlanMgmt/ordRcvMgmt/ordRcvSearch/detail/:ordNo",
+    "route:src/routers/Router.tsx:/partner/ordProdPlanMgmt/prodOrdSpec",
+    "route:src/routers/Router.tsx:/system/code",
+    "route:src/routers/Router.tsx:/system/message",
+    "route:src/routers/Router.tsx:/system/notice/:noticeTpCd/list",
+  ],
+  "nodesByKind": {
+    "component": 15,
+    "route": 22,
+  },
+}
+`;
+
+exports[`Phase XI — fixture baseline snapshots (P1) > mini-react-router-wina-app > Tab1 rendering diagram 1`] = `
+"%% chunk:1/3
+%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0c1a30','primaryTextColor':'#7dd3fc','primaryBorderColor':'#0e3a6e','edgeLabelBackground':'#0c1a30','lineColor':'#334155','secondaryColor':'#0f172a','clusterBkg':'#060c18','clusterBorder':'#1e3a5f','fontFamily':'JetBrains Mono','fontSize':'14'}}}%%
+graph LR
+  classDef ssr fill:#0d1a0d,stroke:#16a34a,color:#86efac
+  classDef csr fill:#2d1200,stroke:#c2410c,color:#fb923c
+  classDef ssg fill:#1a0d1a,stroke:#7c3aed,color:#c4b5fd
+  classDef isr fill:#1a1a0d,stroke:#ca8a04,color:#fde047
+  classDef ppr fill:#0d1a2d,stroke:#2563eb,color:#93c5fd
+  classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
+  classDef pkg fill:#0c1018,stroke:#475569,color:#cbd5e1
+  classDef muted fill:#0a0d14,stroke:#374151,color:#64748b,stroke-dasharray: 3 3
+  classDef hdr fill:#06080f,stroke:#1e3a5f,color:#7dd3fc
+  route_src_routers_Router_tsx__["/ · CSR"]:::csr
+  route_src_routers_Router_tsx__login["/login · CSR"]:::csr
+  subgraph MOBILE_G["📄 /mobile"]
+    route_src_routers_Router_tsx__mobile["mobile · CSR"]:::csr
+    route_src_routers_Router_tsx__mobile_login["login · CSR"]:::csr
+    route_src_routers_Router_tsx__mobile_home["home · CSR"]:::csr
+    subgraph MOBILE_BOARD_G["📄 /board"]
+      subgraph MOBILE_BOARD_NOTICE_DETAIL__NOTICENO_G["📄 /:noticeNo"]
+        route_src_routers_Router_tsx__mobile_board_notice_detail__noticeNo[":noticeNo · CSR"]:::csr
+      end
+    end
+  end
+  route_src_routers_Router_tsx__mobile_login ~~~ route_src_routers_Router_tsx__mobile_home ~~~ MOBILE_BOARD_G
+  route_src_routers_Router_tsx__home["/home · CSR"]:::csr
+  subgraph SYSTEM_G["📄 /system"]
+    route_src_routers_Router_tsx__system_code["code · CSR"]:::csr
+    route_src_routers_Router_tsx__system_message["message · CSR"]:::csr
+    subgraph SYSTEM_NOTICE_G["📄 /notice"]
+      route_src_routers_Router_tsx__system_notice__noticeTpCd_list[":noticeTpCd/list · CSR"]:::csr
+    end
+  end
+  route_src_routers_Router_tsx__system_code ~~~ route_src_routers_Router_tsx__system_message ~~~ SYSTEM_NOTICE_G
+%%--CHUNK--%%
+%% chunk:2/3
+%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0c1a30','primaryTextColor':'#7dd3fc','primaryBorderColor':'#0e3a6e','edgeLabelBackground':'#0c1a30','lineColor':'#334155','secondaryColor':'#0f172a','clusterBkg':'#060c18','clusterBorder':'#1e3a5f','fontFamily':'JetBrains Mono','fontSize':'14'}}}%%
+graph LR
+  classDef ssr fill:#0d1a0d,stroke:#16a34a,color:#86efac
+  classDef csr fill:#2d1200,stroke:#c2410c,color:#fb923c
+  classDef ssg fill:#1a0d1a,stroke:#7c3aed,color:#c4b5fd
+  classDef isr fill:#1a1a0d,stroke:#ca8a04,color:#fde047
+  classDef ppr fill:#0d1a2d,stroke:#2563eb,color:#93c5fd
+  classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
+  classDef pkg fill:#0c1018,stroke:#475569,color:#cbd5e1
+  classDef muted fill:#0a0d14,stroke:#374151,color:#64748b,stroke-dasharray: 3 3
+  classDef hdr fill:#06080f,stroke:#1e3a5f,color:#7dd3fc
+  subgraph MODEL_G["📄 /model"]
+    subgraph MODEL_BASE_INFO_FNSH_PROD_DETAIL__SAPPRODCD__SN_G["📄 /:sn"]
+      route_src_routers_Router_tsx__model_base_info_fnsh_prod_detail__sapProdCd__sn[":sn · CSR"]:::csr
+    end
+  end
+  subgraph HEADOFFICE_G["📄 /headOffice"]
+    subgraph HEADOFFICE_ALLOC_G["📄 /alloc"]
+      route_src_routers_Router_tsx__headOffice_alloc_regionalRank_regional_rank["regionalRank/regional-rank · CSR"]:::csr
+    end
+    subgraph HEADOFFICE_ORDER_G["📄 /order"]
+      route_src_routers_Router_tsx__headOffice_order_orderChange_order_cancel_change_mgmt["orderChange/order-cancel-change-mgmt · CSR"]:::csr
+    end
+  end
+  HEADOFFICE_ALLOC_G ~~~ HEADOFFICE_ORDER_G
+  subgraph AGENCY_G["📄 /agency"]
+    subgraph AGENCY_AGENCYFACTORY_G["📄 /agencyFactory"]
+      subgraph AGENCY_AGENCYFACTORY_MASTERMGMT_G["📄 /masterMgmt"]
+        route_src_routers_Router_tsx__agency_agencyFactory_masterMgmt_customerMgmt["customerMgmt · CSR"]:::csr
+        route_src_routers_Router_tsx__agency_agencyFactory_masterMgmt_jobsMgmt["jobsMgmt · CSR"]:::csr
+      end
+      route_src_routers_Router_tsx__agency_agencyFactory_masterMgmt_customerMgmt ~~~ route_src_routers_Router_tsx__agency_agencyFactory_masterMgmt_jobsMgmt
+      subgraph AGENCY_AGENCYFACTORY_QUOTATIONWORK_G["📄 /quotationWork"]
+        route_src_routers_Router_tsx__agency_agencyFactory_quotationWork_quotationContract["quotationContract · CSR"]:::csr
+      end
+    end
+    AGENCY_AGENCYFACTORY_MASTERMGMT_G ~~~ AGENCY_AGENCYFACTORY_QUOTATIONWORK_G
+  end
+  subgraph PARTNER_G["📄 /partner"]
+    subgraph PARTNER_ORDPRODPLANMGMT_G["📄 /ordProdPlanMgmt"]
+      subgraph PARTNER_ORDPRODPLANMGMT_ORDRCVMGMT_G["📄 /ordRcvMgmt"]
+        subgraph PARTNER_ORDPRODPLANMGMT_ORDRCVMGMT_ORDRCVSEARCH_DETAIL__ORDNO_G["📄 /:ordNo"]
+          route_src_routers_Router_tsx__partner_ordProdPlanMgmt_ordRcvMgmt_ordRcvSearch_detail__ordNo[":ordNo · CSR"]:::csr
+        end
+      end
+      route_src_routers_Router_tsx__partner_ordProdPlanMgmt_prodOrdSpec["prodOrdSpec · CSR"]:::csr
+    end
+    PARTNER_ORDPRODPLANMGMT_ORDRCVMGMT_G ~~~ route_src_routers_Router_tsx__partner_ordProdPlanMgmt_prodOrdSpec
+    subgraph PARTNER_MATMGMT_G["📄 /matMgmt"]
+      route_src_routers_Router_tsx__partner_matMgmt_decoSheet["decoSheet · CSR"]:::csr
+    end
+    subgraph PARTNER_MATERIALMGMT_G["📄 /materialMgmt"]
+      route_src_routers_Router_tsx__partner_materialMgmt_cuttingPlan["cuttingPlan · CSR"]:::csr
+    end
+  end
+  PARTNER_ORDPRODPLANMGMT_G ~~~ PARTNER_MATMGMT_G ~~~ PARTNER_MATERIALMGMT_G
+  route_src_routers_Router_tsx__not_found["/not-found · CSR"]:::csr
+%%--CHUNK--%%
+%% chunk:3/3
+%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0c1a30','primaryTextColor':'#7dd3fc','primaryBorderColor':'#0e3a6e','edgeLabelBackground':'#0c1a30','lineColor':'#334155','secondaryColor':'#0f172a','clusterBkg':'#060c18','clusterBorder':'#1e3a5f','fontFamily':'JetBrains Mono','fontSize':'14'}}}%%
+graph LR
+  classDef ssr fill:#0d1a0d,stroke:#16a34a,color:#86efac
+  classDef csr fill:#2d1200,stroke:#c2410c,color:#fb923c
+  classDef ssg fill:#1a0d1a,stroke:#7c3aed,color:#c4b5fd
+  classDef isr fill:#1a1a0d,stroke:#ca8a04,color:#fde047
+  classDef ppr fill:#0d1a2d,stroke:#2563eb,color:#93c5fd
+  classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
+  classDef pkg fill:#0c1018,stroke:#475569,color:#cbd5e1
+  classDef muted fill:#0a0d14,stroke:#374151,color:#64748b,stroke-dasharray: 3 3
+  classDef hdr fill:#06080f,stroke:#1e3a5f,color:#7dd3fc
+  route_src_routers_Router_tsx___["/* · CSR"]:::csr"
+`;
+
+exports[`Phase XI — fixture baseline snapshots (P1) > mini-react-router-wina-app > Tab2 screen-component diagram 1`] = `
+"%% chunk:1/8
+%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0c1a30','primaryTextColor':'#7dd3fc','primaryBorderColor':'#0e3a6e','edgeLabelBackground':'#0c1a30','lineColor':'#334155','secondaryColor':'#0f172a','clusterBkg':'#060c18','clusterBorder':'#1e3a5f','fontFamily':'JetBrains Mono','fontSize':'14'}}}%%
+graph TD
+  classDef ssr fill:#0d1a0d,stroke:#16a34a,color:#86efac
+  classDef csr fill:#2d1200,stroke:#c2410c,color:#fb923c
+  classDef ssg fill:#1a0d1a,stroke:#7c3aed,color:#c4b5fd
+  classDef isr fill:#1a1a0d,stroke:#ca8a04,color:#fde047
+  classDef ppr fill:#0d1a2d,stroke:#2563eb,color:#93c5fd
+  classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
+  classDef pkg fill:#0c1018,stroke:#475569,color:#cbd5e1
+  classDef muted fill:#0a0d14,stroke:#374151,color:#64748b,stroke-dasharray: 3 3
+  classDef hdr fill:#06080f,stroke:#1e3a5f,color:#7dd3fc
+  subgraph HDR_PAGES ["📁 src/pages/common"]
+    direction TB
+  pageleaf_route_src_routers_Router_tsx__mobile_login["login · CSR<br/>📄 mobile-login-page.tsx"]:::csr
+  end
+%%--CHUNK--%%
+%% chunk:2/8
+%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0c1a30','primaryTextColor':'#7dd3fc','primaryBorderColor':'#0e3a6e','edgeLabelBackground':'#0c1a30','lineColor':'#334155','secondaryColor':'#0f172a','clusterBkg':'#060c18','clusterBorder':'#1e3a5f','fontFamily':'JetBrains Mono','fontSize':'14'}}}%%
+graph TD
+  classDef ssr fill:#0d1a0d,stroke:#16a34a,color:#86efac
+  classDef csr fill:#2d1200,stroke:#c2410c,color:#fb923c
+  classDef ssg fill:#1a0d1a,stroke:#7c3aed,color:#c4b5fd
+  classDef isr fill:#1a1a0d,stroke:#ca8a04,color:#fde047
+  classDef ppr fill:#0d1a2d,stroke:#2563eb,color:#93c5fd
+  classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
+  classDef pkg fill:#0c1018,stroke:#475569,color:#cbd5e1
+  classDef muted fill:#0a0d14,stroke:#374151,color:#64748b,stroke-dasharray: 3 3
+  classDef hdr fill:#06080f,stroke:#1e3a5f,color:#7dd3fc
+  subgraph HDR_PAGES ["📁 src/pages/system"]
+    direction TB
+  pkg_system__code["code"]:::pkg
+  pkg_system__message["message"]:::pkg
+  pkg_system__notice["notice"]:::pkg
+  pageleaf_route_src_routers_Router_tsx__system_code["code · CSR<br/>📄 code-page.tsx"]:::csr
+  pkg_system__code --> pageleaf_route_src_routers_Router_tsx__system_code
+  pageleaf_route_src_routers_Router_tsx__system_message["message · CSR<br/>📄 message-page.tsx"]:::csr
+  pkg_system__message --> pageleaf_route_src_routers_Router_tsx__system_message
+  pageleaf_route_src_routers_Router_tsx__system_notice__noticeTpCd_list["list · CSR<br/>📄 notice-list-page.tsx"]:::csr
+  pkg_system__notice --> pageleaf_route_src_routers_Router_tsx__system_notice__noticeTpCd_list
+  end
+%%--CHUNK--%%
+%% chunk:3/8
+%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0c1a30','primaryTextColor':'#7dd3fc','primaryBorderColor':'#0e3a6e','edgeLabelBackground':'#0c1a30','lineColor':'#334155','secondaryColor':'#0f172a','clusterBkg':'#060c18','clusterBorder':'#1e3a5f','fontFamily':'JetBrains Mono','fontSize':'14'}}}%%
+graph TD
+  classDef ssr fill:#0d1a0d,stroke:#16a34a,color:#86efac
+  classDef csr fill:#2d1200,stroke:#c2410c,color:#fb923c
+  classDef ssg fill:#1a0d1a,stroke:#7c3aed,color:#c4b5fd
+  classDef isr fill:#1a1a0d,stroke:#ca8a04,color:#fde047
+  classDef ppr fill:#0d1a2d,stroke:#2563eb,color:#93c5fd
+  classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
+  classDef pkg fill:#0c1018,stroke:#475569,color:#cbd5e1
+  classDef muted fill:#0a0d14,stroke:#374151,color:#64748b,stroke-dasharray: 3 3
+  classDef hdr fill:#06080f,stroke:#1e3a5f,color:#7dd3fc
+  subgraph HDR_PAGES ["📁 src/pages/model"]
+    direction TB
+  pkg_model__baseInfo["baseInfo"]:::pkg
+  pageleaf_route_src_routers_Router_tsx__model_base_info_fnsh_prod_detail__sapProdCd__sn[":sn · CSR<br/>📄 sap-prod-detail-page.tsx"]:::csr
+  pkg_model__baseInfo --> pageleaf_route_src_routers_Router_tsx__model_base_info_fnsh_prod_detail__sapProdCd__sn
+  end
+%%--CHUNK--%%
+%% chunk:4/8
+%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0c1a30','primaryTextColor':'#7dd3fc','primaryBorderColor':'#0e3a6e','edgeLabelBackground':'#0c1a30','lineColor':'#334155','secondaryColor':'#0f172a','clusterBkg':'#060c18','clusterBorder':'#1e3a5f','fontFamily':'JetBrains Mono','fontSize':'14'}}}%%
+graph TD
+  classDef ssr fill:#0d1a0d,stroke:#16a34a,color:#86efac
+  classDef csr fill:#2d1200,stroke:#c2410c,color:#fb923c
+  classDef ssg fill:#1a0d1a,stroke:#7c3aed,color:#c4b5fd
+  classDef isr fill:#1a1a0d,stroke:#ca8a04,color:#fde047
+  classDef ppr fill:#0d1a2d,stroke:#2563eb,color:#93c5fd
+  classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
+  classDef pkg fill:#0c1018,stroke:#475569,color:#cbd5e1
+  classDef muted fill:#0a0d14,stroke:#374151,color:#64748b,stroke-dasharray: 3 3
+  classDef hdr fill:#06080f,stroke:#1e3a5f,color:#7dd3fc
+  subgraph HDR_PAGES ["📁 src/pages/headOffice"]
+    direction TB
+  pkg_headOffice__alloc["alloc"]:::pkg
+  pkg_headOffice__order["order"]:::pkg
+  pageleaf_route_src_routers_Router_tsx__headOffice_alloc_regionalRank_regional_rank["regional-rank · CSR<br/>📄 regional-rank-page.tsx"]:::csr
+  pkg_headOffice__alloc --> pageleaf_route_src_routers_Router_tsx__headOffice_alloc_regionalRank_regional_rank
+  pageleaf_route_src_routers_Router_tsx__headOffice_order_orderChange_order_cancel_change_mgmt["order-cancel-change-mgmt · CSR<br/>📄 order-cancel-change-mgmt-page.tsx"]:::csr
+  pkg_headOffice__order --> pageleaf_route_src_routers_Router_tsx__headOffice_order_orderChange_order_cancel_change_mgmt
+  end
+%%--CHUNK--%%
+%% chunk:5/8
+%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0c1a30','primaryTextColor':'#7dd3fc','primaryBorderColor':'#0e3a6e','edgeLabelBackground':'#0c1a30','lineColor':'#334155','secondaryColor':'#0f172a','clusterBkg':'#060c18','clusterBorder':'#1e3a5f','fontFamily':'JetBrains Mono','fontSize':'14'}}}%%
+graph TD
+  classDef ssr fill:#0d1a0d,stroke:#16a34a,color:#86efac
+  classDef csr fill:#2d1200,stroke:#c2410c,color:#fb923c
+  classDef ssg fill:#1a0d1a,stroke:#7c3aed,color:#c4b5fd
+  classDef isr fill:#1a1a0d,stroke:#ca8a04,color:#fde047
+  classDef ppr fill:#0d1a2d,stroke:#2563eb,color:#93c5fd
+  classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
+  classDef pkg fill:#0c1018,stroke:#475569,color:#cbd5e1
+  classDef muted fill:#0a0d14,stroke:#374151,color:#64748b,stroke-dasharray: 3 3
+  classDef hdr fill:#06080f,stroke:#1e3a5f,color:#7dd3fc
+  subgraph HDR_PAGES ["📁 src/pages/agency"]
+    direction TB
+  pkg_agency__agencyFactory["agencyFactory"]:::pkg
+  pkg_agency__agencyFactory__masterMgmt["masterMgmt"]:::pkg
+  pkg_agency__agencyFactory --> pkg_agency__agencyFactory__masterMgmt
+  pkg_agency__agencyFactory__quotationWork["quotationWork"]:::pkg
+  pkg_agency__agencyFactory --> pkg_agency__agencyFactory__quotationWork
+  pageleaf_route_src_routers_Router_tsx__agency_agencyFactory_masterMgmt_customerMgmt["customerMgmt · CSR"]:::csr
+  pkg_agency__agencyFactory__masterMgmt --> pageleaf_route_src_routers_Router_tsx__agency_agencyFactory_masterMgmt_customerMgmt
+  pageleaf_route_src_routers_Router_tsx__agency_agencyFactory_masterMgmt_jobsMgmt["jobsMgmt · CSR"]:::csr
+  pkg_agency__agencyFactory__masterMgmt --> pageleaf_route_src_routers_Router_tsx__agency_agencyFactory_masterMgmt_jobsMgmt
+  pageleaf_route_src_routers_Router_tsx__agency_agencyFactory_quotationWork_quotationContract["quotationContract · CSR"]:::csr
+  pkg_agency__agencyFactory__quotationWork --> pageleaf_route_src_routers_Router_tsx__agency_agencyFactory_quotationWork_quotationContract
+  end
+%%--CHUNK--%%
+%% chunk:6/8
+%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0c1a30','primaryTextColor':'#7dd3fc','primaryBorderColor':'#0e3a6e','edgeLabelBackground':'#0c1a30','lineColor':'#334155','secondaryColor':'#0f172a','clusterBkg':'#060c18','clusterBorder':'#1e3a5f','fontFamily':'JetBrains Mono','fontSize':'14'}}}%%
+graph TD
+  classDef ssr fill:#0d1a0d,stroke:#16a34a,color:#86efac
+  classDef csr fill:#2d1200,stroke:#c2410c,color:#fb923c
+  classDef ssg fill:#1a0d1a,stroke:#7c3aed,color:#c4b5fd
+  classDef isr fill:#1a1a0d,stroke:#ca8a04,color:#fde047
+  classDef ppr fill:#0d1a2d,stroke:#2563eb,color:#93c5fd
+  classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
+  classDef pkg fill:#0c1018,stroke:#475569,color:#cbd5e1
+  classDef muted fill:#0a0d14,stroke:#374151,color:#64748b,stroke-dasharray: 3 3
+  classDef hdr fill:#06080f,stroke:#1e3a5f,color:#7dd3fc
+  subgraph HDR_PAGES ["📁 src/pages/partner"]
+    direction TB
+  pkg_partner__ordProdPlanMgmt["ordProdPlanMgmt"]:::pkg
+  pkg_partner__matMgmt["matMgmt"]:::pkg
+  pkg_partner__materialMgmt["materialMgmt"]:::pkg
+  pageleaf_route_src_routers_Router_tsx__partner_ordProdPlanMgmt_ordRcvMgmt_ordRcvSearch_detail__ordNo[":ordNo · CSR<br/>📄 ord-rcv-detail-page.tsx"]:::csr
+  pkg_partner__ordProdPlanMgmt --> pageleaf_route_src_routers_Router_tsx__partner_ordProdPlanMgmt_ordRcvMgmt_ordRcvSearch_detail__ordNo
+  pageleaf_route_src_routers_Router_tsx__partner_ordProdPlanMgmt_prodOrdSpec["prodOrdSpec · CSR<br/>📄 prod-ord-spec-page.tsx"]:::csr
+  pkg_partner__ordProdPlanMgmt --> pageleaf_route_src_routers_Router_tsx__partner_ordProdPlanMgmt_prodOrdSpec
+  pageleaf_route_src_routers_Router_tsx__partner_matMgmt_decoSheet["decoSheet · CSR<br/>📄 deco-sheet-page.tsx"]:::csr
+  pkg_partner__matMgmt --> pageleaf_route_src_routers_Router_tsx__partner_matMgmt_decoSheet
+  pageleaf_route_src_routers_Router_tsx__partner_materialMgmt_cuttingPlan["cuttingPlan · CSR<br/>📄 cutting-plan-page.tsx"]:::csr
+  pkg_partner__materialMgmt --> pageleaf_route_src_routers_Router_tsx__partner_materialMgmt_cuttingPlan
+  end
+%%--CHUNK--%%
+%% chunk:7/8
+%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0c1a30','primaryTextColor':'#7dd3fc','primaryBorderColor':'#0e3a6e','edgeLabelBackground':'#0c1a30','lineColor':'#334155','secondaryColor':'#0f172a','clusterBkg':'#060c18','clusterBorder':'#1e3a5f','fontFamily':'JetBrains Mono','fontSize':'14'}}}%%
+graph TD
+  classDef ssr fill:#0d1a0d,stroke:#16a34a,color:#86efac
+  classDef csr fill:#2d1200,stroke:#c2410c,color:#fb923c
+  classDef ssg fill:#1a0d1a,stroke:#7c3aed,color:#c4b5fd
+  classDef isr fill:#1a1a0d,stroke:#ca8a04,color:#fde047
+  classDef ppr fill:#0d1a2d,stroke:#2563eb,color:#93c5fd
+  classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
+  classDef pkg fill:#0c1018,stroke:#475569,color:#cbd5e1
+  classDef muted fill:#0a0d14,stroke:#374151,color:#64748b,stroke-dasharray: 3 3
+  classDef hdr fill:#06080f,stroke:#1e3a5f,color:#7dd3fc
+  subgraph HDR_PAGES ["📁 src/pages/mobile"]
+    direction TB
+  pkg_mobile__board["board"]:::pkg
+  pageleaf_route_src_routers_Router_tsx__mobile_board_notice_detail__noticeNo[":noticeNo · CSR<br/>📄 mobile-notice-detail-page.tsx"]:::csr
+  pkg_mobile__board --> pageleaf_route_src_routers_Router_tsx__mobile_board_notice_detail__noticeNo
+  pageleaf_route_src_routers_Router_tsx__mobile_home["home · CSR<br/>📄 mobile-home-page.tsx"]:::csr
+  end
+%%--CHUNK--%%
+%% chunk:8/8
+%%{init:{'theme':'base','themeVariables':{'background':'#060810','primaryColor':'#0c1a30','primaryTextColor':'#7dd3fc','primaryBorderColor':'#0e3a6e','edgeLabelBackground':'#0c1a30','lineColor':'#334155','secondaryColor':'#0f172a','clusterBkg':'#060c18','clusterBorder':'#1e3a5f','fontFamily':'JetBrains Mono','fontSize':'14'}}}%%
+graph TD
+  classDef ssr fill:#0d1a0d,stroke:#16a34a,color:#86efac
+  classDef csr fill:#2d1200,stroke:#c2410c,color:#fb923c
+  classDef ssg fill:#1a0d1a,stroke:#7c3aed,color:#c4b5fd
+  classDef isr fill:#1a1a0d,stroke:#ca8a04,color:#fde047
+  classDef ppr fill:#0d1a2d,stroke:#2563eb,color:#93c5fd
+  classDef unk fill:#1a1a1a,stroke:#6b7280,color:#9ca3af
+  classDef pkg fill:#0c1018,stroke:#475569,color:#cbd5e1
+  classDef muted fill:#0a0d14,stroke:#374151,color:#64748b,stroke-dasharray: 3 3
+  classDef hdr fill:#06080f,stroke:#1e3a5f,color:#7dd3fc
+  subgraph HDR_PAGES ["📁 src/pages"]
+    direction TB
+  pageleaf_route_src_routers_Router_tsx__["/ · CSR<br/>📄 layouts.tsx"]:::csr
+  pageleaf_route_src_routers_Router_tsx__login["login · CSR<br/>📄 layouts.tsx"]:::csr
+  pageleaf_route_src_routers_Router_tsx__mobile["mobile · CSR<br/>📄 layouts.tsx"]:::csr
+  pageleaf_route_src_routers_Router_tsx__not_found["not-found · CSR<br/>📄 layouts.tsx"]:::csr
+  pageleaf_route_src_routers_Router_tsx___["* · CSR<br/>📄 layouts.tsx"]:::csr
+  pageleaf_route_src_routers_Router_tsx__home["home · CSR<br/>📄 home-page.tsx"]:::csr
+  end"
+`;
+
+exports[`Phase XI — fixture baseline snapshots (P1) > mini-react-router-wina-app > Tab3 db-screen diagram 1`] = `
+"graph TD
+  empty["(no API calls detected)"]"
+`;
+
 exports[`Phase XI — fixture baseline snapshots (P1) > mini-remix-app > IRGraph summary 1`] = `
 {
   "edgeIds": [

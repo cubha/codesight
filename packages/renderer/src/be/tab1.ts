@@ -11,6 +11,10 @@ import {
   buildPackageHeaderClose,
   emitTreeNodes,
   chunkByTopLevelPackage,
+  estimateChunkCost,
+  splitTreeByBudget,
+  BE_CHUNK_COST_BUDGET,
+  type BudgetChunk,
 } from './pkg-tree.js'
 import { emitControllerFileLeaf } from './leaf.js'
 
@@ -76,14 +80,39 @@ export function buildBeRenderingDiagram(graph: IRGraph): string {
   }
 
   const tree = buildPkgTree(trimmed)
-  const chunks = chunkByTopLevelPackage(tree)
-  if (chunks.length <= 1) {
-    return emitChunk(tree, lcpSegments).join('\n')
+
+  // v1.2.51 B: leaf 파일 cost = leaf 노드 + endpoints subgraph(route 노드 + `---` 엣지) + 부모 edge 근사.
+  const byFilePath = new Map(trimmed.map(f => [f.filePath, f.routes.length]))
+  const leafCost = (filePath: string): number => (byFilePath.get(filePath) ?? 0) * 2 + 2
+  const costOf = (st: PkgTreeNode): number => estimateChunkCost(st, leafCost)
+
+  const topChunks = chunkByTopLevelPackage(tree)
+  const singleWhole = topChunks.length <= 1
+  // 회귀 안전: 예산 초과 chunk가 없으면 기존 경로 그대로(byte-identical).
+  const overBudget = singleWhole
+    ? costOf(tree) > BE_CHUNK_COST_BUDGET
+    : topChunks.some(c => costOf(c.subtree) > BE_CHUNK_COST_BUDGET)
+
+  if (!overBudget) {
+    if (singleWhole) {
+      return emitChunk(tree, lcpSegments).join('\n')
+    }
+    // 각 chunk header = LCP + topSeg. 트리는 topSeg children부터 시작 (R-T1.2 + R-T1.8: 중복 노드 제거)
+    const parts = topChunks.map(({ topSeg, subtree }) => {
+      const headerSegs = topSeg === '_root' ? lcpSegments : [...lcpSegments, topSeg]
+      return emitChunk(subtree, headerSegs).join('\n')
+    })
+    return joinChunks(parts)
   }
-  // 각 chunk header = LCP + topSeg. 트리는 topSeg children부터 시작 (R-T1.2 + R-T1.8: 중복 노드 제거)
-  const parts = chunks.map(({ topSeg, subtree }) => {
-    const headerSegs = topSeg === '_root' ? lcpSegments : [...lcpSegments, topSeg]
-    return emitChunk(subtree, headerSegs).join('\n')
-  })
+
+  // 큰 도메인 1개가 cap 초과 → node/edge-budget 2차 sub-chunk.
+  const budgetChunks: BudgetChunk[] = []
+  for (const { topSeg, subtree } of topChunks) {
+    const pathSegs = topSeg === '_root' ? [] : [topSeg]
+    budgetChunks.push(...splitTreeByBudget(pathSegs, subtree, BE_CHUNK_COST_BUDGET, costOf, (segs, cost) => {
+      console.warn(`[codebase-viz] BE Tab1: 패키지 ${[...lcpSegments, ...segs].join('.')} 가 단일 leaf로 예산 초과(cost≈${cost} > ${BE_CHUNK_COST_BUDGET}) — 더 분할 불가, 그대로 emit`)
+    }))
+  }
+  const parts = budgetChunks.map(c => emitChunk(c.subtree, [...lcpSegments, ...c.pathSegs]).join('\n'))
   return joinChunks(parts)
 }

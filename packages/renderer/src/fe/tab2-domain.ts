@@ -54,7 +54,17 @@ function feHeaderOpen(label: string): string[] {
 
 interface DomainFile {
   filePath: string
+  segments: string[]
   routes: RouteNode[]
+}
+
+// 컴포넌트 미해결(예: import.meta.glob 동적 인입) 라우트의 도메인 폴더를 URL path에서 도출.
+// `/agency/agencyFactory/masterMgmt/customerMgmt` → ['agency','agencyFactory','masterMgmt'] (leaf 제거).
+// 도메인(≥1 폴더 세그먼트)이 없으면 undefined → 기존 _root fallback.
+function urlDomainSegments(routePath: string): string[] | undefined {
+  const urlSegs = routePath.split('/').filter(Boolean)
+  const folderSegs = urlSegs.slice(0, -1)
+  return folderSegs.length >= 1 ? folderSegs : undefined
 }
 
 export function buildFeDomainLayeredScreenDiagram(
@@ -69,13 +79,29 @@ export function buildFeDomainLayeredScreenDiagram(
   for (const r of pageRoutes) {
     const edge = rendersEdges.find(e => e.from === r.id)
     const comp = edge !== undefined ? compById.get(edge.to) : undefined
-    const filePath = comp?.filePath ?? r.filePath
+    let filePath: string
+    let segments: string[]
+    if (comp !== undefined) {
+      filePath = comp.filePath
+      segments = pagesSegments(filePath)
+    } else {
+      // 컴포넌트 미해결: URL path로 도메인 레이어링 (다른 도메인과 동일하게 분리되도록).
+      // 컴포넌트가 없으니 파일명(📄)은 표기 못 하나, 도메인 박스·중첩 트리는 동일.
+      const urlSegs = urlDomainSegments(r.path)
+      if (urlSegs !== undefined) {
+        segments = urlSegs
+        filePath = `url:${urlSegs.join('/')}` // 확장자 없음 → leaf에 📄 미표기
+      } else {
+        filePath = r.filePath
+        segments = pagesSegments(filePath)
+      }
+    }
     const existing = byFile.get(filePath)
     if (existing !== undefined) existing.routes.push(r)
-    else byFile.set(filePath, { filePath, routes: [r] })
+    else byFile.set(filePath, { filePath, segments, routes: [r] })
   }
-  for (const { filePath, routes } of byFile.values()) {
-    fileRoutes.push({ filePath, segments: pagesSegments(filePath), routes })
+  for (const { filePath, segments, routes } of byFile.values()) {
+    fileRoutes.push({ filePath, segments, routes })
   }
 
   const tree = buildPkgTree(fileRoutes)

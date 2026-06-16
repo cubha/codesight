@@ -1,0 +1,6 @@
+{
+  "name": "mini-react-router-wina-app",
+  "version": "0.0.0",
+  "private": true,
+  "dependencies": { "react": "^18.2.0", "react-router-dom": "^6.10.0" }
+}

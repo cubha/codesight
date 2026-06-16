@@ -1,5 +1,59 @@
 # Changelog
 
+## [1.2.51] — 2026-06-16
+
+### Fixed — React Router bulk route omission (tsconfig alias) + Spring Boot large-domain "maximum size" error
+
+- **React Router — entire route trees vanished.** Routes imported through a `tsconfig` path alias (`baseUrl:"src"` + `"@/*":["*"]`) and spread via `appRoutes.map(...)` were dropped — only hard-coded `<Route>` survived. Root cause was alias resolution (`loadTsConfigPaths`): it ignored `baseUrl`, mishandled the `"*"` target, and didn't follow `extends`/`references` (Vite `tsconfig.app.json` split) or strip JSONC comments. A 240-route project that rendered ~15 routes now renders all.
+- **Domain layering — agency parity.** Routes with dynamically loaded components (`import.meta.glob`) now layer into `📁 src/pages/<domain>` identically to statically-imported domains (URL-path fallback).
+- **Spring Boot Tab2 — "Maximum text size exceeded" on a large domain.** Backend chunking split only at the top-level package boundary, so one big domain became a single Mermaid block over the webview cap. Added node/edge-budget secondary sub-chunking — a 1.1 MB single domain now renders as multiple clean rows.
+- **Tab1 — many-domain readability.** Small projects with more than 5 top-level route groups were forced into a single wide `graph LR` strip (all domains rendered but compressed ~20:1). They now chunk into a readable multi-row grid (route-count-independent gate). Note: chunked Tab1 omits the SPA-wrapper/data-layer framing, consistent with how 100+-route projects already render.
+
+## [1.2.50] — 2026-06-12
+
+### Fixed — Spring DI 5-level fan-out + React Router template paths
+
+- **Spring Boot**: Lombok `@RequiredArgsConstructor`/`@AllArgsConstructor` final-field injection now recognized (was dropping DI edges → Tab2 cut off at Controller). MyBatis XML mapper (`<mapper namespace>`) linked as terminal nodes. Fixed 2-hop DI replaced with N-ary recursive chain: Controller → Service[] → Impl → Repository[] → XML.
+- **React Router**: template-literal route paths (`` path: `${BASE}/spec` ``) are now statically evaluated (were dropped entirely). `src/pages/<domain>` file-path domain layering for Tab2.
+
+## [1.2.49] — 2026-06-01
+
+### Fixed — React Router parser + large-webview freeze
+
+- React Router: pathless route suppression, node-id dedup, array-spread (`...routes` + `Object.entries().map()`) route extraction.
+- Large projects (1000+ routes): node-bound chunking + per-frame yield eliminate the viewer freeze on big diagrams.
+
+## [1.2.48] — 2026-05-30
+
+### Changed
+
+- Framework-config externalization (M11) and remaining polish items.
+
+## [1.2.47] — 2026-05-28
+
+### Fixed — React Router import route tracing + code-quality pass
+
+- Generalized React Router route tracing across alias / rename / barrel / lazy imports (`component-resolver`, 4-hop + tsconfig paths).
+- Full `src` refactor: `mermaid-renderer` split into modules (−72% in the largest file), dead-code removal, no behavior change.
+
+## [1.2.46] — 2026-05-26
+
+### Changed
+
+- Project-wide code-quality cleanup (47 files, regression 0, snapshots byte-identical).
+
+## [1.2.45] — 2026-05-23
+
+### Changed — FE diagram standard v1.1
+
+- Top-level route groups guaranteed on the X-axis; nested children stack on the Y-axis (mermaid v11 nested-LR limitation made the standard explicit). URL intermediate-node unfolding, Tab1 leaf flattening, brand/folder unification.
+
+## [1.2.44] — 2026-05-21
+
+### Fixed — React Router `.map()` regression + Vue/Angular Tab2
+
+- React Router `.map()` route pattern regression resolved. Vue/Angular Tab2 component-path standard. Data Flow tab promotion. New `FE-DIAGRAM-STANDARD` v1.0.
+
 ## [1.2.43] — 2026-05-20
 
 ### Changed — config-based FE 어댑터(Vue SPA · Angular) Tab1 wrapper 표준 적용

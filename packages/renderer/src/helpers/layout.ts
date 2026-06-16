@@ -74,7 +74,15 @@ export const CHUNK_ROUTE_BUDGET = 50
 // - 단일 브랜치가 budget을 초과하면 그 자식 단위로 재귀 분할(각 sub-chunk가 독립 다이어그램).
 //   자식의 groupKey는 full path라 nested subgraph 라벨/계층이 그대로 보존된다.
 // - 자식 없는 leaf가 budget을 초과하면 더 쪼갤 수 없으므로 그대로 emit(드문 케이스).
-export function splitGroupsByNodeBound(groups: NestedGroup[], maxRoutes: number): NestedGroup[][] {
+// - maxGroups: 청크당 top-level 형제 그룹 수 상한(v1.2.51 C2). route 수가 적어도 형제가 많으면
+//   단일 graph LR이 가로로 길게 늘어나(20:1 띠) 가독성이 무너지므로, 형제 수로도 분할한다.
+//   viewer row-mode가 청크를 CSS 그리드(minmax 560px auto-fit)로 배치 → 다중 행/열 readable.
+//   기본 Infinity(미지정 호출은 기존 route-수 기준만 — 회귀 보존).
+export function splitGroupsByNodeBound(
+  groups: NestedGroup[],
+  maxRoutes: number,
+  maxGroups = Infinity,
+): NestedGroup[][] {
   const result: NestedGroup[][] = []
   let bucket: NestedGroup[] = []
   let bucketCount = 0
@@ -88,12 +96,15 @@ export function splitGroupsByNodeBound(groups: NestedGroup[], maxRoutes: number)
   for (const g of groups) {
     const size = collectNestedRoutes([g]).length
     if (size <= maxRoutes) {
-      if (bucketCount + size > maxRoutes) flush()
+      if (bucketCount + size > maxRoutes || bucket.length >= maxGroups) flush()
       bucket.push(g)
       bucketCount += size
     } else {
       flush()
       if (g.children.length > 0) {
+        // 거대 단일 도메인 내부 분할은 route-budget만 govern(maxGroups 미전달). maxGroups를
+        // 재귀에 전파하면 깊이마다 형제 캡이 걸려 과분할(938 routes→190 chunks)된다. 형제 띠
+        // 문제는 top-level에서만 발생(nested 자식은 Y-stack)하므로 top-level 캡만 유효.
         for (const sub of splitGroupsByNodeBound(g.children, maxRoutes)) result.push(sub)
         if (g.routes.length > 0) result.push([{ ...g, children: [] }])
       } else {
