@@ -130,3 +130,128 @@ export function chunkByTopLevelPackage(
   }
   return chunks
 }
+
+// ── v1.2.51 B: node/edge-budget 2차 sub-chunk ────────────────────────────────
+// top-level 패키지 1단계 chunk만으로는 큰 도메인 1개가 webview cap(maxTextSize 1M /
+// maxEdges 2000)을 넘겨 그 도메인만 "Maximum text size in diagram exceeded" 에러를 낸다.
+// FE는 이미 splitGroupsByNodeBound(layout.ts)로 청크당 노드 수를 bound하나 BE엔 부재였다.
+// 이 splitter는 한 패키지 subtree의 추정 emit 비용이 예산 초과 시 서브패키지 단위로 재귀
+// 재분할한다. 각 sub-chunk는 풀 패키지 경로(pathSegs)를 유지해 헤더/계층이 보존된다.
+// 별도 mermaid diagram = 독립 ID라 동일 패키지가 형제 chunk로 나뉘어도 노드 ID 충돌 없음.
+
+// 청크당 추정 emit 비용(노드+엣지 근사) 상한. webview maxTextSize 1M(~640 byte/edge 실측,
+// 하드월 ≈ 3100 units) / maxEdges 2000 대비 ~50% 헤드룸. 초과 시 서브패키지로 재분할.
+export const BE_CHUNK_COST_BUDGET = 1500
+
+export type BudgetChunk = { pathSegs: string[]; subtree: PkgTreeNode }
+
+// subtree를 emit할 때 발생하는 노드+엣지 수의 근사치.
+// - 패키지 노드 1개당 2(노드 정의 + 부모 edge) — chunk 루트의 첫 depth는 cluster라 edge 생략되나
+//   보수적으로 2로 계산(예산 헤드룸 안전 측).
+// - leaf(파일=Controller)는 leafCostOf로 위임 — Tab2는 DI 체인 노드+엣지, Tab1은 상수.
+export function estimateChunkCost(
+  node: PkgTreeNode,
+  leafCostOf: (filePath: string) => number,
+): number {
+  let cost = 0
+  const walk = (n: PkgTreeNode): void => {
+    for (const [, child] of n.children) {
+      cost += 2
+      walk(child)
+    }
+    for (const f of n.files) cost += leafCostOf(f.filePath)
+  }
+  walk(node)
+  return cost
+}
+
+// 무거운 leaf 다수를 가진(더 못 쪼개는) 단일 패키지의 파일들을 예산 단위 subset으로 packing.
+function splitFilesByBudget(
+  files: PkgTreeNode['files'],
+  budget: number,
+  leafCostOf: (filePath: string) => number,
+  onOverflow?: (cost: number) => void,
+): PkgTreeNode['files'][] {
+  const result: PkgTreeNode['files'][] = []
+  let bucket: PkgTreeNode['files'] = []
+  let bucketCost = 0
+  const flush = (): void => {
+    if (bucket.length > 0) { result.push(bucket); bucket = []; bucketCost = 0 }
+  }
+  for (const f of files) {
+    const c = leafCostOf(f.filePath)
+    if (c > budget) {
+      // 단일 leaf가 홀로 예산 초과 — 더 쪼갤 수 없음. 그대로 emit + overflow 보고(silent 금지).
+      flush()
+      result.push([f])
+      onOverflow?.(c)
+      continue
+    }
+    if (bucketCost + c > budget) flush()
+    bucket.push(f)
+    bucketCost += c
+  }
+  flush()
+  return result.length > 0 ? result : [[]]
+}
+
+// 한 패키지 subtree를 각 chunk 비용 ≤ budget이 되도록 재귀 분할. FE splitGroupsByNodeBound 대칭.
+// - 전체 비용 ≤ budget → 단일 chunk (입력 그대로, 회귀 안전).
+// - 초과 시: 직속 파일 + 형제 서브패키지를 예산 단위 bucket으로 greedy packing.
+//   홀로 예산 초과하는 서브패키지는 그 패키지로 재귀(pathSegs 확장).
+//   children 없이 파일만 초과하면 파일 단위로 분할(last resort).
+// - 더 못 쪼개는 단일 leaf 초과는 onOverflow로 보고(no silent truncation).
+export function splitTreeByBudget(
+  pathSegs: string[],
+  subtree: PkgTreeNode,
+  budget: number,
+  costOf: (st: PkgTreeNode) => number,
+  onOverflow?: (pathSegs: string[], cost: number) => void,
+): BudgetChunk[] {
+  const total = costOf(subtree)
+  if (total <= budget) return [{ pathSegs, subtree }]
+
+  const leafCostOf = (fp: string): number => costOf({ children: new Map(), files: [{ filePath: fp, routes: [] }] })
+
+  const result: BudgetChunk[] = []
+  let bucketChildren = new Map<string, PkgTreeNode>()
+  let bucketFiles: PkgTreeNode['files'] = []
+  let bucketCost = 0
+  const flush = (): void => {
+    if (bucketChildren.size > 0 || bucketFiles.length > 0) {
+      result.push({ pathSegs, subtree: { children: bucketChildren, files: bucketFiles } })
+      bucketChildren = new Map()
+      bucketFiles = []
+      bucketCost = 0
+    }
+  }
+
+  // 1) 직속 파일(이 레벨의 leaf)
+  if (subtree.files.length > 0) {
+    const filesCost = costOf({ children: new Map(), files: subtree.files })
+    if (filesCost > budget) {
+      flush()
+      for (const fs of splitFilesByBudget(subtree.files, budget, leafCostOf, cost => onOverflow?.(pathSegs, cost))) {
+        result.push({ pathSegs, subtree: { children: new Map(), files: fs } })
+      }
+    } else {
+      bucketFiles = [...subtree.files]
+      bucketCost += filesCost
+    }
+  }
+
+  // 2) 서브패키지 — greedy packing, 초과 패키지는 재귀
+  for (const [seg, child] of subtree.children) {
+    const childCost = costOf({ children: new Map([[seg, child]]), files: [] })
+    if (childCost > budget) {
+      flush()
+      result.push(...splitTreeByBudget([...pathSegs, seg], child, budget, costOf, onOverflow))
+    } else {
+      if (bucketCost + childCost > budget) flush()
+      bucketChildren.set(seg, child)
+      bucketCost += childCost
+    }
+  }
+  flush()
+  return result
+}

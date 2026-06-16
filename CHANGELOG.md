@@ -1,5 +1,33 @@
 # Changelog
 
+## [1.2.51] — 2026-06-16
+
+### 사용자 단일검증 3건 통합 (A: React Router · B: Spring Boot · C': Tab1 가독성 · 회귀 0)
+
+사용자 실제 React Router·Spring Boot 프로젝트 단일검증 보고 3건을 FAIL 재현 fixture로 근본 원인 확정 후 통합 수정. verify.sh **801 PASS** · 1 skipped · 회귀 0(스냅샷 byte-identical).
+
+#### 묶음 A — React Router 라우트 통째 누락 + agency 도메인 레이어 (`adapters/_shared/ts-config-loader.ts` · `renderer/fe/tab2-domain.ts`)
+
+근본 원인: 파서가 아니라 **tsconfig path alias 해석**. `loadTsConfigPaths`가 `baseUrl` 미반영 + `"*"` 타겟 오처리 + `extends`/`references`(Vite `tsconfig.app.json` 스플릿) 미추적 + JSONC 주석 throw. 사용자 `baseUrl:"src"`+`"@/*":["*"]`에서 `appRoutes.map()` 통과 240 라우트 전멸(하드코딩 `<Route>`만 생존).
+
+- **A-1** `stripJsonComments` + `buildPathsMap`(baseUrl 기준 디렉토리 + `"*"`→빈 suffix) + `extends`/`references` 1-hop 추적(depth≤5).
+- **A-2** agency 등 `import.meta.glob` 동적 컴포넌트 라우트 → `fe/tab2-domain.ts` URL path 폴더 세그먼트로 도메인 레이어링(다른 도메인과 동일 분리). 재현 fixture `mini-react-router-baseurl-app`·`mini-react-router-tsref-app`·`mini-react-router-wina-app`.
+
+#### 묶음 B — Spring Boot Tab2 대형 도메인 "Maximum text size exceeded" (`renderer/be/pkg-tree.ts` · `be/tab1.ts` · `be/tab2.ts`)
+
+근본 원인: BE chunking이 top-level 패키지 1단계만 분할 → 큰 도메인 1개가 webview cap(maxTextSize 1M / maxEdges 2000) 초과. v1.2.50 N-ary DI fan-out이 컨트롤러당 노드/엣지 증폭으로 발현. FE는 이미 `splitGroupsByNodeBound` 2차 분할 보유, BE만 부재(비대칭).
+
+- **B-1** `pkg-tree.ts`: `estimateChunkCost` + `splitTreeByBudget`(서브패키지 재귀 분할, `BE_CHUNK_COST_BUDGET=1500`) + `onOverflow` 로그(silent truncation 금지). Tab1·Tab2 적용. **예산 초과 시에만** 분기 → 기존 출력 byte-identical.
+- 검증: 합성 800·3000 컨트롤러 게이트 테스트(각 청크 edges<2000·bytes<1M) + 700-feature 실제 fixture 화면 스모크(1.15MB 단일 도메인 → 5 rows, 에러박스 0).
+
+#### 묶음 C' — Tab1 소형-다도메인 가독성 (`renderer/helpers/layout.ts` · `mermaid-renderer.ts`)
+
+근본 원인: top-level 형제 그룹>5인데 route<100이면 단일 `graph LR`로 강제 → 모든 도메인을 한 가로줄에 깔아 ~20:1 띠로 압축(전 도메인 렌더되나 가독성 X). 게이트 `routeCount>100` 단독 + 분할기 route 수만 bound.
+
+- **C'-1** `splitGroupsByNodeBound`에 `maxGroups` bound 추가(top-level 형제 수, 재귀엔 미전파 — 938 route 과분할 회피). Tab1 게이트 `routeCount>100 OR branchingGroups>GROUPS_PER_ROW(5)` → chunked grid. viewer row-mode CSS 그리드가 readable 배치.
+- **v1.1.53 게이트 반전**: 'Y축 단조 나열' dump는 v1.1.6 T3 grid로 이미 해소(실측 확인). 스펙-반전 테스트 2건 명시 갱신.
+- **알려진 delta**: chunked Tab1은 SPA 래퍼·data-layer framing 드롭(>100 route 경로와 동일 동작). Tab2 url-grouping 다도메인은 후속 scope.
+
 ## [1.2.50] — 2026-06-12
 
 ### Spring Boot DI 체인 5단 fan-out + React Router 도메인 레이어 (사용자 단일검증 보강 2건 · 회귀 0)

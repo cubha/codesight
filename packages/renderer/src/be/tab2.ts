@@ -12,6 +12,10 @@ import {
   buildPackageHeaderClose,
   emitTreeNodes,
   chunkByTopLevelPackage,
+  estimateChunkCost,
+  splitTreeByBudget,
+  BE_CHUNK_COST_BUDGET,
+  type BudgetChunk,
 } from './pkg-tree.js'
 import { isBeController, isBeService, isBeRepository } from './leaf.js'
 
@@ -188,15 +192,57 @@ export function buildBeArchitectureDiagram(graph: IRGraph): string {
 
   // chunking: top-level 패키지 단위 (D2 — BE 내부에서 emit, L958 가드 유지)
   const filesTree = buildPkgTree(trimmed.map(b => ({ filePath: b.filePath, segments: b.segments, routes: [] })))
-  const chunks = chunkByTopLevelPackage(filesTree)
-  if (chunks.length <= 1) {
-    return emitChunk(filesTree, [], lcpSegments).join('\n')
+
+  // v1.2.51 B: leaf(Controller) DI 체인의 노드+엣지 근사 — renderControllerLeaf와 동일 순회를 count-only로.
+  const leafDiCost = (filePath: string): number => {
+    const ctrl = ctrlByFilePath.get(filePath)
+    if (ctrl === undefined) return 0
+    if (!controllerHasDi(ctrl)) return 2 // 노드 + 부모 edge
+    let count = 1 // ctrl 노드
+    const visited = new Set<string>()
+    const recurse = (node: ComponentNode, depth: number): void => {
+      if (depth > 6 || visited.has(node.id)) return
+      visited.add(node.id)
+      for (const edge of callsEdgesByFrom.get(node.id) ?? []) {
+        const target = compById.get(edge.to)
+        if (target === undefined) continue
+        count += 2 // target(또는 cross-pkg ext) 노드 + edge
+        if (isXmlNode(target) || samePkg(node, target)) recurse(target, depth + 1)
+      }
+    }
+    recurse(ctrl, 0)
+    return count + 1 // 부모 → leaf edge
   }
-  // 각 chunk header = LCP + topSeg. 트리는 topSeg children부터 시작 (R-T1.2 + R-T1.8: 중복 노드 제거)
-  const parts = chunks.map(({ topSeg, subtree }) => {
-    const headerSegs = topSeg === '_root' ? lcpSegments : [...lcpSegments, topSeg]
-    const chunkPath = topSeg === '_root' ? [] : [topSeg]
-    return emitChunk(subtree, chunkPath, headerSegs).join('\n')
-  })
+  const costOf = (st: PkgTreeNode): number => estimateChunkCost(st, leafDiCost)
+
+  const topChunks = chunkByTopLevelPackage(filesTree)
+  const singleWhole = topChunks.length <= 1
+  // 회귀 안전: 예산 초과 chunk가 하나도 없으면 기존 경로 그대로(byte-identical).
+  const overBudget = singleWhole
+    ? costOf(filesTree) > BE_CHUNK_COST_BUDGET
+    : topChunks.some(c => costOf(c.subtree) > BE_CHUNK_COST_BUDGET)
+
+  if (!overBudget) {
+    if (singleWhole) {
+      return emitChunk(filesTree, [], lcpSegments).join('\n')
+    }
+    // 각 chunk header = LCP + topSeg. 트리는 topSeg children부터 시작 (R-T1.2 + R-T1.8: 중복 노드 제거)
+    const parts = topChunks.map(({ topSeg, subtree }) => {
+      const headerSegs = topSeg === '_root' ? lcpSegments : [...lcpSegments, topSeg]
+      const chunkPath = topSeg === '_root' ? [] : [topSeg]
+      return emitChunk(subtree, chunkPath, headerSegs).join('\n')
+    })
+    return joinChunks(parts)
+  }
+
+  // 큰 도메인 1개가 cap 초과 → node/edge-budget 2차 sub-chunk (서브패키지 단위 재귀 분할).
+  const budgetChunks: BudgetChunk[] = []
+  for (const { topSeg, subtree } of topChunks) {
+    const pathSegs = topSeg === '_root' ? [] : [topSeg]
+    budgetChunks.push(...splitTreeByBudget(pathSegs, subtree, BE_CHUNK_COST_BUDGET, costOf, (segs, cost) => {
+      console.warn(`[codebase-viz] BE Tab2: 패키지 ${[...lcpSegments, ...segs].join('.')} 가 단일 leaf로 예산 초과(cost≈${cost} > ${BE_CHUNK_COST_BUDGET}) — 더 분할 불가, 그대로 emit`)
+    }))
+  }
+  const parts = budgetChunks.map(c => emitChunk(c.subtree, c.pathSegs, [...lcpSegments, ...c.pathSegs]).join('\n'))
   return joinChunks(parts)
 }

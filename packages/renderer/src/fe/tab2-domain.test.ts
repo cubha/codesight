@@ -66,4 +66,25 @@ describe('FE Tab2 도메인 레이어 (v1.2.50 B-ST2)', () => {
     // 각 페이지 leaf는 route 표시 + 렌더모드 배지
     expect(out).toContain('spec · csr')
   })
+
+  // 컴포넌트 미해결(import.meta.glob 동적 인입) 라우트도 다른 도메인과 동일하게 분리.
+  it('컴포넌트 엣지 없는 agency 라우트 → URL path로 src/pages/agency 도메인 분리', () => {
+    // edge 없는 라우트: import.meta.glob로 컴포넌트가 동적 인입되어 정적 추적 불가한 케이스.
+    const agencyRoutes: RouteNode[] = [
+      ...routes,
+      route('g1', '/agency/agencyFactory/masterMgmt/customerMgmt'),
+      route('g2', '/agency/agencyFactory/quotationWork/quotationContract'),
+    ]
+    const out = buildFeDomainLayeredScreenDiagram(agencyRoutes, edges, comps)
+    // agency 도메인 박스 + 중첩 트리가 다른 도메인과 동일하게 표시 (이전엔 일반 src/pages 버킷으로 누락)
+    expect(out).toContain('📁 src/pages/agency')
+    expect(out).toContain('agencyFactory')
+    expect(out).toContain('masterMgmt')
+    expect(out).toContain('customerMgmt · csr')
+    // 일반 _root 버킷이 아니라 agency 도메인 chunk에 들어가야 함
+    const agencyIdx = out.indexOf('src/pages/agency')
+    const rootIdx = out.lastIndexOf('"📁 src/pages"')
+    expect(agencyIdx).toBeGreaterThanOrEqual(0)
+    if (rootIdx >= 0) expect(out.indexOf('customerMgmt')).toBeLessThan(rootIdx > agencyIdx ? rootIdx : out.length)
+  })
 })

@@ -57,25 +57,31 @@ Frameworks not in this list (Express, Hono, Rails, Go, etc.) use **LLM primary**
 
 ---
 
-## ✨ What's new in v1.1.53
+## ✨ What's new in v1.2.51
 
-### Fixed — Small-project Y-axis stack (adapter-wide)
+### Fixed — React Router bulk route omission (tsconfig path alias) + large-domain "maximum size" error
 
-Projects with as few as 28 routes were being forced into a chunked rendering path purely because their top-level folder count exceeded a heuristic — viewer then stacked the chunks vertically, producing a single-column Y-axis dump instead of a proper tree layout. The same defect was latent in **every adapter's mini fixture** (angular / fastapi / flask / next / nextpages / nuxt / react-router / remix / sveltekit / vue-spa Tab2).
+Two real-world defects from large enterprise projects, fixed with FAIL-reproducing fixtures.
 
-- **Root cause**: `GROUPS_PER_ROW = 5` (Tab1) / `TAB2_GROUPS_PER_ROW = 2` (Tab2) thresholds triggered chunking based on top-level group count alone, with no regard for total route count.
-- **Fix**: New `SINGLE_DIAGRAM_ROUTE_THRESHOLD = 100` gate. Chunked path now requires **both** `branchingGroups > GROUPS_PER_ROW` **AND** `routeCount > 100`. Small projects render as a single Mermaid diagram with nested subgraphs and Mermaid's natural layout handles the X-axis fan-out.
-- **Verified**: 630 tests pass (including the v1.1.6 200-route NestJS stress test). Real-world `dev-log-portfolio` re-analysis: Tab1·Tab2 chunk count 7 → 0.
+- **React Router — entire route trees vanished.** Routes imported through a `tsconfig` path alias (e.g. `baseUrl:"src"` + `"@/*":["*"]`) and spread via `appRoutes.map(...)` were silently dropped — only hard-coded `<Route>` survived. Root cause was alias resolution (`loadTsConfigPaths`), not the parser: it ignored `baseUrl`, mishandled the `"*"` target, and didn't follow `extends` / `references` (Vite `tsconfig.app.json` split) or strip JSONC comments. Now fully resolved — a 240-route project that rendered ~15 routes renders all of them.
+- **Domain layer separation — agency parity.** Routes whose components are loaded dynamically (`import.meta.glob`) now layer into `📁 src/pages/<domain>` identically to statically-imported domains, via URL-path fallback.
+- **Spring Boot Tab2 — "Maximum text size exceeded" on a large domain.** Backend chunking split only at the top-level package boundary, so one big domain became a single Mermaid block that exceeded the webview cap. Added node/edge-budget secondary sub-chunking (mirroring the frontend path) — a 1.1 MB single domain now renders as multiple clean rows instead of an error.
 
 ### Previous highlights
 
-**v1.1.52** — Tab1/Tab2 chunk 과다 수정 (698→9 chunks) · Tab3 `bin/main/sql/primary/**` extractModule fix · row-mode floating island fix (`left:50%→0`) · React Router sub-router 2-pass parsing (9→130 routes)
+**v1.2.50** — Spring DI chain 5-level fan-out (Lombok `@RequiredArgsConstructor` · MyBatis XML mapper) · React Router template-literal paths · `src/pages` domain layering
 
-**v1.1.51** — chunked path nested grouping preservation for 937+ route monorepos · 1 top-level branch = 1 chunk boundary
+**v1.2.49** — React Router parser fixes (pathless · dedup · array spread) · large-webview freeze fix (node-bound chunking + frame yield)
 
-**v1.1.5** — i18n 4 languages (한국어·English·日本語·中文 简体) with instant locale switch · demo GIFs (Tab switch · DB toggle)
+**v1.2.47** — React Router alias/barrel/lazy import route tracing · full `src` code-quality pass
 
-**v1.1.4** — Turbo/Lerna/Nx monorepo detection · multi-service projects without root `package.json` · Flutter (`pubspec.yaml`) support · last-resort scan fallback
+**v1.2.45** — FE diagram standard v1.1 (top-level X-axis · nested Y-stack) · brand/folder unification
+
+**v1.2.44** — React Router `.map()` pattern regression fix · Vue/Angular Tab2 standard · Data Flow promotion
+
+**v1.2.42** — React Tab1/2/3 redesign · file-based FE adapters (6) Tab2 file-path nodes
+
+**v1.2.40** — Backend Tab1/Tab2 package tree standard (Spring · NestJS · Django · FastAPI · Flask)
 
 ---
 
