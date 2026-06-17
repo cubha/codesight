@@ -20,6 +20,10 @@ scratch.md
 # Playwright MCP
 .playwright-mcp/
 
+# Playwright 테스트 전이 산출물 (리포트/결과 — 영구 추적 X)
+test-results/
+tests/playwright/report/
+
 # Spike / 임시 실험 (영구 산출물 아님)
 .scratch/
 fixtures/mini-next-app/.next/
