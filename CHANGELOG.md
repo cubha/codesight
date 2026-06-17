@@ -1,5 +1,22 @@
 # Changelog
 
+## [1.2.52] — 2026-06-17
+
+### 대형 라우트 viewer perf 개선 — 점진 주입 + content-visibility (레버 1+2 · 회귀 0)
+
+사용자 보고(1112 route 분석 결과 viewer 버벅임·로딩 지연)의 backlog 항목. **viewer.html 단독** 변경 — analyzer/IR/diagram 출력 무변경. baseline 실측으로 scope를 확정(advisor 검증).
+
+근본 진단: 기존 `renderChunked`가 청크(~22개)를 **전부 렌더 → 문자열 누적 → 마지막 1회 `innerHTML`** 주입. → ①첫 행과 전체가 동시 노출(빈 화면 대기 = "로딩 오래걸림") ②전 SVG 동시 DOM 상주로 스크롤/줌/팬마다 화면 밖까지 repaint(버벅임).
+
+- **레버1 (content-visibility)**: `.row-diagram { content-visibility:auto }` + fit 단계에서 실측 높이로 `contain-intrinsic-height:auto <N>px` 갱신(height축만 — 폭은 grid `minmax(560px,1fr)` track 결정). off-screen 청크 paint/hit-test 스킵 → 상호작용 비용이 청크 수에 비례하지 않음. `fitS=1` hardcode·`cellW` dead라 size containment가 fit 비간섭(unblock 근거).
+- **레버2 (점진 주입)**: `renderChunked` → `renderChunkedInto(t, inner, idPrefix, diagram, onSvg)`. 다중청크는 row-mode grid를 루프 전 켜고 청크별 즉시 `append`+rAF yield, 루프 후 `activateRowMode` 1회로 배선 재사용. 단일청크·최종 레이아웃은 기존과 동일.
+- **측정 delta** (`scripts/viewer-perf.mjs`, headless, 22청크≈1100route): time-to-first-row **1459ms→333ms (−77%)** · time-to-all-rendered 1459→1559ms(+100ms, 비차단 스트리밍).
+- **레버3(IntersectionObserver 가상화) 보류**: baseline상 총 렌더가 wall이 아니고 progressive로 비차단화됨 → 100+청크 초대형에서만 가치. 실 프로젝트 재실측에서 총 스크롤이 여전히 느리면 후속 진입.
+- **부수**: `playwright` devDep 1.59.1→1.60.0 (러너/`@playwright/test` 버전 skew로 viewer spec이 실행조차 안 되던 latent 버그 해소).
+- 검증: verify.sh **PASS**(tsc+vitest) · Playwright **6/6**(기존 결함1·2·3 회귀 0 + 신규 content-visibility assertion + 스크롤활성 청크 zoom/drag/rz 동작) · 9청크 그리드 시각 정상(에러박스 0).
+
+**알려진 한계**: 1+2는 첫 페인트 지연 + 상호작용 jank를 고침. 초대형 입력의 **총 dagre 레이아웃 시간 자체는 불변**(레버3 후속).
+
 ## [1.2.51] — 2026-06-16
 
 ### 사용자 단일검증 3건 통합 (A: React Router · B: Spring Boot · C': Tab1 가독성 · 회귀 0)

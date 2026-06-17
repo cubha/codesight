@@ -248,4 +248,80 @@ test.describe('v1.1.52 결함 검증 — viewer.html Playwright', () => {
 
     expect(allPass).toBe(true)
   })
+
+  test('v1.2.52: 다중청크 .row-diagram에 content-visibility:auto + 실측 contain-intrinsic-height', async ({ page }) => {
+    const multiChunk = buildMultiChunkDiagram(9)
+    await page.addInitScript((rendering) => {
+      window.__CODESIGHT_DIAGRAMS__ = { rendering, screenComponent: '', dbScreen: '' }
+      window.__CODESIGHT_META__ = { projectName: 'PerfTest', routeCount: 120, tableCount: 0 }
+    }, multiChunk)
+
+    await page.goto(VIEWER_URL)
+    await page.waitForTimeout(4000)
+
+    const rows = page.locator('#i-r .row-diagram')
+    expect(await rows.count()).toBe(9)
+
+    // 레버1: off-screen 청크 paint skip을 위해 content-visibility:auto가 적용돼야 함.
+    const probe = await rows.first().evaluate((el) => ({
+      cv: getComputedStyle(el).contentVisibility,
+      cih: el.style.containIntrinsicHeight,
+      minH: el.style.minHeight,
+    }))
+    console.log(`  content-visibility: ${probe.cv} · contain-intrinsic-height: ${probe.cih} · min-height: ${probe.minH}`)
+    expect(probe.cv).toBe('auto')
+    // fit 단계에서 실측 높이(auto <N>px)로 갱신 → off-screen 시 스크롤 점프 방지.
+    expect(probe.cih).toMatch(/^auto \d+px$/)
+    expect(probe.minH).toMatch(/^\d/)
+  })
+
+  test('v1.2.52: 스크롤로 content-visibility 활성화된 청크도 wheel-zoom·drag·rz 동작', async ({ page }) => {
+    const multiChunk = buildMultiChunkDiagram(12)
+    await page.addInitScript((rendering) => {
+      window.__CODESIGHT_DIAGRAMS__ = { rendering, screenComponent: '', dbScreen: '' }
+      window.__CODESIGHT_META__ = { projectName: 'InteractTest', routeCount: 160, tableCount: 0 }
+    }, multiChunk)
+
+    await page.goto(VIEWER_URL)
+    await page.waitForTimeout(4000)
+
+    // 하단(초기 off-screen) 청크를 뷰로 스크롤 → content-visibility:auto 활성화.
+    const targetIdx = 9
+    await page.evaluate((idx) => {
+      const row = document.querySelector('#i-r .row-diagram[data-row-idx="' + idx + '"]')
+      row.scrollIntoView({ block: 'center' })
+    }, targetIdx)
+    await page.waitForTimeout(300)
+
+    const row = page.locator('#i-r .row-diagram[data-row-idx="' + targetIdx + '"]')
+    const svg = row.locator('svg')
+    const before = await svg.evaluate((el) => el.style.transform)
+
+    // wheel zoom in
+    const box = await row.boundingBox()
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
+    await page.mouse.wheel(0, -120)
+    await page.waitForTimeout(100)
+    const afterZoom = await svg.evaluate((el) => el.style.transform)
+    console.log(`  zoom: "${before}" → "${afterZoom}"`)
+    expect(afterZoom).not.toBe(before)
+    expect(afterZoom).toMatch(/scale\(/)
+
+    // drag pan
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
+    await page.mouse.down()
+    await page.mouse.move(box.x + box.width / 2 + 40, box.y + box.height / 2 + 30)
+    await page.mouse.up()
+    await page.waitForTimeout(100)
+    const afterDrag = await svg.evaluate((el) => el.style.transform)
+    console.log(`  drag: "${afterDrag}"`)
+    expect(afterDrag).toMatch(/translate\(/)
+
+    // rz reset → fit 상태(translate 0, scale fitS) 복원
+    await page.evaluate(() => rz('r'))
+    await page.waitForTimeout(100)
+    const afterReset = await svg.evaluate((el) => el.style.transform)
+    console.log(`  reset: "${afterReset}"`)
+    expect(afterReset).toMatch(/translate\(0px, 0px\)/)
+  })
 })

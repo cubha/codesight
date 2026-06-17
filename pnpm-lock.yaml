@@ -15,8 +15,8 @@ importers:
         specifier: ^22.0.0
         version: 22.19.17
       playwright:
-        specifier: ^1.59.1
-        version: 1.59.1
+        specifier: ^1.60.0
+        version: 1.60.0
       typescript:
         specifier: ^5.5.0
         version: 5.9.3
@@ -124,8 +124,50 @@ importers:
         specifier: ^6.22.0
         version: 6.30.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
 
+  fixtures/mini-react-router-alias-app:
+    dependencies:
+      react:
+        specifier: ^18.2.0
+        version: 18.3.1
+      react-dom:
+        specifier: ^18.2.0
+        version: 18.3.1(react@18.3.1)
+      react-router-dom:
+        specifier: ^6.22.0
+        version: 6.30.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+
   fixtures/mini-react-router-app:
     dependencies:
+      react:
+        specifier: ^18.2.0
+        version: 18.3.1
+      react-dom:
+        specifier: ^18.2.0
+        version: 18.3.1(react@18.3.1)
+      react-router-dom:
+        specifier: ^6.22.0
+        version: 6.30.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+
+  fixtures/mini-react-router-baseurl-app:
+    dependencies:
+      react:
+        specifier: ^18.2.0
+        version: 18.3.1
+      react-dom:
+        specifier: ^18.2.0
+        version: 18.3.1(react@18.3.1)
+      react-router-dom:
+        specifier: ^6.22.0
+        version: 6.30.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+
+  fixtures/mini-react-router-domain-app:
+    dependencies:
+      '@tanstack/react-query':
+        specifier: ^5.50.0
+        version: 5.100.14(react@18.3.1)
+      axios:
+        specifier: ^1.7.0
+        version: 1.16.1
       react:
         specifier: ^18.2.0
         version: 18.3.1
@@ -194,6 +236,39 @@ importers:
         version: 18.3.1(react@18.3.1)
       react-router-dom:
         specifier: ^6.20.0
+        version: 6.30.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+
+  fixtures/mini-react-router-spread-app:
+    dependencies:
+      react:
+        specifier: ^18.2.0
+        version: 18.3.1
+      react-dom:
+        specifier: ^18.2.0
+        version: 18.3.1(react@18.3.1)
+      react-router-dom:
+        specifier: ^6.22.0
+        version: 6.30.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+
+  fixtures/mini-react-router-tsref-app:
+    dependencies:
+      react:
+        specifier: ^18.2.0
+        version: 18.3.1
+      react-dom:
+        specifier: ^18.2.0
+        version: 18.3.1(react@18.3.1)
+      react-router-dom:
+        specifier: ^6.22.0
+        version: 6.30.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+
+  fixtures/mini-react-router-wina-app:
+    dependencies:
+      react:
+        specifier: ^18.2.0
+        version: 18.3.1
+      react-router-dom:
+        specifier: ^6.10.0
         version: 6.30.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
 
   fixtures/mini-remix-app:

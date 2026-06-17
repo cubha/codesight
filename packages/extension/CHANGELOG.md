@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.2.52] — 2026-06-17
+
+### Improved — Large-project viewer loads faster, scrolls smoother
+
+- **First diagram appears ~4× sooner on large projects.** Previously, projects that split into many chunks (e.g. 1000+ routes → ~22 chunks) rendered every chunk before showing anything — a long blank wait. Chunks now stream in progressively: the first row paints immediately and the rest fill in without blocking the UI. Measured time-to-first-row on a ~1100-route synthetic dropped 1459 ms → 333 ms.
+- **Less stutter when scrolling/zooming/panning.** Off-screen chunks now skip repaint (`content-visibility`), so interaction cost no longer scales with the total number of chunks.
+- Note: this improves first-paint latency and interaction smoothness; the total time to render *all* chunks of a very large project is unchanged. Viewer-only change — no analyzer/diagram-output difference.
+
 ## [1.2.51] — 2026-06-16
 
 ### Fixed — React Router bulk route omission (tsconfig alias) + Spring Boot large-domain "maximum size" error

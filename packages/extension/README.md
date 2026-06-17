@@ -57,17 +57,17 @@ Frameworks not in this list (Express, Hono, Rails, Go, etc.) use **LLM primary**
 
 ---
 
-## ✨ What's new in v1.2.51
+## ✨ What's new in v1.2.52
 
-### Fixed — React Router bulk route omission (tsconfig path alias) + large-domain "maximum size" error
+### Improved — Large-project viewer loads faster and scrolls smoother
 
-Two real-world defects from large enterprise projects, fixed with FAIL-reproducing fixtures.
-
-- **React Router — entire route trees vanished.** Routes imported through a `tsconfig` path alias (e.g. `baseUrl:"src"` + `"@/*":["*"]`) and spread via `appRoutes.map(...)` were silently dropped — only hard-coded `<Route>` survived. Root cause was alias resolution (`loadTsConfigPaths`), not the parser: it ignored `baseUrl`, mishandled the `"*"` target, and didn't follow `extends` / `references` (Vite `tsconfig.app.json` split) or strip JSONC comments. Now fully resolved — a 240-route project that rendered ~15 routes renders all of them.
-- **Domain layer separation — agency parity.** Routes whose components are loaded dynamically (`import.meta.glob`) now layer into `📁 src/pages/<domain>` identically to statically-imported domains, via URL-path fallback.
-- **Spring Boot Tab2 — "Maximum text size exceeded" on a large domain.** Backend chunking split only at the top-level package boundary, so one big domain became a single Mermaid block that exceeded the webview cap. Added node/edge-budget secondary sub-chunking (mirroring the frontend path) — a 1.1 MB single domain now renders as multiple clean rows instead of an error.
+- **First diagram appears ~4× sooner on large projects.** Projects that split into many chunks (e.g. 1000+ routes → ~22 chunks) used to render every chunk before showing anything — a long blank wait. Chunks now stream in progressively: the first row paints right away and the rest fill in without blocking the UI (measured time-to-first-row on a ~1100-route synthetic: 1459 ms → 333 ms).
+- **Less stutter when scrolling, zooming, or panning.** Off-screen chunks skip repaint (`content-visibility`), so interaction cost no longer scales with the total chunk count.
+- Viewer-only change — no analyzer or diagram-output difference. (The total time to render *all* chunks of a very large project is unchanged; this targets first-paint latency and interaction smoothness.)
 
 ### Previous highlights
+
+**v1.2.51** — React Router bulk route omission (tsconfig path alias resolution) · Spring Boot large-domain "maximum size" sub-chunking · Tab1 many-domain readability grid
 
 **v1.2.50** — Spring DI chain 5-level fan-out (Lombok `@RequiredArgsConstructor` · MyBatis XML mapper) · React Router template-literal paths · `src/pages` domain layering
 

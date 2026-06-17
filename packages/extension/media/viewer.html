@@ -144,6 +144,10 @@
       display: block; width: 100%; min-height: 200px;
       overflow: hidden; cursor: grab; position: relative;
       background: rgba(13,18,32,.3); border: 1px solid var(--border-sub); border-radius: 6px;
+      /* v1.2.52: 화면 밖 청크는 paint/hit-test 스킵 → 대형(20+청크) zoom/pan/scroll repaint 비용 제거.
+         height축 intrinsic만 설정(폭은 grid track minmax가 결정); 실측 높이는 fit 단계에서 갱신. */
+      content-visibility: auto;
+      contain-intrinsic-height: auto 300px;
     }
     .row-diagram.dragging { cursor: grabbing; }
     .row-diagram svg { transform-origin: top left; will-change: transform; display: block; }
@@ -329,28 +333,46 @@ function applyErdColors(svgEl) {
   svgEl.querySelectorAll('g.row-rect-odd path[fill]').forEach(p => p.setAttribute('fill', '#f1f5f9'));
 }
 
-async function renderChunked(idPrefix, diagram) {
+// v1.2.52: 청크를 누적 후 일괄 innerHTML 하던 방식(첫 행과 전체가 동시 노출 → 대형 입력
+// 로딩 체감 지연)을 점진적 주입으로 전환한다. 각 청크는 렌더 즉시 grid에 append되어
+// 첫 행이 바로 보이고, 나머지는 프레임마다 끊어 비차단으로 스트리밍된다.
+// 단일 청크는 기존과 동일하게 1회 주입 후 중앙 fit.
+async function renderChunkedInto(t, inner, idPrefix, diagram, onSvg) {
   // ELK 등록 대기 — pragma가 있는 BE diagram이 mrtree로 layout되도록 보장.
   // 실패 시 elkReady가 false로 resolve → dagre fallback (pragma 자체는 mermaid가 unknown layout으로 무시).
   await elkReady;
   const chunks = splitChunks(diagram);
   if (chunks.length <= 1) {
     const {svg} = await mermaid.render(idPrefix+'_'+Date.now(), diagram);
-    return svg;
+    inner.innerHTML = svg;
+    if (onSvg) inner.querySelectorAll('svg').forEach(onSvg);
+    setSvgDimensions(inner);
+    fitToView(t);
+    return;
   }
-  let combined = '';
+  // 다중 청크: row-mode grid를 먼저 켜고(첫 청크부터 grid 셀에 보이도록) 점진 주입.
+  const wrap = document.getElementById('w-'+t);
+  wrap.classList.add('row-mode');
+  inner.style.cssText = '';
+  inner.innerHTML = '';
   for (let i = 0; i < chunks.length; i++) {
     // v1.2.49 B-8: 청크 사이 메인 스레드 양보 — 대형 입력(1031 routes 등)에서 각 청크
     // dagre 레이아웃이 연속 실행돼 탭 전환/페인트가 막히지 않도록 프레임마다 끊는다.
     if (i > 0) await new Promise(r => requestAnimationFrame(r));
+    const row = document.createElement('div');
+    row.className = 'row-diagram';
     try {
       const {svg} = await mermaid.render(idPrefix+'_c'+i+'_'+Date.now(), chunks[i]);
-      combined += '<div class="row-diagram">'+svg+'</div>';
+      row.innerHTML = svg;
     } catch(e) {
-      combined += '<div class="row-diagram"><pre style="color:#fb923c;font-size:11px;padding:8px">Row '+(i+1)+' error: '+e.message+'</pre></div>';
+      row.innerHTML = '<pre style="color:#fb923c;font-size:11px;padding:8px">Row '+(i+1)+' error: '+e.message+'</pre>';
     }
+    inner.appendChild(row);
+    const svgEl = row.querySelector('svg');
+    if (svgEl && onSvg) onSvg(svgEl);
   }
-  return combined;
+  // 전 청크 주입 완료 후 일괄 배선(data-row-idx·ROW_ST·fit·nav). 진행 중에도 행은 보인다.
+  activateRowMode(t, inner);
 }
 
 function setSvgDimensions(inner) {
@@ -409,6 +431,8 @@ function fitRowSvgsInitial(t, inner) {
     applyRowTransform(t, idx);
     // row-diagram cell 높이를 SVG 실제 표시 높이에 맞춤 (grid cell 자동 신축)
     row.style.minHeight = (natH * fitS) + 'px';
+    // v1.2.52: content-visibility:auto가 off-screen일 때 실측 높이를 placeholder로 사용 → 스크롤 점프 방지.
+    row.style.containIntrinsicHeight = 'auto ' + Math.round(natH * fitS) + 'px';
   });
 }
 
@@ -441,14 +465,7 @@ async function renderTab(t) {
   const inner = document.getElementById('i-'+t);
   if (!DIAGRAMS[t]) { inner.innerHTML = '<div class="loading-msg">' + tr('status.noData') + '</div>'; return; }
   try {
-    const html = await renderChunked('msvg_'+t, DIAGRAMS[t]);
-    inner.innerHTML = html;
-    if (inner.querySelector('.row-diagram')) {
-      activateRowMode(t, inner);
-    } else {
-      setSvgDimensions(inner);
-      fitToView(t);
-    }
+    await renderChunkedInto(t, inner, 'msvg_'+t, DIAGRAMS[t]);
   } catch(e) {
     inner.innerHTML = '<pre style="color:#fb923c;padding:20px;font-size:11px">' + tr('alert.renderError') + ': '+e.message+'</pre>';
   }
@@ -662,16 +679,8 @@ async function renderDbView(view) {
       };
     }
     const diag = dbGraphs[view] || dbGraphs.fk;
-    const html = await renderChunked('dbsvg_'+view, diag);
-    inner.innerHTML = html;
-    // erDiagram이 렌더링된 경우 row-rect 색상 후처리 적용
-    inner.querySelectorAll('svg.erDiagram, svg[class*="er"]').forEach(applyErdColors);
-    if (inner.querySelector('.row-diagram')) {
-      activateRowMode('d', inner);
-    } else {
-      setSvgDimensions(inner);
-      fitToView('d');
-    }
+    // onSvg=applyErdColors: erDiagram이면 row-rect 색상 후처리, graph LR이면 no-op(g.row-rect 부재).
+    await renderChunkedInto('d', inner, 'dbsvg_'+view, diag, applyErdColors);
   } catch(e) {
     inner.innerHTML = '<pre style="color:#fb923c;padding:20px;font-size:11px">'+e.message+'</pre>';
   }
