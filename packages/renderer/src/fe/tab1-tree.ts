@@ -26,29 +26,50 @@ function badgeLabel(g: NestedGroup): string {
   return `📁 ${disp} · ${n} ${unit}`
 }
 
-function isTerminal(g: NestedGroup): boolean {
-  return g.children.length === 0
+function routeCount(g: NestedGroup): number {
+  return collectNestedRoutes([g]).length
 }
 
-// children이 전부 terminal(자식 0)이면 leaf-folder — 최하위 route 묶음이라 개별 route로 펼치지 않고
-// 부모 카운트 박스 하나로 collapse한다(개별 leaf 미포함). 구조적 분기가 있는 폴더만 subgraph로 중첩.
-function isLeafFolder(g: NestedGroup): boolean {
-  return g.children.length > 0 && g.children.every(isTerminal)
+// 자식이 전부 단일 라우트(재귀합 1)면 펼칠 구조적 분기가 없으므로 부모 카운트 박스 하나로 collapse한다.
+// 이로써 deepest 단일-라우트 폴더가 형제마다 개별 박스로 반복되는 현상(v1.2.55 사용자 보고)을 제거한다.
+// 다중 라우트(≥2)로 갈라지는 자식이 하나라도 있으면 그 분기는 구조로 보존해야 하므로 subgraph로 중첩.
+function isCollapsed(g: NestedGroup): boolean {
+  if (g.children.length === 0) return true
+  return g.children.every((c) => routeCount(c) < 2)
+}
+
+// 혼합 폴더 안에서 단일 라우트 자식 ≥2개를 하나로 묶는 집계 박스 라벨. 이름은 최대 3개 노출 + `+N`.
+const AGG_NAME_CAP = 3
+
+function aggregateLabel(singles: NestedGroup[]): string {
+  const names = singles.map((s) => folderName(s.groupKey))
+  const shown = names.slice(0, AGG_NAME_CAP)
+  const more = names.length > shown.length ? ` +${names.length - shown.length}` : ''
+  return `📄 ${shown.join(' · ')}${more} (${singles.length} pages)`
 }
 
 function emitFolder(g: NestedGroup, indent: string, lines: string[]): void {
-  if (isTerminal(g) || isLeafFolder(g)) {
+  if (isCollapsed(g)) {
     lines.push(`${indent}${folderId(g.groupKey)}["${badgeLabel(g)}"]:::pkg`)
     return
   }
+  // 혼합/구조적 폴더 → subgraph. 다중 자식은 구조로 재귀, 단일 자식은 1개면 이름 박스·2개+면 집계 박스.
   lines.push(`${indent}subgraph ${folderId(g.groupKey)}_G["${badgeLabel(g)}"]`)
-  for (const c of g.children) emitFolder(c, indent + '  ', lines)
+  const inner = indent + '  '
+  const multi = g.children.filter((c) => routeCount(c) >= 2)
+  const singles = g.children.filter((c) => routeCount(c) < 2)
+  for (const m of multi) emitFolder(m, inner, lines)
+  if (singles.length === 1) {
+    emitFolder(singles[0]!, inner, lines)
+  } else if (singles.length >= 2) {
+    lines.push(`${inner}${folderId(g.groupKey)}_PAGES["${aggregateLabel(singles)}"]:::pkg`)
+  }
   lines.push(`${indent}end`)
 }
 
-// top-level 도메인의 chain 참조 id — 구조적 폴더는 subgraph id(_G), terminal/leaf-folder는 node id.
+// top-level 도메인의 chain 참조 id — collapse된 폴더는 node id, 구조적 폴더는 subgraph id(_G).
 function topRefId(g: NestedGroup): string {
-  return isTerminal(g) || isLeafFolder(g) ? folderId(g.groupKey) : folderId(g.groupKey) + '_G'
+  return isCollapsed(g) ? folderId(g.groupKey) : folderId(g.groupKey) + '_G'
 }
 
 export function buildNestedFolderOverviewLines(domains: NestedGroup[], indent: string): string[] {

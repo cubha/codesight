@@ -320,11 +320,29 @@ Tab1에서 옵션 X.2 적용 후 일부 nested 자식이 webview에서 우연히
 
 ### 10.3 정정되는 규칙
 
-- **R-T1.2 (§2.2)**: 도메인 요약 박스 → **full-depth 폴더 개요**(`buildNestedFolderOverviewLines`). top-level `~~~` chain X축은 유지.
+- **R-T1.2 (§2.2)**: 도메인 요약 박스 → **full-depth 폴더 개요**(`buildNestedFolderOverviewLines`). top-level `~~~` chain X축은 유지. collapse/혼합 폴더 집계는 §10.4.
 - **R-T1.7 (§2.2)**: 청킹 폐지 유지. 추가로 `buildDiagrams`의 `rendering` 필드를 `buildWithChunkFallback`에서 **직접 `buildRenderingDiagram` 호출로 교체**(routeCount>300 재청킹 누수 차단, ST0).
 - **§9.2 "하위 세분화 안 함"** → **폴더 구조는 표시, 개별 route 열거만 Tab2 위임**으로 완화.
 
-### 10.4 보존
+### 10.4 박스 반복 완화 — collapse + 혼합 폴더 집계 (v1.2.55 refinement)
+
+> **사유**: 초기 emitter(leaf-folder = "자식 전부 terminal"만 collapse)는 폴더에 다중 분기 자식이 하나라도 있으면 subgraph로 펼쳐, 그 안의 **단일 라우트(1-route) 자식들이 형제마다 개별 `📁 · 1 route` 박스로 반복** 출력됐다. WINA Dummy 실측 184 박스 중 141개(77%)가 "·1 route" 반복. 사용자 보고("여러 폴더박스가 반복되는 게 별로").
+
+collapse 기준을 **재귀 라우트 수**로 재정의한다(`isCollapsed`):
+
+| 폴더 유형 | 판정 | 출력 |
+|---|---|---|
+| 자식 전부 단일 라우트(재귀합 < 2) | collapse | 카운트 박스 1개 (`📁 /name · N routes`) |
+| 다중 라우트(≥2) 자식 존재 = 혼합/구조적 | 펼침 | `subgraph` |
+
+혼합 폴더 `subgraph` 내부:
+- **다중 라우트(≥2) 자식** → 구조 보존(재귀 `emitFolder`, 박스/subgraph).
+- **단일 라우트 자식 1개** → 이름 카운트 박스(`📁 /name · 1 route`).
+- **단일 라우트 자식 2개+** → **하나의 집계 박스**로 묶음: `📄 name1 · name2 · name3 +N (M pages)`(이름 최대 3개 노출, id `<folder>_PAGES`).
+
+→ **표준 레이아웃(단일 래퍼·full-depth 폴더·`~~~` X축) 불변**, 박스 수만 감소. Dummy 실측: "·1 route" 박스 **141 → 17**, 집계 박스 13개 신설, 총 카운트 박스 184 → 117, subgraph 57 → 42. 재귀 카운트 합·도메인 누락 0 불변(chain ref 19 유지).
+
+### 10.5 보존
 
 - Tab2·Tab3·BE Tab1/Tab2 무변경(단, Tab2 leaf URL 보강은 별도 ST2).
 - nested 자식 Y-stack·외부 edge는 outermost wrapper 발사(§8) 원칙 유지.

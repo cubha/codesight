@@ -845,17 +845,10 @@ graph LR
   subgraph BROWSER["🌐 Browser · Client-Side App"]
     subgraph ROUTER["🧭 React Router · SPA"]
       subgraph REACT["⚛ React · CSR Engine"]
-        subgraph T1_partner_G["📁 /partner · 3 routes"]
-          T1_partner_ordProdPlanMgmt["📁 /ordProdPlanMgmt · 1 route"]:::pkg
-          T1_partner_matMgmt["📁 /matMgmt · 1 route"]:::pkg
-          T1_partner_perfMgmt["📁 /perfMgmt · 1 route"]:::pkg
-        end
+        T1_partner["📁 /partner · 3 routes"]:::pkg
         T1_agency["📁 /agency · 2 routes"]:::pkg
-        subgraph T1_headOffice_G["📁 /headOffice · 2 routes"]
-          T1_headOffice_partnerBaseInfo["📁 /partnerBaseInfo · 1 route"]:::pkg
-          T1_headOffice_materialMgmt["📁 /materialMgmt · 1 route"]:::pkg
-        end
-        T1_partner_G ~~~ T1_agency ~~~ T1_headOffice_G
+        T1_headOffice["📁 /headOffice · 2 routes"]:::pkg
+        T1_partner ~~~ T1_agency ~~~ T1_headOffice
       end
     end
   end
@@ -1408,35 +1401,18 @@ graph LR
       subgraph REACT["⚛ React · CSR Engine"]
         T1_root["📁 / · 1 route"]:::pkg
         T1_login["📁 /login · 1 route"]:::pkg
-        subgraph T1_mobile_G["📁 /mobile · 4 routes"]
-          T1_mobile_login["📁 /login · 1 route"]:::pkg
-          T1_mobile_home["📁 /home · 1 route"]:::pkg
-          T1_mobile_board["📁 /board · 1 route"]:::pkg
-        end
+        T1_mobile["📁 /mobile · 4 routes"]:::pkg
         T1_home["📁 /home · 1 route"]:::pkg
-        subgraph T1_system_G["📁 /system · 3 routes"]
-          T1_system_code["📁 /code · 1 route"]:::pkg
-          T1_system_message["📁 /message · 1 route"]:::pkg
-          T1_system_notice["📁 /notice · 1 route"]:::pkg
-        end
+        T1_system["📁 /system · 3 routes"]:::pkg
         T1_model["📁 /model · 1 route"]:::pkg
-        subgraph T1_headOffice_G["📁 /headOffice · 2 routes"]
-          T1_headOffice_alloc["📁 /alloc · 1 route"]:::pkg
-          T1_headOffice_order["📁 /order · 1 route"]:::pkg
-        end
+        T1_headOffice["📁 /headOffice · 2 routes"]:::pkg
         T1_sso_login["📁 /sso-login · 1 route"]:::pkg
         T1_sso_result["📁 /sso-result · 1 route"]:::pkg
-        subgraph T1_sample_G["📁 /sample · 2 routes"]
-          T1_sample_list["📁 /list · 1 route"]:::pkg
-          T1_sample_detail["📁 /detail · 1 route"]:::pkg
-        end
+        T1_sample["📁 /sample · 2 routes"]:::pkg
         T1_publish["📁 /publish · 1 route"]:::pkg
         T1_profile["📁 /profile · 1 route"]:::pkg
         T1_reference_info["📁 /reference-info · 1 route"]:::pkg
-        subgraph T1_price_G["📁 /price · 2 routes"]
-          T1_price_list["📁 /list · 1 route"]:::pkg
-          T1_price_detail["📁 /detail · 1 route"]:::pkg
-        end
+        T1_price["📁 /price · 2 routes"]:::pkg
         T1_template["📁 /template · 1 route"]:::pkg
         subgraph T1_agency_G["📁 /agency · 3 routes"]
           subgraph T1_agency_agencyFactory_G["📁 /agencyFactory · 3 routes"]
@@ -1445,16 +1421,12 @@ graph LR
           end
         end
         subgraph T1_partner_G["📁 /partner · 4 routes"]
-          subgraph T1_partner_ordProdPlanMgmt_G["📁 /ordProdPlanMgmt · 2 routes"]
-            T1_partner_ordProdPlanMgmt_ordRcvMgmt["📁 /ordRcvMgmt · 1 route"]:::pkg
-            T1_partner_ordProdPlanMgmt_prodOrdSpec["📁 /prodOrdSpec · 1 route"]:::pkg
-          end
-          T1_partner_matMgmt["📁 /matMgmt · 1 route"]:::pkg
-          T1_partner_materialMgmt["📁 /materialMgmt · 1 route"]:::pkg
+          T1_partner_ordProdPlanMgmt["📁 /ordProdPlanMgmt · 2 routes"]:::pkg
+          T1_partner_PAGES["📄 matMgmt · materialMgmt (2 pages)"]:::pkg
         end
         T1_not_found["📁 /not-found · 1 route"]:::pkg
         T1__["📁 /* · 1 route"]:::pkg
-        T1_root ~~~ T1_login ~~~ T1_mobile_G ~~~ T1_home ~~~ T1_system_G ~~~ T1_model ~~~ T1_headOffice_G ~~~ T1_sso_login ~~~ T1_sso_result ~~~ T1_sample_G ~~~ T1_publish ~~~ T1_profile ~~~ T1_reference_info ~~~ T1_price_G ~~~ T1_template ~~~ T1_agency_G ~~~ T1_partner_G ~~~ T1_not_found ~~~ T1__
+        T1_root ~~~ T1_login ~~~ T1_mobile ~~~ T1_home ~~~ T1_system ~~~ T1_model ~~~ T1_headOffice ~~~ T1_sso_login ~~~ T1_sso_result ~~~ T1_sample ~~~ T1_publish ~~~ T1_profile ~~~ T1_reference_info ~~~ T1_price ~~~ T1_template ~~~ T1_agency_G ~~~ T1_partner_G ~~~ T1_not_found ~~~ T1__
       end
     end
   end"
