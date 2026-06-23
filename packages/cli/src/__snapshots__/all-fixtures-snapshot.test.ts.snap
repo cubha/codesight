@@ -1317,12 +1317,22 @@ exports[`Phase XI — fixture baseline snapshots (P1) > mini-react-router-wina-a
     "renders:route:src/routers/Router.tsx:/partner/materialMgmt/cuttingPlan:component:src/pages/partner/materialMgmt/cutting-plan-page.tsx:CuttingPlanPage",
     "renders:route:src/routers/Router.tsx:/partner/ordProdPlanMgmt/ordRcvMgmt/ordRcvSearch/detail/:ordNo:component:src/pages/partner/ordProdPlanMgmt/ord-rcv-detail-page.tsx:OrdRcvDetailPage",
     "renders:route:src/routers/Router.tsx:/partner/ordProdPlanMgmt/prodOrdSpec:component:src/pages/partner/ordProdPlanMgmt/prod-ord-spec-page.tsx:ProdOrdSpecPage",
+    "renders:route:src/routers/Router.tsx:/price/detail/:priceCd:component:src/pages/misc-pages.tsx:SsoLoginPage",
+    "renders:route:src/routers/Router.tsx:/price/list:component:src/pages/misc-pages.tsx:SsoLoginPage",
+    "renders:route:src/routers/Router.tsx:/profile/setting:component:src/pages/misc-pages.tsx:SsoLoginPage",
+    "renders:route:src/routers/Router.tsx:/publish/doc:component:src/pages/misc-pages.tsx:SsoLoginPage",
+    "renders:route:src/routers/Router.tsx:/reference-info/code-guide:component:src/pages/misc-pages.tsx:SsoLoginPage",
+    "renders:route:src/routers/Router.tsx:/sample/detail/:sampleId:component:src/pages/misc-pages.tsx:SsoLoginPage",
+    "renders:route:src/routers/Router.tsx:/sample/list:component:src/pages/misc-pages.tsx:SsoLoginPage",
+    "renders:route:src/routers/Router.tsx:/sso-login:component:src/pages/misc-pages.tsx:SsoLoginPage",
+    "renders:route:src/routers/Router.tsx:/sso-result:component:src/pages/misc-pages.tsx:SsoLoginPage",
     "renders:route:src/routers/Router.tsx:/system/code:component:src/pages/system/code/code-page.tsx:CodePage",
     "renders:route:src/routers/Router.tsx:/system/message:component:src/pages/system/message/message-page.tsx:MessagePage",
     "renders:route:src/routers/Router.tsx:/system/notice/:noticeTpCd/list:component:src/pages/system/notice/notice-list-page.tsx:NoticeListPage",
+    "renders:route:src/routers/Router.tsx:/template/form:component:src/pages/misc-pages.tsx:SsoLoginPage",
   ],
   "edgesByKind": {
-    "renders": 19,
+    "renders": 29,
   },
   "nodeIds": [
     "component:src/pages/common/mobile-login-page.tsx:MobileLoginPage",
@@ -1330,6 +1340,7 @@ exports[`Phase XI — fixture baseline snapshots (P1) > mini-react-router-wina-a
     "component:src/pages/headOffice/order/order-cancel-change-mgmt-page.tsx:OrderCancelChangeMgmtPage",
     "component:src/pages/home-page.tsx:HomePage",
     "component:src/pages/layouts.tsx:RootRedirect",
+    "component:src/pages/misc-pages.tsx:SsoLoginPage",
     "component:src/pages/mobile/board/mobile-notice-detail-page.tsx:MobileNoticeDetailPage",
     "component:src/pages/mobile/mobile-home-page.tsx:MobileHomePage",
     "component:src/pages/model/baseInfo/sap-prod-detail-page.tsx:SapProdDetailPage",
@@ -1359,13 +1370,23 @@ exports[`Phase XI — fixture baseline snapshots (P1) > mini-react-router-wina-a
     "route:src/routers/Router.tsx:/partner/materialMgmt/cuttingPlan",
     "route:src/routers/Router.tsx:/partner/ordProdPlanMgmt/ordRcvMgmt/ordRcvSearch/detail/:ordNo",
     "route:src/routers/Router.tsx:/partner/ordProdPlanMgmt/prodOrdSpec",
+    "route:src/routers/Router.tsx:/price/detail/:priceCd",
+    "route:src/routers/Router.tsx:/price/list",
+    "route:src/routers/Router.tsx:/profile/setting",
+    "route:src/routers/Router.tsx:/publish/doc",
+    "route:src/routers/Router.tsx:/reference-info/code-guide",
+    "route:src/routers/Router.tsx:/sample/detail/:sampleId",
+    "route:src/routers/Router.tsx:/sample/list",
+    "route:src/routers/Router.tsx:/sso-login",
+    "route:src/routers/Router.tsx:/sso-result",
     "route:src/routers/Router.tsx:/system/code",
     "route:src/routers/Router.tsx:/system/message",
     "route:src/routers/Router.tsx:/system/notice/:noticeTpCd/list",
+    "route:src/routers/Router.tsx:/template/form",
   ],
   "nodesByKind": {
-    "component": 15,
-    "route": 22,
+    "component": 16,
+    "route": 32,
   },
 }
 `;
@@ -1403,6 +1424,20 @@ graph LR
           T1_headOffice_alloc["📁 /alloc · 1 route"]:::pkg
           T1_headOffice_order["📁 /order · 1 route"]:::pkg
         end
+        T1_sso_login["📁 /sso-login · 1 route"]:::pkg
+        T1_sso_result["📁 /sso-result · 1 route"]:::pkg
+        subgraph T1_sample_G["📁 /sample · 2 routes"]
+          T1_sample_list["📁 /list · 1 route"]:::pkg
+          T1_sample_detail["📁 /detail · 1 route"]:::pkg
+        end
+        T1_publish["📁 /publish · 1 route"]:::pkg
+        T1_profile["📁 /profile · 1 route"]:::pkg
+        T1_reference_info["📁 /reference-info · 1 route"]:::pkg
+        subgraph T1_price_G["📁 /price · 2 routes"]
+          T1_price_list["📁 /list · 1 route"]:::pkg
+          T1_price_detail["📁 /detail · 1 route"]:::pkg
+        end
+        T1_template["📁 /template · 1 route"]:::pkg
         subgraph T1_agency_G["📁 /agency · 3 routes"]
           subgraph T1_agency_agencyFactory_G["📁 /agencyFactory · 3 routes"]
             T1_agency_agencyFactory_masterMgmt["📁 /masterMgmt · 2 routes"]:::pkg
@@ -1419,7 +1454,7 @@ graph LR
         end
         T1_not_found["📁 /not-found · 1 route"]:::pkg
         T1__["📁 /* · 1 route"]:::pkg
-        T1_root ~~~ T1_login ~~~ T1_mobile_G ~~~ T1_home ~~~ T1_system_G ~~~ T1_model ~~~ T1_headOffice_G ~~~ T1_agency_G ~~~ T1_partner_G ~~~ T1_not_found ~~~ T1__
+        T1_root ~~~ T1_login ~~~ T1_mobile_G ~~~ T1_home ~~~ T1_system_G ~~~ T1_model ~~~ T1_headOffice_G ~~~ T1_sso_login ~~~ T1_sso_result ~~~ T1_sample_G ~~~ T1_publish ~~~ T1_profile ~~~ T1_reference_info ~~~ T1_price_G ~~~ T1_template ~~~ T1_agency_G ~~~ T1_partner_G ~~~ T1_not_found ~~~ T1__
       end
     end
   end"
@@ -1603,6 +1638,16 @@ graph TD
   pageleaf_route_src_routers_Router_tsx__not_found["not-found · CSR<br/>🔗 /not-found<br/>📄 layouts.tsx"]:::csr
   pageleaf_route_src_routers_Router_tsx___["* · CSR<br/>🔗 /*<br/>📄 layouts.tsx"]:::csr
   pageleaf_route_src_routers_Router_tsx__home["home · CSR<br/>🔗 /home<br/>📄 home-page.tsx"]:::csr
+  pageleaf_route_src_routers_Router_tsx__sso_login["sso-login · CSR<br/>🔗 /sso-login<br/>📄 misc-pages.tsx"]:::csr
+  pageleaf_route_src_routers_Router_tsx__sso_result["sso-result · CSR<br/>🔗 /sso-result<br/>📄 misc-pages.tsx"]:::csr
+  pageleaf_route_src_routers_Router_tsx__sample_list["list · CSR<br/>🔗 /sample/list<br/>📄 misc-pages.tsx"]:::csr
+  pageleaf_route_src_routers_Router_tsx__sample_detail__sampleId[":sampleId · CSR<br/>🔗 /sample/detail/:sampleId<br/>📄 misc-pages.tsx"]:::csr
+  pageleaf_route_src_routers_Router_tsx__publish_doc["doc · CSR<br/>🔗 /publish/doc<br/>📄 misc-pages.tsx"]:::csr
+  pageleaf_route_src_routers_Router_tsx__profile_setting["setting · CSR<br/>🔗 /profile/setting<br/>📄 misc-pages.tsx"]:::csr
+  pageleaf_route_src_routers_Router_tsx__reference_info_code_guide["code-guide · CSR<br/>🔗 /reference-info/code-guide<br/>📄 misc-pages.tsx"]:::csr
+  pageleaf_route_src_routers_Router_tsx__price_list["list · CSR<br/>🔗 /price/list<br/>📄 misc-pages.tsx"]:::csr
+  pageleaf_route_src_routers_Router_tsx__price_detail__priceCd[":priceCd · CSR<br/>🔗 /price/detail/:priceCd<br/>📄 misc-pages.tsx"]:::csr
+  pageleaf_route_src_routers_Router_tsx__template_form["form · CSR<br/>🔗 /template/form<br/>📄 misc-pages.tsx"]:::csr
   end"
 `;
 
