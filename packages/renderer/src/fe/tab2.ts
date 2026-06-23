@@ -3,7 +3,7 @@ import type { NestedGroup } from '../url-grouper.js'
 import { sanitizeId, modeClass, edgeArrow } from '../helpers/ids.js'
 import { RENDERING_INIT, CLASS_DEFS } from '../helpers/constants.js'
 import { emitInnerRowSubgraphs, collectNestedRoutes, chunkGroups, GROUPS_PER_ROW } from '../helpers/layout.js'
-import { groupSubgraphId, sectionLabel, stripGroupPrefix } from './labels.js'
+import { groupSubgraphId, sectionLabel, stripGroupPrefix, routeUrlLine } from './labels.js'
 
 // 읽기 전용 lookup 묶음. T1 lookup table·T4 시퀀스 신규 빌더는 본 ctx에 필드 추가만으로 주입 가능.
 export interface ScreenCtx {
@@ -39,7 +39,7 @@ export function buildScreenSubgraphLines(
       const r = group.routes[i]!
       const badge = r.renderingMode === 'unknown' ? '?' : r.renderingMode
       const displayPath = stripGroupPrefix(r.path, group.groupKey)
-      return `${ind}${sanitizeId(r.id)}["${displayPath} · ${badge}"]:::${modeClass(r.renderingMode)}`
+      return `${ind}${sanitizeId(r.id)}["${displayPath} · ${badge}<br/>${routeUrlLine(r)}"]:::${modeClass(r.renderingMode)}`
     }))
 
     const compsInGroup: string[] = []
