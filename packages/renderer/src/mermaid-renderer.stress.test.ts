@@ -259,3 +259,69 @@ describe('mermaid-renderer freeze — 단일 대형 브랜치 (v1.2.49 B 회귀 
     expect(maxLeafSiblingCount(rendering)).toBeLessThan(30)
   })
 })
+
+// v1.2.55 회귀 가드 (ST4) — ST0/ST1 동작을 잠근다(이미 구현·통과, RED-first 아닌 회귀 가드).
+// 근본원인: buildDiagrams가 v1.2.53 단일 Tab1을 routeCount>DEFAULT_NODE_THRESHOLD(300)로 재청킹 →
+// wrapper 반복·findBranchingGroups 산란·도메인 누락 체감. >300 미커버 테스트 갭으로 누수됐던 것을 잠금.
+describe('mermaid-renderer — Tab1 폴더 개요 >300 routes 회귀 가드 + 누락0 (v1.2.55 ST4)', () => {
+  // react-router FE 메타 — wrapper(BROWSER/ROUTER/REACT) 분기까지 검증.
+  function feGraph(routes: RouteNode[]) {
+    return createIRGraph({
+      analyzerVersion: 'codebase-viz@0.1.0',
+      repoRoot: '/tmp/test',
+      metadata: {
+        framework: 'react-router', hasSupabase: false, hasPrisma: false,
+        hasDexie: false, hasFirebase: false, adapterCategory: 'FE',
+      },
+      nodes: routes,
+      edges: [],
+    })
+  }
+
+  const WINA_DOMAINS = [
+    'login', 'sso-login', 'sso-result', 'home', 'system', 'sample', 'publish',
+    'model', 'profile', 'reference-info', 'price', 'headOffice', 'agency',
+    'partner', 'mobile', 'template',
+  ]
+
+  it('400 routes(>300)·16 도메인: Tab1 chunkCount===1 (재청킹 게이트 누수 차단)', () => {
+    const routes = WINA_DOMAINS.flatMap(d => Array.from({ length: 25 }, (_, i) => r(`/${d}/mid${i % 5}/leaf${i}`)))
+    expect(routes.length).toBe(400)
+    const { rendering } = buildDiagrams(feGraph(routes))
+    // 핵심 회귀: >300이어도 Tab1은 단일 다이어그램(청크 0).
+    expect(chunkCountOf(rendering)).toBe(1)
+    // wrapper 1세트만(반복 없음): BROWSER subgraph가 정확히 1개.
+    expect(rendering.match(/subgraph BROWSER/g)?.length).toBe(1)
+  })
+
+  it('누락 0: 16 top-level 도메인이 전부 폴더 박스로 존재 + `~~~` chain이 정확히 16 도메인 연결', () => {
+    const routes = WINA_DOMAINS.flatMap(d => Array.from({ length: 25 }, (_, i) => r(`/${d}/mid${i % 5}/leaf${i}`)))
+    const { rendering } = buildDiagrams(feGraph(routes))
+    // 각 도메인 폴더 박스 존재(camelCase·hyphen 포함).
+    for (const d of WINA_DOMAINS) {
+      expect(rendering, `도메인 /${d} 누락`).toContain(`📁 /${d} ·`)
+    }
+    // top-level `~~~` chain은 정확히 top-level 도메인만 연결 → 참조 id 수 = 16 (누락0 결정론 게이트).
+    const chainLine = rendering.split('\n').find(l => l.includes(' ~~~ '))
+    expect(chainLine, 'top-level chain 라인 없음').toBeDefined()
+    const ids = chainLine!.trim().split(' ~~~ ')
+    expect(ids.length).toBe(WINA_DOMAINS.length)
+  })
+
+  it('재귀 카운트 합 = 전체 page route 수 (silent drop 0)', () => {
+    const routes = WINA_DOMAINS.flatMap(d => Array.from({ length: 25 }, (_, i) => r(`/${d}/mid${i % 5}/leaf${i}`)))
+    const { rendering } = buildDiagrams(feGraph(routes))
+    // top-level chain의 각 도메인 박스/subgraph 헤더 카운트를 합산 → 전체 라우트 수와 일치.
+    const chainLine = rendering.split('\n').find(l => l.includes(' ~~~ '))!
+    const topIds = chainLine.trim().split(' ~~~ ')
+    let sum = 0
+    for (const id of topIds) {
+      // `${id}["📁 /name · N routes"]` 또는 `subgraph ${id}["📁 /name · N routes"]`
+      const re = new RegExp(`(?:subgraph )?${id.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\["📁 [^"]*· (\\d+) routes?"\\]`)
+      const m = rendering.match(re)
+      expect(m, `${id} 카운트 배지 없음`).not.toBeNull()
+      sum += parseInt(m![1]!, 10)
+    }
+    expect(sum).toBe(routes.length)
+  })
+})
