@@ -109,7 +109,7 @@ describe('mermaid-renderer — 소형-다도메인 chunk 게이트 (v1.2.51 C2)'
     ]
   }
 
-  it('28 routes / 7 top-level groups (>5) → Tab1 도메인 요약 단일 다이어그램 (청킹 폐지, R-T1.7 v1.2)', () => {
+  it('28 routes / 7 top-level groups (>5) → Tab1 폴더 개요 단일 다이어그램 (청킹 폐지, R-T1.7 v1.2)', () => {
     const routes = devLogPortfolioRoutes()
     const graph = createIRGraph({
       analyzerVersion: 'codebase-viz@0.1.0',
@@ -118,9 +118,10 @@ describe('mermaid-renderer — 소형-다도메인 chunk 게이트 (v1.2.51 C2)'
       edges: [],
     })
     const { rendering } = buildDiagrams(graph)
-    // v1.2.53: Tab1 청킹 폐지. 7 도메인 > GROUPS_PER_ROW(5) → inner-row wrapper 줄넘김(청킹 아님).
+    // v1.2.55: Tab1 폴더 개요(full-depth 중첩 + 카운트 배지) — 청킹 없음, top-level은 `~~~` chain X축 분포.
     expect(chunkCountOf(rendering)).toBe(1)
-    expect(rendering).toMatch(/subgraph DOMAINS_R\d/)
+    expect(rendering).toMatch(/📁 \/blog · \d+ routes?/)
+    expect(rendering).toContain(' ~~~ ')
   })
 
   it('28 routes / 7 top-level groups → Tab2 single chunk (Tab2 게이트 미변경 — 현 scope)', () => {
@@ -170,11 +171,11 @@ describe('mermaid-renderer stress — NestJS 200 routes (v1.1.6 회귀 fixture)'
   describe('Tab1 rendering', () => {
     const { rendering } = buildDiagrams(graph)
 
-    it('v1.2.53: Tab1 도메인 요약 — 청킹·nested subgraph 없이 단일 다이어그램에 도메인 박스 emit', () => {
-      // FE 표준 v1.2 (R-T1.2/R-T1.7): /api/v1 단일 자식 통과 후 admin/auth/billing 도메인 요약 박스.
-      // 이전: chunked nested(module→resource) — v1.2.53에서 폐지(wrapper·외부분기 보존이 우선).
+    it('v1.2.55: Tab1 폴더 개요 — 청킹 없이 단일 다이어그램에 도메인 폴더 박스 emit', () => {
+      // FE 표준 v1.2.55 (R-T1.2/R-T1.7): /api/v1 단일 자식 통과 후 admin/auth/billing 폴더 박스(재귀 카운트).
+      // 이전: chunked nested(module→resource) — v1.2.53에서 폐지, v1.2.55에서 full-depth 폴더 개요로 재정의.
       expect(chunkCountOf(rendering)).toBe(1)
-      expect(rendering).toMatch(/DOMAIN_[A-Za-z0-9_]+\["📁 [a-z]+ · \d+ routes?"\]/)
+      expect(rendering).toMatch(/📁 \/[a-z]+ · \d+ routes?/)
     })
 
     it('[결함2] chunk 수가 top-level branch 수의 2배 이하 (200 routes → ≤ 10 chunks)', () => {
@@ -238,9 +239,9 @@ describe('mermaid-renderer freeze — 단일 대형 브랜치 (v1.2.49 B 회귀 
 
   it('v1.2.53: routeCount>100(112)여도 Tab1은 청킹 안 함 — 도메인 요약 단일 다이어그램 (R-T1.7 v1.2)', () => {
     const { rendering } = buildDiagrams(graph)
-    // 이전 B-6: routeCount>100이면 청킹 발동. v1.2.53: Tab1 도메인 요약은 O(도메인)이라 청킹 폐지.
+    // 이전 B-6: routeCount>100이면 청킹 발동. v1.2.55: Tab1 폴더 개요는 폴더 수준이라 청킹 폐지.
     expect(chunkCountOf(rendering)).toBe(1)
-    expect(rendering).toMatch(/DOMAIN_[A-Za-z0-9_]+\["📁 /)
+    expect(rendering).toMatch(/📁 \/[a-z]+ ·/)
   })
 
   it('B-7: Tab1 도메인 요약 노드 수 = O(도메인) ≤ 50 (단일 다이어그램)', () => {

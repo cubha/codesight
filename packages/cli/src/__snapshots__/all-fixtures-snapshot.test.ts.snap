@@ -48,10 +48,10 @@ graph LR
   subgraph BROWSER["🌐 Browser · Client-Side App"]
     subgraph ROUTER["🧭 Angular Router · SPA"]
       subgraph ANGULAR["🅰 Angular · CSR Engine"]
-        DOMAIN_root["📁 / · 2 routes"]:::pkg
-        DOMAIN_about["📁 about · 1 route"]:::pkg
-        DOMAIN_users["📁 users · 2 routes"]:::pkg
-        DOMAIN_root ~~~ DOMAIN_about ~~~ DOMAIN_users
+        T1_root["📁 / · 2 routes"]:::pkg
+        T1_about["📁 /about · 1 route"]:::pkg
+        T1_users["📁 /users · 2 routes"]:::pkg
+        T1_root ~~~ T1_about ~~~ T1_users
       end
     end
   end"
@@ -548,10 +548,10 @@ graph LR
     subgraph RUNTIME["⚙ Node.js · Server Runtime"]
       subgraph FRAMEWORK["▲ Next.js · App Router"]
         subgraph REACT["⚛ React · SSR Engine"]
-          DOMAIN_about["📁 about · 1 route"]:::pkg
-          DOMAIN_blog["📁 blog · 1 route"]:::pkg
-          DOMAIN_root["📁 / · 1 route"]:::pkg
-          DOMAIN_about ~~~ DOMAIN_blog ~~~ DOMAIN_root
+          T1_about["📁 /about · 1 route"]:::pkg
+          T1_blog["📁 /blog · 1 route"]:::pkg
+          T1_root["📁 / · 1 route"]:::pkg
+          T1_about ~~~ T1_blog ~~~ T1_root
         end
       end
     end
@@ -657,11 +657,11 @@ graph LR
     subgraph RUNTIME["⚙ Node.js · Server Runtime"]
       subgraph FRAMEWORK["▲ Next.js · App Router"]
         subgraph REACT["⚛ React · SSR Engine"]
-          DOMAIN__components["📁 _components · 2 routes"]:::pkg
-          DOMAIN_about["📁 about · 1 route"]:::pkg
-          DOMAIN_root["📁 / · 1 route"]:::pkg
-          DOMAIN_users["📁 users · 1 route"]:::pkg
-          DOMAIN__components ~~~ DOMAIN_about ~~~ DOMAIN_root ~~~ DOMAIN_users
+          T1__components["📁 /_components · 2 routes"]:::pkg
+          T1_about["📁 /about · 1 route"]:::pkg
+          T1_root["📁 / · 1 route"]:::pkg
+          T1_users["📁 /users · 1 route"]:::pkg
+          T1__components ~~~ T1_about ~~~ T1_root ~~~ T1_users
         end
       end
     end
@@ -744,11 +744,11 @@ graph LR
   classDef pkg fill:#0c1018,stroke:#475569,color:#cbd5e1
   classDef muted fill:#0a0d14,stroke:#374151,color:#64748b,stroke-dasharray: 3 3
   classDef hdr fill:#06080f,stroke:#1e3a5f,color:#7dd3fc
-  DOMAIN_about["📁 about · 1 route"]:::pkg
-  DOMAIN_client_only["📁 client-only · 1 route"]:::pkg
-  DOMAIN_root["📁 / · 1 route"]:::pkg
-  DOMAIN_users["📁 users · 1 route"]:::pkg
-  DOMAIN_about ~~~ DOMAIN_client_only ~~~ DOMAIN_root ~~~ DOMAIN_users"
+  T1_about["📁 /about · 1 route"]:::pkg
+  T1_client_only["📁 /client-only · 1 route"]:::pkg
+  T1_root["📁 / · 1 route"]:::pkg
+  T1_users["📁 /users · 1 route"]:::pkg
+  T1_about ~~~ T1_client_only ~~~ T1_root ~~~ T1_users"
 `;
 
 exports[`Phase XI — fixture baseline snapshots (P1) > mini-nuxt-app > Tab2 screen-component diagram 1`] = `
@@ -845,10 +845,17 @@ graph LR
   subgraph BROWSER["🌐 Browser · Client-Side App"]
     subgraph ROUTER["🧭 React Router · SPA"]
       subgraph REACT["⚛ React · CSR Engine"]
-        DOMAIN_partner["📁 partner · 3 routes"]:::pkg
-        DOMAIN_agency["📁 agency · 2 routes"]:::pkg
-        DOMAIN_headOffice["📁 headOffice · 2 routes"]:::pkg
-        DOMAIN_partner ~~~ DOMAIN_agency ~~~ DOMAIN_headOffice
+        subgraph T1_partner_G["📁 /partner · 3 routes"]
+          T1_partner_ordProdPlanMgmt["📁 /ordProdPlanMgmt · 1 route"]:::pkg
+          T1_partner_matMgmt["📁 /matMgmt · 1 route"]:::pkg
+          T1_partner_perfMgmt["📁 /perfMgmt · 1 route"]:::pkg
+        end
+        T1_agency["📁 /agency · 2 routes"]:::pkg
+        subgraph T1_headOffice_G["📁 /headOffice · 2 routes"]
+          T1_headOffice_partnerBaseInfo["📁 /partnerBaseInfo · 1 route"]:::pkg
+          T1_headOffice_materialMgmt["📁 /materialMgmt · 1 route"]:::pkg
+        end
+        T1_partner_G ~~~ T1_agency ~~~ T1_headOffice_G
       end
     end
   end
@@ -1058,10 +1065,10 @@ graph LR
   subgraph BROWSER["🌐 Browser · Client-Side App"]
     subgraph ROUTER["🧭 React Router · SPA"]
       subgraph REACT["⚛ React · CSR Engine"]
-        DOMAIN_root["📁 / · 1 route"]:::pkg
-        DOMAIN_about["📁 about · 1 route"]:::pkg
-        DOMAIN_users["📁 users · 2 routes"]:::pkg
-        DOMAIN_root ~~~ DOMAIN_about ~~~ DOMAIN_users
+        T1_root["📁 / · 1 route"]:::pkg
+        T1_about["📁 /about · 1 route"]:::pkg
+        T1_users["📁 /users · 2 routes"]:::pkg
+        T1_root ~~~ T1_about ~~~ T1_users
       end
     end
   end"
@@ -1149,12 +1156,12 @@ graph LR
   subgraph BROWSER["🌐 Browser · Client-Side App"]
     subgraph ROUTER["🧭 React Router · SPA"]
       subgraph REACT["⚛ React · CSR Engine"]
-        DOMAIN_order_plan["📁 order-plan · 1 route"]:::pkg
-        DOMAIN_material["📁 material · 1 route"]:::pkg
-        DOMAIN_agency["📁 agency · 1 route"]:::pkg
-        DOMAIN_head_office["📁 head-office · 1 route"]:::pkg
-        DOMAIN_perf["📁 perf · 1 route"]:::pkg
-        DOMAIN_order_plan ~~~ DOMAIN_material ~~~ DOMAIN_agency ~~~ DOMAIN_head_office ~~~ DOMAIN_perf
+        T1_order_plan["📁 /order-plan · 1 route"]:::pkg
+        T1_material["📁 /material · 1 route"]:::pkg
+        T1_agency["📁 /agency · 1 route"]:::pkg
+        T1_head_office["📁 /head-office · 1 route"]:::pkg
+        T1_perf["📁 /perf · 1 route"]:::pkg
+        T1_order_plan ~~~ T1_material ~~~ T1_agency ~~~ T1_head_office ~~~ T1_perf
       end
     end
   end
@@ -1378,29 +1385,41 @@ graph LR
   subgraph BROWSER["🌐 Browser · Client-Side App"]
     subgraph ROUTER["🧭 React Router · SPA"]
       subgraph REACT["⚛ React · CSR Engine"]
-        subgraph DOMAINS_R0 [" "]
-          direction LR
-          DOMAIN_root["📁 / · 1 route"]:::pkg
-          DOMAIN_login["📁 login · 1 route"]:::pkg
-          DOMAIN_mobile["📁 mobile · 4 routes"]:::pkg
-          DOMAIN_home["📁 home · 1 route"]:::pkg
-          DOMAIN_system["📁 system · 3 routes"]:::pkg
+        T1_root["📁 / · 1 route"]:::pkg
+        T1_login["📁 /login · 1 route"]:::pkg
+        subgraph T1_mobile_G["📁 /mobile · 4 routes"]
+          T1_mobile_login["📁 /login · 1 route"]:::pkg
+          T1_mobile_home["📁 /home · 1 route"]:::pkg
+          T1_mobile_board["📁 /board · 1 route"]:::pkg
         end
-        style DOMAINS_R0 fill:none,stroke:none
-        subgraph DOMAINS_R1 [" "]
-          direction LR
-          DOMAIN_model["📁 model · 1 route"]:::pkg
-          DOMAIN_headOffice["📁 headOffice · 2 routes"]:::pkg
-          DOMAIN_agency["📁 agency · 3 routes"]:::pkg
-          DOMAIN_partner["📁 partner · 4 routes"]:::pkg
-          DOMAIN_not_found["📁 not-found · 1 route"]:::pkg
+        T1_home["📁 /home · 1 route"]:::pkg
+        subgraph T1_system_G["📁 /system · 3 routes"]
+          T1_system_code["📁 /code · 1 route"]:::pkg
+          T1_system_message["📁 /message · 1 route"]:::pkg
+          T1_system_notice["📁 /notice · 1 route"]:::pkg
         end
-        style DOMAINS_R1 fill:none,stroke:none
-        subgraph DOMAINS_R2 [" "]
-          direction LR
-          DOMAIN__["📁 * · 1 route"]:::pkg
+        T1_model["📁 /model · 1 route"]:::pkg
+        subgraph T1_headOffice_G["📁 /headOffice · 2 routes"]
+          T1_headOffice_alloc["📁 /alloc · 1 route"]:::pkg
+          T1_headOffice_order["📁 /order · 1 route"]:::pkg
         end
-        style DOMAINS_R2 fill:none,stroke:none
+        subgraph T1_agency_G["📁 /agency · 3 routes"]
+          subgraph T1_agency_agencyFactory_G["📁 /agencyFactory · 3 routes"]
+            T1_agency_agencyFactory_masterMgmt["📁 /masterMgmt · 2 routes"]:::pkg
+            T1_agency_agencyFactory_quotationWork["📁 /quotationWork · 1 route"]:::pkg
+          end
+        end
+        subgraph T1_partner_G["📁 /partner · 4 routes"]
+          subgraph T1_partner_ordProdPlanMgmt_G["📁 /ordProdPlanMgmt · 2 routes"]
+            T1_partner_ordProdPlanMgmt_ordRcvMgmt["📁 /ordRcvMgmt · 1 route"]:::pkg
+            T1_partner_ordProdPlanMgmt_prodOrdSpec["📁 /prodOrdSpec · 1 route"]:::pkg
+          end
+          T1_partner_matMgmt["📁 /matMgmt · 1 route"]:::pkg
+          T1_partner_materialMgmt["📁 /materialMgmt · 1 route"]:::pkg
+        end
+        T1_not_found["📁 /not-found · 1 route"]:::pkg
+        T1__["📁 /* · 1 route"]:::pkg
+        T1_root ~~~ T1_login ~~~ T1_mobile_G ~~~ T1_home ~~~ T1_system_G ~~~ T1_model ~~~ T1_headOffice_G ~~~ T1_agency_G ~~~ T1_partner_G ~~~ T1_not_found ~~~ T1__
       end
     end
   end"
@@ -1627,10 +1646,10 @@ graph LR
   classDef pkg fill:#0c1018,stroke:#475569,color:#cbd5e1
   classDef muted fill:#0a0d14,stroke:#374151,color:#64748b,stroke-dasharray: 3 3
   classDef hdr fill:#06080f,stroke:#1e3a5f,color:#7dd3fc
-  DOMAIN_root["📁 / · 1 route"]:::pkg
-  DOMAIN_about["📁 about · 1 route"]:::pkg
-  DOMAIN_users["📁 users · 1 route"]:::pkg
-  DOMAIN_root ~~~ DOMAIN_about ~~~ DOMAIN_users"
+  T1_root["📁 / · 1 route"]:::pkg
+  T1_about["📁 /about · 1 route"]:::pkg
+  T1_users["📁 /users · 1 route"]:::pkg
+  T1_root ~~~ T1_about ~~~ T1_users"
 `;
 
 exports[`Phase XI — fixture baseline snapshots (P1) > mini-remix-app > Tab2 screen-component diagram 1`] = `
@@ -3467,10 +3486,10 @@ graph LR
   classDef pkg fill:#0c1018,stroke:#475569,color:#cbd5e1
   classDef muted fill:#0a0d14,stroke:#374151,color:#64748b,stroke-dasharray: 3 3
   classDef hdr fill:#06080f,stroke:#1e3a5f,color:#7dd3fc
-  DOMAIN_root["📁 / · 1 route"]:::pkg
-  DOMAIN_about["📁 about · 1 route"]:::pkg
-  DOMAIN_blog["📁 blog · 1 route"]:::pkg
-  DOMAIN_root ~~~ DOMAIN_about ~~~ DOMAIN_blog"
+  T1_root["📁 / · 1 route"]:::pkg
+  T1_about["📁 /about · 1 route"]:::pkg
+  T1_blog["📁 /blog · 1 route"]:::pkg
+  T1_root ~~~ T1_about ~~~ T1_blog"
 `;
 
 exports[`Phase XI — fixture baseline snapshots (P1) > mini-sveltekit-app > Tab2 screen-component diagram 1`] = `
@@ -3550,10 +3569,10 @@ graph LR
   subgraph BROWSER["🌐 Browser · Client-Side App"]
     subgraph ROUTER["🧭 Vue Router · SPA"]
       subgraph VUE["💚 Vue · CSR Engine"]
-        DOMAIN_root["📁 / · 1 route"]:::pkg
-        DOMAIN_about["📁 about · 1 route"]:::pkg
-        DOMAIN_users["📁 users · 2 routes"]:::pkg
-        DOMAIN_root ~~~ DOMAIN_about ~~~ DOMAIN_users
+        T1_root["📁 / · 1 route"]:::pkg
+        T1_about["📁 /about · 1 route"]:::pkg
+        T1_users["📁 /users · 2 routes"]:::pkg
+        T1_root ~~~ T1_about ~~~ T1_users
       end
     end
   end"

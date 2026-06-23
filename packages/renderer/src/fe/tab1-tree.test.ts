@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
-import { createRouteNode, makeNodeId, type RouteNode } from '@codebase-viz/types'
+import { createIRGraph, createRouteNode, createEdge, makeNodeId, makeEdgeId, type RouteNode, type IREdge } from '@codebase-viz/types'
 import { buildNestedFolderOverviewLines } from './tab1-tree.js'
+import { buildDiagrams } from '../mermaid-renderer.js'
 import { groupRoutesByUrl } from '../url-grouper.js'
 
 const PROV = { file: 'src/router.tsx', line: 1, adapter: 'reactrouter', analyzerVersion: '0.1' }
@@ -16,6 +17,36 @@ function rr(p: string): RouteNode {
     renderingMode: 'CSR',
     provenance: PROV,
     confidence: 'verified',
+  })
+}
+
+function apiEdge(from: ReturnType<typeof makeNodeId>): IREdge {
+  const endpoint = makeNodeId('endpoint', '/api/x', 'GET')
+  return createEdge({
+    id: makeEdgeId('api-call', from, endpoint),
+    from,
+    to: endpoint,
+    kind: 'api-call',
+    provenance: PROV,
+    confidence: 'inferred',
+    inferenceChain: ['axios.get'],
+  })
+}
+
+function rrGraph(routes: RouteNode[], edges: IREdge[] = []): ReturnType<typeof createIRGraph> {
+  return createIRGraph({
+    analyzerVersion: 'codebase-viz@0.1.0',
+    repoRoot: '/tmp/test',
+    metadata: {
+      framework: 'react-router',
+      hasSupabase: false,
+      hasPrisma: false,
+      hasDexie: false,
+      hasFirebase: false,
+      adapterCategory: 'FE',
+    },
+    nodes: routes,
+    edges,
   })
 }
 
@@ -73,5 +104,49 @@ describe('buildNestedFolderOverviewLines (Tab1 v1.2.55 — full-depth folder 개
     for (const d of domains) {
       expect(lines, `도메인 /${d} 누락`).toContain(`📁 /${d} ·`)
     }
+  })
+})
+
+describe('buildRenderingDiagram Tab1 — 대형 다도메인 wrapper·데이터레이어 유지 (1b 회귀가드)', () => {
+  it('react-router 7도메인: wrapper(BROWSER/ROUTER/REACT)·API LAYER 유지 + 청킹 안 함', () => {
+    const routes = [
+      rr('/partner/matMgmt/deco'),
+      rr('/agency/user'),
+      rr('/headoffice/base'),
+      rr('/sales/order'),
+      rr('/finance/bill'),
+      rr('/system/code'),
+      rr('/report/daily'),
+    ]
+    const edges = [apiEdge(routes[0]!.id)]
+    const { rendering } = buildDiagrams(rrGraph(routes, edges))
+
+    // 1b 핵심: 프레임워크 wrapper 유지
+    expect(rendering).toContain('subgraph BROWSER')
+    expect(rendering).toContain('ROUTER')
+    expect(rendering).toContain('REACT')
+    // 데이터레이어(외부 API) 유지
+    expect(rendering).toContain('API LAYER')
+    // Tab1은 청킹하지 않는다 (R-T1.7 v1.2)
+    expect(rendering).not.toContain('%%--CHUNK--%%')
+    // 폴더 개요 박스(재귀 카운트 배지)
+    expect(rendering).toMatch(/📁 \/partner · 1 route\b/)
+    // Tab1은 nested 구조라 spacing 옵션이 무시됨 → FE_TREE_INIT 미적용(RENDERING_INIT 유지)
+    expect(rendering).not.toContain("'rankSpacing'")
+  })
+
+  it('도메인 5개(게이트 미발동 케이스)도 동일하게 wrapper 유지 + leaf 라우트 미열거', () => {
+    const routes = [
+      rr('/order-plan/spec'),
+      rr('/material/deco'),
+      rr('/agency/users'),
+      rr('/head-office/proc-code'),
+      rr('/perf/trans'),
+    ]
+    const { rendering } = buildDiagrams(rrGraph(routes))
+    expect(rendering).toContain('subgraph BROWSER')
+    // 개별 라우트 leaf 노드(예: 'spec · CSR')는 Tab1에 더 이상 없음 → Tab2로 위임
+    expect(rendering).not.toContain('spec · CSR')
+    expect(rendering).not.toContain('%%--CHUNK--%%')
   })
 })
