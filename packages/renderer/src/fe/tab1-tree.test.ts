@@ -87,6 +87,30 @@ describe('buildNestedFolderOverviewLines (Tab1 v1.2.55 — full-depth folder 개
     expect(lines).toMatch(/📁 \/code · 2 routes/)
   })
 
+  it('혼합 폴더: 단일라우트 자식 2개+ 는 하나의 📄 집계 박스로 묶고 다중 자식은 구조 유지', () => {
+    // sysX: code·msg·menu(각 1-route) 단일 3개 + role(2-route) 다중 1개
+    const lines = overview([
+      rr('/sysX/code'), rr('/sysX/msg'), rr('/sysX/menu'),
+      rr('/sysX/role/a'), rr('/sysX/role/b'),
+    ])
+    // 다중 분기 role은 박스로 유지(구조)
+    expect(lines).toMatch(/📁 \/role · 2 routes/)
+    // 단일 3개는 개별 박스가 아니라 하나의 📄 집계 박스 (M pages)
+    expect(lines).toMatch(/📄 [^"]*\(3 pages\)/)
+    expect(lines).not.toMatch(/📁 \/code · 1 route/)
+    expect(lines).not.toMatch(/📁 \/msg · 1 route/)
+  })
+
+  it('혼합 폴더: 단일라우트 자식이 1개뿐이면 집계 없이 이름 박스로 표시', () => {
+    // alloc: ordAllocInfo(2-route) 다중 + ordAllocMgmt(1-route) 단일 1개 → 집계 안 함
+    const lines = overview([
+      rr('/alloc/ordAllocInfo/x'), rr('/alloc/ordAllocInfo/y'), rr('/alloc/ordAllocMgmt/z'),
+    ])
+    expect(lines).toMatch(/📁 \/ordAllocInfo · 2 routes/)
+    expect(lines).toMatch(/📁 \/ordAllocMgmt · 1 route\b/)
+    expect(lines).not.toMatch(/\(1 pages?\)/)
+  })
+
   it('청크 구분자를 포함하지 않는다 (단일 다이어그램·청킹 폐지)', () => {
     const lines = overview(Array.from({ length: 12 }, (_, i) => rr(`/d${i}/x`)))
     expect(lines).not.toContain('%%--CHUNK--%%')
