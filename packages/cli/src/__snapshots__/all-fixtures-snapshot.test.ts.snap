@@ -48,10 +48,10 @@ graph LR
   subgraph BROWSER["🌐 Browser · Client-Side App"]
     subgraph ROUTER["🧭 Angular Router · SPA"]
       subgraph ANGULAR["🅰 Angular · CSR Engine"]
-        DOMAIN_root["📁 / · 2 routes"]:::pkg
-        DOMAIN_about["📁 about · 1 route"]:::pkg
-        DOMAIN_users["📁 users · 2 routes"]:::pkg
-        DOMAIN_root ~~~ DOMAIN_about ~~~ DOMAIN_users
+        T1_root["📁 / · 2 routes"]:::pkg
+        T1_about["📁 /about · 1 route"]:::pkg
+        T1_users["📁 /users · 2 routes"]:::pkg
+        T1_root ~~~ T1_about ~~~ T1_users
       end
     end
   end"
@@ -69,16 +69,16 @@ graph LR
   classDef pkg fill:#0c1018,stroke:#475569,color:#cbd5e1
   classDef muted fill:#0a0d14,stroke:#374151,color:#64748b,stroke-dasharray: 3 3
   classDef hdr fill:#06080f,stroke:#1e3a5f,color:#7dd3fc
-  route_src_app_home_component_ts__["/ · CSR"]:::csr
+  route_src_app_home_component_ts__["/ · CSR<br/>🔗 /"]:::csr
   file_component_src_app_home_component_ts_HomeComponent["📂 src/app<br/>📄 home.component.ts"]:::pkg
   route_src_app_home_component_ts__ --> file_component_src_app_home_component_ts_HomeComponent
   file_component_src_app_users_component_ts_UsersComponent["📂 src/app<br/>📄 users.component.ts"]:::pkg
-  leaf_route_src_app_about_component_ts__about["about · CSR<br/>📂 src/app<br/>📄 about.component.ts"]:::csr
+  leaf_route_src_app_about_component_ts__about["about · CSR<br/>🔗 /about<br/>📂 src/app<br/>📄 about.component.ts"]:::csr
   subgraph USERS_T["📄 /users"]
-    route_src_app_users_component_ts__users["users · CSR"]:::csr
+    route_src_app_users_component_ts__users["users · CSR<br/>🔗 /users"]:::csr
     route_src_app_users_component_ts__users --> file_component_src_app_users_component_ts_UsersComponent
     subgraph USERS__ID_T["📄 /:id"]
-      route_src_app_app_routes_ts__users__id[":id · CSR"]:::csr
+      route_src_app_app_routes_ts__users__id[":id · CSR<br/>🔗 /users/:id"]:::csr
     end
   end
   leaf_route_src_app_about_component_ts__about ~~~ USERS_T
@@ -548,10 +548,10 @@ graph LR
     subgraph RUNTIME["⚙ Node.js · Server Runtime"]
       subgraph FRAMEWORK["▲ Next.js · App Router"]
         subgraph REACT["⚛ React · SSR Engine"]
-          DOMAIN_about["📁 about · 1 route"]:::pkg
-          DOMAIN_blog["📁 blog · 1 route"]:::pkg
-          DOMAIN_root["📁 / · 1 route"]:::pkg
-          DOMAIN_about ~~~ DOMAIN_blog ~~~ DOMAIN_root
+          T1_about["📁 /about · 1 route"]:::pkg
+          T1_blog["📁 /blog · 1 route"]:::pkg
+          T1_root["📁 / · 1 route"]:::pkg
+          T1_about ~~~ T1_blog ~~~ T1_root
         end
       end
     end
@@ -577,11 +577,11 @@ graph LR
   classDef pkg fill:#0c1018,stroke:#475569,color:#cbd5e1
   classDef muted fill:#0a0d14,stroke:#374151,color:#64748b,stroke-dasharray: 3 3
   classDef hdr fill:#06080f,stroke:#1e3a5f,color:#7dd3fc
-  leaf_route_app__marketing__about_page["about · SSR<br/>📂 app/(marketing)/about<br/>📄 page.tsx"]:::ssr
+  leaf_route_app__marketing__about_page["about · SSR<br/>🔗 /about<br/>📂 app/(marketing)/about<br/>📄 page.tsx"]:::ssr
   subgraph BLOG_T["📝 /blog"]
-    leaf_route_app_blog__slug__page[":slug · SSR<br/>📂 app/blog/[slug]<br/>📄 page.tsx"]:::ssr
+    leaf_route_app_blog__slug__page[":slug · SSR<br/>🔗 /blog/:slug<br/>📂 app/blog/[slug]<br/>📄 page.tsx"]:::ssr
   end
-  route_app_page["/ · SSR"]:::ssr
+  route_app_page["/ · SSR<br/>🔗 /"]:::ssr
   file_component_app_page_tsx_page["📂 app<br/>📄 page.tsx"]:::pkg
   route_app_page --> file_component_app_page_tsx_page
   file_component_components_Header_tsx_Header["📂 components<br/>📄 Header.tsx"]:::pkg
@@ -657,11 +657,11 @@ graph LR
     subgraph RUNTIME["⚙ Node.js · Server Runtime"]
       subgraph FRAMEWORK["▲ Next.js · App Router"]
         subgraph REACT["⚛ React · SSR Engine"]
-          DOMAIN__components["📁 _components · 2 routes"]:::pkg
-          DOMAIN_about["📁 about · 1 route"]:::pkg
-          DOMAIN_root["📁 / · 1 route"]:::pkg
-          DOMAIN_users["📁 users · 1 route"]:::pkg
-          DOMAIN__components ~~~ DOMAIN_about ~~~ DOMAIN_root ~~~ DOMAIN_users
+          T1__components["📁 /_components · 2 routes"]:::pkg
+          T1_about["📁 /about · 1 route"]:::pkg
+          T1_root["📁 / · 1 route"]:::pkg
+          T1_users["📁 /users · 1 route"]:::pkg
+          T1__components ~~~ T1_about ~~~ T1_root ~~~ T1_users
         end
       end
     end
@@ -682,20 +682,20 @@ graph LR
   classDef hdr fill:#06080f,stroke:#1e3a5f,color:#7dd3fc
   subgraph _COMPONENTS_T["📄 /_components"]
     subgraph _COMPONENTS_USERBADGE_T["📄 /UserBadge"]
-      route_pages__components_UserBadge_tsx_page["UserBadge · SSR"]:::ssr
+      route_pages__components_UserBadge_tsx_page["UserBadge · SSR<br/>🔗 /_components/UserBadge"]:::ssr
     end
     subgraph _COMPONENTS_USERCARD_T["📄 /UserCard"]
-      route_pages__components_UserCard_tsx_page["UserCard · SSR"]:::ssr
+      route_pages__components_UserCard_tsx_page["UserCard · SSR<br/>🔗 /_components/UserCard"]:::ssr
     end
   end
   _COMPONENTS_USERBADGE_T ~~~ _COMPONENTS_USERCARD_T
   subgraph ABOUT_T["👤 /about"]
-    route_pages_about_tsx_page["about · SSR"]:::ssr
+    route_pages_about_tsx_page["about · SSR<br/>🔗 /about"]:::ssr
   end
-  route_pages_index_tsx_page["/ · SSR"]:::ssr
+  route_pages_index_tsx_page["/ · SSR<br/>🔗 /"]:::ssr
   subgraph USERS_T["📄 /users"]
     subgraph USERS__ID_T["📄 /:id"]
-      route_pages_users__id__tsx_page[":id · SSR"]:::ssr
+      route_pages_users__id__tsx_page[":id · SSR<br/>🔗 /users/:id"]:::ssr
     end
   end
   _COMPONENTS_T ~~~ ABOUT_T ~~~ USERS_T"
@@ -744,11 +744,11 @@ graph LR
   classDef pkg fill:#0c1018,stroke:#475569,color:#cbd5e1
   classDef muted fill:#0a0d14,stroke:#374151,color:#64748b,stroke-dasharray: 3 3
   classDef hdr fill:#06080f,stroke:#1e3a5f,color:#7dd3fc
-  DOMAIN_about["📁 about · 1 route"]:::pkg
-  DOMAIN_client_only["📁 client-only · 1 route"]:::pkg
-  DOMAIN_root["📁 / · 1 route"]:::pkg
-  DOMAIN_users["📁 users · 1 route"]:::pkg
-  DOMAIN_about ~~~ DOMAIN_client_only ~~~ DOMAIN_root ~~~ DOMAIN_users"
+  T1_about["📁 /about · 1 route"]:::pkg
+  T1_client_only["📁 /client-only · 1 route"]:::pkg
+  T1_root["📁 / · 1 route"]:::pkg
+  T1_users["📁 /users · 1 route"]:::pkg
+  T1_about ~~~ T1_client_only ~~~ T1_root ~~~ T1_users"
 `;
 
 exports[`Phase XI — fixture baseline snapshots (P1) > mini-nuxt-app > Tab2 screen-component diagram 1`] = `
@@ -764,15 +764,15 @@ graph LR
   classDef muted fill:#0a0d14,stroke:#374151,color:#64748b,stroke-dasharray: 3 3
   classDef hdr fill:#06080f,stroke:#1e3a5f,color:#7dd3fc
   subgraph ABOUT_T["👤 /about"]
-    route_pages_about_vue["about · SSR"]:::ssr
+    route_pages_about_vue["about · SSR<br/>🔗 /about"]:::ssr
   end
   subgraph CLIENT_ONLY_T["📄 /client-only"]
-    route_pages_client_only_vue["client-only · CSR"]:::csr
+    route_pages_client_only_vue["client-only · CSR<br/>🔗 /client-only"]:::csr
   end
-  route_pages_index_vue["/ · SSR"]:::ssr
+  route_pages_index_vue["/ · SSR<br/>🔗 /"]:::ssr
   subgraph USERS_T["📄 /users"]
     subgraph USERS__ID_T["📄 /:id"]
-      route_pages_users__id__vue[":id · SSR"]:::ssr
+      route_pages_users__id__vue[":id · SSR<br/>🔗 /users/:id"]:::ssr
     end
   end
   ABOUT_T ~~~ CLIENT_ONLY_T ~~~ USERS_T"
@@ -845,10 +845,10 @@ graph LR
   subgraph BROWSER["🌐 Browser · Client-Side App"]
     subgraph ROUTER["🧭 React Router · SPA"]
       subgraph REACT["⚛ React · CSR Engine"]
-        DOMAIN_partner["📁 partner · 3 routes"]:::pkg
-        DOMAIN_agency["📁 agency · 2 routes"]:::pkg
-        DOMAIN_headOffice["📁 headOffice · 2 routes"]:::pkg
-        DOMAIN_partner ~~~ DOMAIN_agency ~~~ DOMAIN_headOffice
+        T1_partner["📁 /partner · 3 routes"]:::pkg
+        T1_agency["📁 /agency · 2 routes"]:::pkg
+        T1_headOffice["📁 /headOffice · 2 routes"]:::pkg
+        T1_partner ~~~ T1_agency ~~~ T1_headOffice
       end
     end
   end
@@ -884,11 +884,11 @@ graph TD
   pkg_partner__perfMgmt["perfMgmt"]:::pkg
   pkg_partner__perfMgmt__transStmt["transStmt"]:::pkg
   pkg_partner__perfMgmt --> pkg_partner__perfMgmt__transStmt
-  pageleaf_route_src_router_tsx__partner_ordProdPlanMgmt_prodOrdSpec["prodOrdSpec · CSR<br/>📄 OrdSpecPrintPage.tsx"]:::csr
+  pageleaf_route_src_router_tsx__partner_ordProdPlanMgmt_prodOrdSpec["prodOrdSpec · CSR<br/>🔗 /partner/ordProdPlanMgmt/prodOrdSpec<br/>📄 OrdSpecPrintPage.tsx"]:::csr
   pkg_partner__ordProdPlanMgmt__prodOrdSpec --> pageleaf_route_src_router_tsx__partner_ordProdPlanMgmt_prodOrdSpec
-  pageleaf_route_src_router_tsx__partner_matMgmt_decoSheet["decoSheet · CSR<br/>📄 DecoSheetPage.tsx"]:::csr
+  pageleaf_route_src_router_tsx__partner_matMgmt_decoSheet["decoSheet · CSR<br/>🔗 /partner/matMgmt/decoSheet<br/>📄 DecoSheetPage.tsx"]:::csr
   pkg_partner__matMgmt__decoSheet --> pageleaf_route_src_router_tsx__partner_matMgmt_decoSheet
-  pageleaf_route_src_router_tsx__partner_perfMgmt_transStmt["transStmt · CSR<br/>📄 TrnStmtSchPage.tsx"]:::csr
+  pageleaf_route_src_router_tsx__partner_perfMgmt_transStmt["transStmt · CSR<br/>🔗 /partner/perfMgmt/transStmt<br/>📄 TrnStmtSchPage.tsx"]:::csr
   pkg_partner__perfMgmt__transStmt --> pageleaf_route_src_router_tsx__partner_perfMgmt_transStmt
   end
 %%--CHUNK--%%
@@ -908,9 +908,9 @@ graph TD
     direction TB
   pkg_agency__userMgmt["userMgmt"]:::pkg
   pkg_agency__contractMgmt["contractMgmt"]:::pkg
-  pageleaf_route_src_router_tsx__agency_userMgmt["userMgmt · CSR<br/>📄 UserMgmtPage.tsx"]:::csr
+  pageleaf_route_src_router_tsx__agency_userMgmt["userMgmt · CSR<br/>🔗 /agency/userMgmt<br/>📄 UserMgmtPage.tsx"]:::csr
   pkg_agency__userMgmt --> pageleaf_route_src_router_tsx__agency_userMgmt
-  pageleaf_route_src_router_tsx__agency_contractMgmt["contractMgmt · CSR<br/>📄 ContractMgmtPage.tsx"]:::csr
+  pageleaf_route_src_router_tsx__agency_contractMgmt["contractMgmt · CSR<br/>🔗 /agency/contractMgmt<br/>📄 ContractMgmtPage.tsx"]:::csr
   pkg_agency__contractMgmt --> pageleaf_route_src_router_tsx__agency_contractMgmt
   end
 %%--CHUNK--%%
@@ -934,9 +934,9 @@ graph TD
   pkg_headoffice__materialMgmt["materialMgmt"]:::pkg
   pkg_headoffice__materialMgmt__cuttingPlanInfoMgmt["cuttingPlanInfoMgmt"]:::pkg
   pkg_headoffice__materialMgmt --> pkg_headoffice__materialMgmt__cuttingPlanInfoMgmt
-  pageleaf_route_src_router_tsx__headOffice_partnerBaseInfo_procCodeMgmt["procCodeMgmt · CSR<br/>📄 ProcCodeMgmtPage.tsx"]:::csr
+  pageleaf_route_src_router_tsx__headOffice_partnerBaseInfo_procCodeMgmt["procCodeMgmt · CSR<br/>🔗 /headOffice/partnerBaseInfo/procCodeMgmt<br/>📄 ProcCodeMgmtPage.tsx"]:::csr
   pkg_headoffice__partnerBaseInfo__procCodeMgmt --> pageleaf_route_src_router_tsx__headOffice_partnerBaseInfo_procCodeMgmt
-  pageleaf_route_src_router_tsx__headOffice_materialMgmt_cuttingPlanInfoMgmt["cuttingPlanInfoMgmt · CSR<br/>📄 CuttingPlanMgmtPage.tsx"]:::csr
+  pageleaf_route_src_router_tsx__headOffice_materialMgmt_cuttingPlanInfoMgmt["cuttingPlanInfoMgmt · CSR<br/>🔗 /headOffice/materialMgmt/cuttingPlanInfoMgmt<br/>📄 CuttingPlanMgmtPage.tsx"]:::csr
   pkg_headoffice__materialMgmt__cuttingPlanInfoMgmt --> pageleaf_route_src_router_tsx__headOffice_materialMgmt_cuttingPlanInfoMgmt
   end"
 `;
@@ -1058,10 +1058,10 @@ graph LR
   subgraph BROWSER["🌐 Browser · Client-Side App"]
     subgraph ROUTER["🧭 React Router · SPA"]
       subgraph REACT["⚛ React · CSR Engine"]
-        DOMAIN_root["📁 / · 1 route"]:::pkg
-        DOMAIN_about["📁 about · 1 route"]:::pkg
-        DOMAIN_users["📁 users · 2 routes"]:::pkg
-        DOMAIN_root ~~~ DOMAIN_about ~~~ DOMAIN_users
+        T1_root["📁 / · 1 route"]:::pkg
+        T1_about["📁 /about · 1 route"]:::pkg
+        T1_users["📁 /users · 2 routes"]:::pkg
+        T1_root ~~~ T1_about ~~~ T1_users
       end
     end
   end"
@@ -1079,15 +1079,15 @@ graph LR
   classDef pkg fill:#0c1018,stroke:#475569,color:#cbd5e1
   classDef muted fill:#0a0d14,stroke:#374151,color:#64748b,stroke-dasharray: 3 3
   classDef hdr fill:#06080f,stroke:#1e3a5f,color:#7dd3fc
-  route_src_router_tsx__["/ · CSR"]:::csr
+  route_src_router_tsx__["/ · CSR<br/>🔗 /"]:::csr
   file_component_src_pages_HomePage_tsx_HomePage["📂 src/pages<br/>📄 HomePage.tsx"]:::pkg
   route_src_router_tsx__ --> file_component_src_pages_HomePage_tsx_HomePage
-  leaf_route_src_router_tsx__about["about · CSR<br/>📂 src/pages<br/>📄 AboutPage.tsx"]:::csr
+  leaf_route_src_router_tsx__about["about · CSR<br/>🔗 /about<br/>📂 src/pages<br/>📄 AboutPage.tsx"]:::csr
   subgraph USERS_T["📄 /users"]
-    route_src_router_tsx__users["users · CSR"]:::csr
+    route_src_router_tsx__users["users · CSR<br/>🔗 /users"]:::csr
     file_component_src_pages_UserListPage_tsx_UserListPage["📂 src/pages<br/>📄 UserListPage.tsx"]:::pkg
     route_src_router_tsx__users --> file_component_src_pages_UserListPage_tsx_UserListPage
-    leaf_route_src_router_tsx__users__id[":id · CSR<br/>📂 src/pages<br/>📄 UserDetailPage.tsx"]:::csr
+    leaf_route_src_router_tsx__users__id[":id · CSR<br/>🔗 /users/:id<br/>📂 src/pages<br/>📄 UserDetailPage.tsx"]:::csr
   end
   leaf_route_src_router_tsx__about ~~~ USERS_T"
 `;
@@ -1149,12 +1149,12 @@ graph LR
   subgraph BROWSER["🌐 Browser · Client-Side App"]
     subgraph ROUTER["🧭 React Router · SPA"]
       subgraph REACT["⚛ React · CSR Engine"]
-        DOMAIN_order_plan["📁 order-plan · 1 route"]:::pkg
-        DOMAIN_material["📁 material · 1 route"]:::pkg
-        DOMAIN_agency["📁 agency · 1 route"]:::pkg
-        DOMAIN_head_office["📁 head-office · 1 route"]:::pkg
-        DOMAIN_perf["📁 perf · 1 route"]:::pkg
-        DOMAIN_order_plan ~~~ DOMAIN_material ~~~ DOMAIN_agency ~~~ DOMAIN_head_office ~~~ DOMAIN_perf
+        T1_order_plan["📁 /order-plan · 1 route"]:::pkg
+        T1_material["📁 /material · 1 route"]:::pkg
+        T1_agency["📁 /agency · 1 route"]:::pkg
+        T1_head_office["📁 /head-office · 1 route"]:::pkg
+        T1_perf["📁 /perf · 1 route"]:::pkg
+        T1_order_plan ~~~ T1_material ~~~ T1_agency ~~~ T1_head_office ~~~ T1_perf
       end
     end
   end
@@ -1190,11 +1190,11 @@ graph TD
   pkg_partner__perfMgmt["perfMgmt"]:::pkg
   pkg_partner__perfMgmt__transStmt["transStmt"]:::pkg
   pkg_partner__perfMgmt --> pkg_partner__perfMgmt__transStmt
-  pageleaf_route_src_router_tsx__order_plan_spec["spec · CSR<br/>📄 OrdSpecPrintPage.tsx"]:::csr
+  pageleaf_route_src_router_tsx__order_plan_spec["spec · CSR<br/>🔗 /order-plan/spec<br/>📄 OrdSpecPrintPage.tsx"]:::csr
   pkg_partner__ordProdPlanMgmt__prodOrdSpec --> pageleaf_route_src_router_tsx__order_plan_spec
-  pageleaf_route_src_router_tsx__material_deco["deco · CSR<br/>📄 DecoSheetPage.tsx"]:::csr
+  pageleaf_route_src_router_tsx__material_deco["deco · CSR<br/>🔗 /material/deco<br/>📄 DecoSheetPage.tsx"]:::csr
   pkg_partner__matMgmt__decoSheet --> pageleaf_route_src_router_tsx__material_deco
-  pageleaf_route_src_router_tsx__perf_trans["trans · CSR<br/>📄 TrnStmtSchPage.tsx"]:::csr
+  pageleaf_route_src_router_tsx__perf_trans["trans · CSR<br/>🔗 /perf/trans<br/>📄 TrnStmtSchPage.tsx"]:::csr
   pkg_partner__perfMgmt__transStmt --> pageleaf_route_src_router_tsx__perf_trans
   end
 %%--CHUNK--%%
@@ -1213,7 +1213,7 @@ graph TD
   subgraph HDR_PAGES ["📁 src/pages/agency"]
     direction TB
   pkg_agency__userMgmt["userMgmt"]:::pkg
-  pageleaf_route_src_router_tsx__agency_users["users · CSR<br/>📄 UserMgmtPage.tsx"]:::csr
+  pageleaf_route_src_router_tsx__agency_users["users · CSR<br/>🔗 /agency/users<br/>📄 UserMgmtPage.tsx"]:::csr
   pkg_agency__userMgmt --> pageleaf_route_src_router_tsx__agency_users
   end
 %%--CHUNK--%%
@@ -1234,7 +1234,7 @@ graph TD
   pkg_headoffice__partnerBaseInfo["partnerBaseInfo"]:::pkg
   pkg_headoffice__partnerBaseInfo__procCodeMgmt["procCodeMgmt"]:::pkg
   pkg_headoffice__partnerBaseInfo --> pkg_headoffice__partnerBaseInfo__procCodeMgmt
-  pageleaf_route_src_router_tsx__head_office_proc_code["proc-code · CSR<br/>📄 ProcCodeMgmtPage.tsx"]:::csr
+  pageleaf_route_src_router_tsx__head_office_proc_code["proc-code · CSR<br/>🔗 /head-office/proc-code<br/>📄 ProcCodeMgmtPage.tsx"]:::csr
   pkg_headoffice__partnerBaseInfo__procCodeMgmt --> pageleaf_route_src_router_tsx__head_office_proc_code
   end"
 `;
@@ -1310,12 +1310,22 @@ exports[`Phase XI — fixture baseline snapshots (P1) > mini-react-router-wina-a
     "renders:route:src/routers/Router.tsx:/partner/materialMgmt/cuttingPlan:component:src/pages/partner/materialMgmt/cutting-plan-page.tsx:CuttingPlanPage",
     "renders:route:src/routers/Router.tsx:/partner/ordProdPlanMgmt/ordRcvMgmt/ordRcvSearch/detail/:ordNo:component:src/pages/partner/ordProdPlanMgmt/ord-rcv-detail-page.tsx:OrdRcvDetailPage",
     "renders:route:src/routers/Router.tsx:/partner/ordProdPlanMgmt/prodOrdSpec:component:src/pages/partner/ordProdPlanMgmt/prod-ord-spec-page.tsx:ProdOrdSpecPage",
+    "renders:route:src/routers/Router.tsx:/price/detail/:priceCd:component:src/pages/misc-pages.tsx:SsoLoginPage",
+    "renders:route:src/routers/Router.tsx:/price/list:component:src/pages/misc-pages.tsx:SsoLoginPage",
+    "renders:route:src/routers/Router.tsx:/profile/setting:component:src/pages/misc-pages.tsx:SsoLoginPage",
+    "renders:route:src/routers/Router.tsx:/publish/doc:component:src/pages/misc-pages.tsx:SsoLoginPage",
+    "renders:route:src/routers/Router.tsx:/reference-info/code-guide:component:src/pages/misc-pages.tsx:SsoLoginPage",
+    "renders:route:src/routers/Router.tsx:/sample/detail/:sampleId:component:src/pages/misc-pages.tsx:SsoLoginPage",
+    "renders:route:src/routers/Router.tsx:/sample/list:component:src/pages/misc-pages.tsx:SsoLoginPage",
+    "renders:route:src/routers/Router.tsx:/sso-login:component:src/pages/misc-pages.tsx:SsoLoginPage",
+    "renders:route:src/routers/Router.tsx:/sso-result:component:src/pages/misc-pages.tsx:SsoLoginPage",
     "renders:route:src/routers/Router.tsx:/system/code:component:src/pages/system/code/code-page.tsx:CodePage",
     "renders:route:src/routers/Router.tsx:/system/message:component:src/pages/system/message/message-page.tsx:MessagePage",
     "renders:route:src/routers/Router.tsx:/system/notice/:noticeTpCd/list:component:src/pages/system/notice/notice-list-page.tsx:NoticeListPage",
+    "renders:route:src/routers/Router.tsx:/template/form:component:src/pages/misc-pages.tsx:SsoLoginPage",
   ],
   "edgesByKind": {
-    "renders": 19,
+    "renders": 29,
   },
   "nodeIds": [
     "component:src/pages/common/mobile-login-page.tsx:MobileLoginPage",
@@ -1323,6 +1333,7 @@ exports[`Phase XI — fixture baseline snapshots (P1) > mini-react-router-wina-a
     "component:src/pages/headOffice/order/order-cancel-change-mgmt-page.tsx:OrderCancelChangeMgmtPage",
     "component:src/pages/home-page.tsx:HomePage",
     "component:src/pages/layouts.tsx:RootRedirect",
+    "component:src/pages/misc-pages.tsx:SsoLoginPage",
     "component:src/pages/mobile/board/mobile-notice-detail-page.tsx:MobileNoticeDetailPage",
     "component:src/pages/mobile/mobile-home-page.tsx:MobileHomePage",
     "component:src/pages/model/baseInfo/sap-prod-detail-page.tsx:SapProdDetailPage",
@@ -1352,13 +1363,23 @@ exports[`Phase XI — fixture baseline snapshots (P1) > mini-react-router-wina-a
     "route:src/routers/Router.tsx:/partner/materialMgmt/cuttingPlan",
     "route:src/routers/Router.tsx:/partner/ordProdPlanMgmt/ordRcvMgmt/ordRcvSearch/detail/:ordNo",
     "route:src/routers/Router.tsx:/partner/ordProdPlanMgmt/prodOrdSpec",
+    "route:src/routers/Router.tsx:/price/detail/:priceCd",
+    "route:src/routers/Router.tsx:/price/list",
+    "route:src/routers/Router.tsx:/profile/setting",
+    "route:src/routers/Router.tsx:/publish/doc",
+    "route:src/routers/Router.tsx:/reference-info/code-guide",
+    "route:src/routers/Router.tsx:/sample/detail/:sampleId",
+    "route:src/routers/Router.tsx:/sample/list",
+    "route:src/routers/Router.tsx:/sso-login",
+    "route:src/routers/Router.tsx:/sso-result",
     "route:src/routers/Router.tsx:/system/code",
     "route:src/routers/Router.tsx:/system/message",
     "route:src/routers/Router.tsx:/system/notice/:noticeTpCd/list",
+    "route:src/routers/Router.tsx:/template/form",
   ],
   "nodesByKind": {
-    "component": 15,
-    "route": 22,
+    "component": 16,
+    "route": 32,
   },
 }
 `;
@@ -1378,29 +1399,34 @@ graph LR
   subgraph BROWSER["🌐 Browser · Client-Side App"]
     subgraph ROUTER["🧭 React Router · SPA"]
       subgraph REACT["⚛ React · CSR Engine"]
-        subgraph DOMAINS_R0 [" "]
-          direction LR
-          DOMAIN_root["📁 / · 1 route"]:::pkg
-          DOMAIN_login["📁 login · 1 route"]:::pkg
-          DOMAIN_mobile["📁 mobile · 4 routes"]:::pkg
-          DOMAIN_home["📁 home · 1 route"]:::pkg
-          DOMAIN_system["📁 system · 3 routes"]:::pkg
+        T1_root["📁 / · 1 route"]:::pkg
+        T1_login["📁 /login · 1 route"]:::pkg
+        T1_mobile["📁 /mobile · 4 routes"]:::pkg
+        T1_home["📁 /home · 1 route"]:::pkg
+        T1_system["📁 /system · 3 routes"]:::pkg
+        T1_model["📁 /model · 1 route"]:::pkg
+        T1_headOffice["📁 /headOffice · 2 routes"]:::pkg
+        T1_sso_login["📁 /sso-login · 1 route"]:::pkg
+        T1_sso_result["📁 /sso-result · 1 route"]:::pkg
+        T1_sample["📁 /sample · 2 routes"]:::pkg
+        T1_publish["📁 /publish · 1 route"]:::pkg
+        T1_profile["📁 /profile · 1 route"]:::pkg
+        T1_reference_info["📁 /reference-info · 1 route"]:::pkg
+        T1_price["📁 /price · 2 routes"]:::pkg
+        T1_template["📁 /template · 1 route"]:::pkg
+        subgraph T1_agency_G["📁 /agency · 3 routes"]
+          subgraph T1_agency_agencyFactory_G["📁 /agencyFactory · 3 routes"]
+            T1_agency_agencyFactory_masterMgmt["📁 /masterMgmt · 2 routes"]:::pkg
+            T1_agency_agencyFactory_quotationWork["📁 /quotationWork · 1 route"]:::pkg
+          end
         end
-        style DOMAINS_R0 fill:none,stroke:none
-        subgraph DOMAINS_R1 [" "]
-          direction LR
-          DOMAIN_model["📁 model · 1 route"]:::pkg
-          DOMAIN_headOffice["📁 headOffice · 2 routes"]:::pkg
-          DOMAIN_agency["📁 agency · 3 routes"]:::pkg
-          DOMAIN_partner["📁 partner · 4 routes"]:::pkg
-          DOMAIN_not_found["📁 not-found · 1 route"]:::pkg
+        subgraph T1_partner_G["📁 /partner · 4 routes"]
+          T1_partner_ordProdPlanMgmt["📁 /ordProdPlanMgmt · 2 routes"]:::pkg
+          T1_partner_PAGES["📄 matMgmt · materialMgmt (2 pages)"]:::pkg
         end
-        style DOMAINS_R1 fill:none,stroke:none
-        subgraph DOMAINS_R2 [" "]
-          direction LR
-          DOMAIN__["📁 * · 1 route"]:::pkg
-        end
-        style DOMAINS_R2 fill:none,stroke:none
+        T1_not_found["📁 /not-found · 1 route"]:::pkg
+        T1__["📁 /* · 1 route"]:::pkg
+        T1_root ~~~ T1_login ~~~ T1_mobile ~~~ T1_home ~~~ T1_system ~~~ T1_model ~~~ T1_headOffice ~~~ T1_sso_login ~~~ T1_sso_result ~~~ T1_sample ~~~ T1_publish ~~~ T1_profile ~~~ T1_reference_info ~~~ T1_price ~~~ T1_template ~~~ T1_agency_G ~~~ T1_partner_G ~~~ T1_not_found ~~~ T1__
       end
     end
   end"
@@ -1421,7 +1447,7 @@ graph TD
   classDef hdr fill:#06080f,stroke:#1e3a5f,color:#7dd3fc
   subgraph HDR_PAGES ["📁 src/pages/common"]
     direction TB
-  pageleaf_route_src_routers_Router_tsx__mobile_login["login · CSR<br/>📄 mobile-login-page.tsx"]:::csr
+  pageleaf_route_src_routers_Router_tsx__mobile_login["login · CSR<br/>🔗 /mobile/login<br/>📄 mobile-login-page.tsx"]:::csr
   end
 %%--CHUNK--%%
 %% chunk:2/8
@@ -1441,11 +1467,11 @@ graph TD
   pkg_system__code["code"]:::pkg
   pkg_system__message["message"]:::pkg
   pkg_system__notice["notice"]:::pkg
-  pageleaf_route_src_routers_Router_tsx__system_code["code · CSR<br/>📄 code-page.tsx"]:::csr
+  pageleaf_route_src_routers_Router_tsx__system_code["code · CSR<br/>🔗 /system/code<br/>📄 code-page.tsx"]:::csr
   pkg_system__code --> pageleaf_route_src_routers_Router_tsx__system_code
-  pageleaf_route_src_routers_Router_tsx__system_message["message · CSR<br/>📄 message-page.tsx"]:::csr
+  pageleaf_route_src_routers_Router_tsx__system_message["message · CSR<br/>🔗 /system/message<br/>📄 message-page.tsx"]:::csr
   pkg_system__message --> pageleaf_route_src_routers_Router_tsx__system_message
-  pageleaf_route_src_routers_Router_tsx__system_notice__noticeTpCd_list["list · CSR<br/>📄 notice-list-page.tsx"]:::csr
+  pageleaf_route_src_routers_Router_tsx__system_notice__noticeTpCd_list["list · CSR<br/>🔗 /system/notice/:noticeTpCd/list<br/>📄 notice-list-page.tsx"]:::csr
   pkg_system__notice --> pageleaf_route_src_routers_Router_tsx__system_notice__noticeTpCd_list
   end
 %%--CHUNK--%%
@@ -1464,7 +1490,7 @@ graph TD
   subgraph HDR_PAGES ["📁 src/pages/model"]
     direction TB
   pkg_model__baseInfo["baseInfo"]:::pkg
-  pageleaf_route_src_routers_Router_tsx__model_base_info_fnsh_prod_detail__sapProdCd__sn[":sn · CSR<br/>📄 sap-prod-detail-page.tsx"]:::csr
+  pageleaf_route_src_routers_Router_tsx__model_base_info_fnsh_prod_detail__sapProdCd__sn[":sn · CSR<br/>🔗 /model/base-info/fnsh-prod/detail/:sapProdCd/:sn<br/>📄 sap-prod-detail-page.tsx"]:::csr
   pkg_model__baseInfo --> pageleaf_route_src_routers_Router_tsx__model_base_info_fnsh_prod_detail__sapProdCd__sn
   end
 %%--CHUNK--%%
@@ -1484,9 +1510,9 @@ graph TD
     direction TB
   pkg_headOffice__alloc["alloc"]:::pkg
   pkg_headOffice__order["order"]:::pkg
-  pageleaf_route_src_routers_Router_tsx__headOffice_alloc_regionalRank_regional_rank["regional-rank · CSR<br/>📄 regional-rank-page.tsx"]:::csr
+  pageleaf_route_src_routers_Router_tsx__headOffice_alloc_regionalRank_regional_rank["regional-rank · CSR<br/>🔗 /headOffice/alloc/regionalRank/regional-rank<br/>📄 regional-rank-page.tsx"]:::csr
   pkg_headOffice__alloc --> pageleaf_route_src_routers_Router_tsx__headOffice_alloc_regionalRank_regional_rank
-  pageleaf_route_src_routers_Router_tsx__headOffice_order_orderChange_order_cancel_change_mgmt["order-cancel-change-mgmt · CSR<br/>📄 order-cancel-change-mgmt-page.tsx"]:::csr
+  pageleaf_route_src_routers_Router_tsx__headOffice_order_orderChange_order_cancel_change_mgmt["order-cancel-change-mgmt · CSR<br/>🔗 /headOffice/order/orderChange/order-cancel-change-mgmt<br/>📄 order-cancel-change-mgmt-page.tsx"]:::csr
   pkg_headOffice__order --> pageleaf_route_src_routers_Router_tsx__headOffice_order_orderChange_order_cancel_change_mgmt
   end
 %%--CHUNK--%%
@@ -1509,11 +1535,11 @@ graph TD
   pkg_agency__agencyFactory --> pkg_agency__agencyFactory__masterMgmt
   pkg_agency__agencyFactory__quotationWork["quotationWork"]:::pkg
   pkg_agency__agencyFactory --> pkg_agency__agencyFactory__quotationWork
-  pageleaf_route_src_routers_Router_tsx__agency_agencyFactory_masterMgmt_customerMgmt["customerMgmt · CSR"]:::csr
+  pageleaf_route_src_routers_Router_tsx__agency_agencyFactory_masterMgmt_customerMgmt["customerMgmt · CSR<br/>🔗 /agency/agencyFactory/masterMgmt/customerMgmt"]:::csr
   pkg_agency__agencyFactory__masterMgmt --> pageleaf_route_src_routers_Router_tsx__agency_agencyFactory_masterMgmt_customerMgmt
-  pageleaf_route_src_routers_Router_tsx__agency_agencyFactory_masterMgmt_jobsMgmt["jobsMgmt · CSR"]:::csr
+  pageleaf_route_src_routers_Router_tsx__agency_agencyFactory_masterMgmt_jobsMgmt["jobsMgmt · CSR<br/>🔗 /agency/agencyFactory/masterMgmt/jobsMgmt"]:::csr
   pkg_agency__agencyFactory__masterMgmt --> pageleaf_route_src_routers_Router_tsx__agency_agencyFactory_masterMgmt_jobsMgmt
-  pageleaf_route_src_routers_Router_tsx__agency_agencyFactory_quotationWork_quotationContract["quotationContract · CSR"]:::csr
+  pageleaf_route_src_routers_Router_tsx__agency_agencyFactory_quotationWork_quotationContract["quotationContract · CSR<br/>🔗 /agency/agencyFactory/quotationWork/quotationContract"]:::csr
   pkg_agency__agencyFactory__quotationWork --> pageleaf_route_src_routers_Router_tsx__agency_agencyFactory_quotationWork_quotationContract
   end
 %%--CHUNK--%%
@@ -1534,13 +1560,13 @@ graph TD
   pkg_partner__ordProdPlanMgmt["ordProdPlanMgmt"]:::pkg
   pkg_partner__matMgmt["matMgmt"]:::pkg
   pkg_partner__materialMgmt["materialMgmt"]:::pkg
-  pageleaf_route_src_routers_Router_tsx__partner_ordProdPlanMgmt_ordRcvMgmt_ordRcvSearch_detail__ordNo[":ordNo · CSR<br/>📄 ord-rcv-detail-page.tsx"]:::csr
+  pageleaf_route_src_routers_Router_tsx__partner_ordProdPlanMgmt_ordRcvMgmt_ordRcvSearch_detail__ordNo[":ordNo · CSR<br/>🔗 /partner/ordProdPlanMgmt/ordRcvMgmt/ordRcvSearch/detail/:ordNo<br/>📄 ord-rcv-detail-page.tsx"]:::csr
   pkg_partner__ordProdPlanMgmt --> pageleaf_route_src_routers_Router_tsx__partner_ordProdPlanMgmt_ordRcvMgmt_ordRcvSearch_detail__ordNo
-  pageleaf_route_src_routers_Router_tsx__partner_ordProdPlanMgmt_prodOrdSpec["prodOrdSpec · CSR<br/>📄 prod-ord-spec-page.tsx"]:::csr
+  pageleaf_route_src_routers_Router_tsx__partner_ordProdPlanMgmt_prodOrdSpec["prodOrdSpec · CSR<br/>🔗 /partner/ordProdPlanMgmt/prodOrdSpec<br/>📄 prod-ord-spec-page.tsx"]:::csr
   pkg_partner__ordProdPlanMgmt --> pageleaf_route_src_routers_Router_tsx__partner_ordProdPlanMgmt_prodOrdSpec
-  pageleaf_route_src_routers_Router_tsx__partner_matMgmt_decoSheet["decoSheet · CSR<br/>📄 deco-sheet-page.tsx"]:::csr
+  pageleaf_route_src_routers_Router_tsx__partner_matMgmt_decoSheet["decoSheet · CSR<br/>🔗 /partner/matMgmt/decoSheet<br/>📄 deco-sheet-page.tsx"]:::csr
   pkg_partner__matMgmt --> pageleaf_route_src_routers_Router_tsx__partner_matMgmt_decoSheet
-  pageleaf_route_src_routers_Router_tsx__partner_materialMgmt_cuttingPlan["cuttingPlan · CSR<br/>📄 cutting-plan-page.tsx"]:::csr
+  pageleaf_route_src_routers_Router_tsx__partner_materialMgmt_cuttingPlan["cuttingPlan · CSR<br/>🔗 /partner/materialMgmt/cuttingPlan<br/>📄 cutting-plan-page.tsx"]:::csr
   pkg_partner__materialMgmt --> pageleaf_route_src_routers_Router_tsx__partner_materialMgmt_cuttingPlan
   end
 %%--CHUNK--%%
@@ -1559,9 +1585,9 @@ graph TD
   subgraph HDR_PAGES ["📁 src/pages/mobile"]
     direction TB
   pkg_mobile__board["board"]:::pkg
-  pageleaf_route_src_routers_Router_tsx__mobile_board_notice_detail__noticeNo[":noticeNo · CSR<br/>📄 mobile-notice-detail-page.tsx"]:::csr
+  pageleaf_route_src_routers_Router_tsx__mobile_board_notice_detail__noticeNo[":noticeNo · CSR<br/>🔗 /mobile/board/notice/detail/:noticeNo<br/>📄 mobile-notice-detail-page.tsx"]:::csr
   pkg_mobile__board --> pageleaf_route_src_routers_Router_tsx__mobile_board_notice_detail__noticeNo
-  pageleaf_route_src_routers_Router_tsx__mobile_home["home · CSR<br/>📄 mobile-home-page.tsx"]:::csr
+  pageleaf_route_src_routers_Router_tsx__mobile_home["home · CSR<br/>🔗 /mobile/home<br/>📄 mobile-home-page.tsx"]:::csr
   end
 %%--CHUNK--%%
 %% chunk:8/8
@@ -1578,12 +1604,22 @@ graph TD
   classDef hdr fill:#06080f,stroke:#1e3a5f,color:#7dd3fc
   subgraph HDR_PAGES ["📁 src/pages"]
     direction TB
-  pageleaf_route_src_routers_Router_tsx__["/ · CSR<br/>📄 layouts.tsx"]:::csr
-  pageleaf_route_src_routers_Router_tsx__login["login · CSR<br/>📄 layouts.tsx"]:::csr
-  pageleaf_route_src_routers_Router_tsx__mobile["mobile · CSR<br/>📄 layouts.tsx"]:::csr
-  pageleaf_route_src_routers_Router_tsx__not_found["not-found · CSR<br/>📄 layouts.tsx"]:::csr
-  pageleaf_route_src_routers_Router_tsx___["* · CSR<br/>📄 layouts.tsx"]:::csr
-  pageleaf_route_src_routers_Router_tsx__home["home · CSR<br/>📄 home-page.tsx"]:::csr
+  pageleaf_route_src_routers_Router_tsx__["/ · CSR<br/>🔗 /<br/>📄 layouts.tsx"]:::csr
+  pageleaf_route_src_routers_Router_tsx__login["login · CSR<br/>🔗 /login<br/>📄 layouts.tsx"]:::csr
+  pageleaf_route_src_routers_Router_tsx__mobile["mobile · CSR<br/>🔗 /mobile<br/>📄 layouts.tsx"]:::csr
+  pageleaf_route_src_routers_Router_tsx__not_found["not-found · CSR<br/>🔗 /not-found<br/>📄 layouts.tsx"]:::csr
+  pageleaf_route_src_routers_Router_tsx___["* · CSR<br/>🔗 /*<br/>📄 layouts.tsx"]:::csr
+  pageleaf_route_src_routers_Router_tsx__home["home · CSR<br/>🔗 /home<br/>📄 home-page.tsx"]:::csr
+  pageleaf_route_src_routers_Router_tsx__sso_login["sso-login · CSR<br/>🔗 /sso-login<br/>📄 misc-pages.tsx"]:::csr
+  pageleaf_route_src_routers_Router_tsx__sso_result["sso-result · CSR<br/>🔗 /sso-result<br/>📄 misc-pages.tsx"]:::csr
+  pageleaf_route_src_routers_Router_tsx__sample_list["list · CSR<br/>🔗 /sample/list<br/>📄 misc-pages.tsx"]:::csr
+  pageleaf_route_src_routers_Router_tsx__sample_detail__sampleId[":sampleId · CSR<br/>🔗 /sample/detail/:sampleId<br/>📄 misc-pages.tsx"]:::csr
+  pageleaf_route_src_routers_Router_tsx__publish_doc["doc · CSR<br/>🔗 /publish/doc<br/>📄 misc-pages.tsx"]:::csr
+  pageleaf_route_src_routers_Router_tsx__profile_setting["setting · CSR<br/>🔗 /profile/setting<br/>📄 misc-pages.tsx"]:::csr
+  pageleaf_route_src_routers_Router_tsx__reference_info_code_guide["code-guide · CSR<br/>🔗 /reference-info/code-guide<br/>📄 misc-pages.tsx"]:::csr
+  pageleaf_route_src_routers_Router_tsx__price_list["list · CSR<br/>🔗 /price/list<br/>📄 misc-pages.tsx"]:::csr
+  pageleaf_route_src_routers_Router_tsx__price_detail__priceCd[":priceCd · CSR<br/>🔗 /price/detail/:priceCd<br/>📄 misc-pages.tsx"]:::csr
+  pageleaf_route_src_routers_Router_tsx__template_form["form · CSR<br/>🔗 /template/form<br/>📄 misc-pages.tsx"]:::csr
   end"
 `;
 
@@ -1627,10 +1663,10 @@ graph LR
   classDef pkg fill:#0c1018,stroke:#475569,color:#cbd5e1
   classDef muted fill:#0a0d14,stroke:#374151,color:#64748b,stroke-dasharray: 3 3
   classDef hdr fill:#06080f,stroke:#1e3a5f,color:#7dd3fc
-  DOMAIN_root["📁 / · 1 route"]:::pkg
-  DOMAIN_about["📁 about · 1 route"]:::pkg
-  DOMAIN_users["📁 users · 1 route"]:::pkg
-  DOMAIN_root ~~~ DOMAIN_about ~~~ DOMAIN_users"
+  T1_root["📁 / · 1 route"]:::pkg
+  T1_about["📁 /about · 1 route"]:::pkg
+  T1_users["📁 /users · 1 route"]:::pkg
+  T1_root ~~~ T1_about ~~~ T1_users"
 `;
 
 exports[`Phase XI — fixture baseline snapshots (P1) > mini-remix-app > Tab2 screen-component diagram 1`] = `
@@ -1645,13 +1681,13 @@ graph LR
   classDef pkg fill:#0c1018,stroke:#475569,color:#cbd5e1
   classDef muted fill:#0a0d14,stroke:#374151,color:#64748b,stroke-dasharray: 3 3
   classDef hdr fill:#06080f,stroke:#1e3a5f,color:#7dd3fc
-  route_app_routes__index_tsx_page["/ · SSR"]:::ssr
+  route_app_routes__index_tsx_page["/ · SSR<br/>🔗 /"]:::ssr
   subgraph ABOUT_T["👤 /about"]
-    route_app_routes_about_tsx_page["about · SSR"]:::ssr
+    route_app_routes_about_tsx_page["about · SSR<br/>🔗 /about"]:::ssr
   end
   subgraph USERS_T["📄 /users"]
     subgraph USERS__ID_T["📄 /:id"]
-      route_app_routes_users__id_tsx_page[":id · SSR"]:::ssr
+      route_app_routes_users__id_tsx_page[":id · SSR<br/>🔗 /users/:id"]:::ssr
     end
   end
   ABOUT_T ~~~ USERS_T"
@@ -3467,10 +3503,10 @@ graph LR
   classDef pkg fill:#0c1018,stroke:#475569,color:#cbd5e1
   classDef muted fill:#0a0d14,stroke:#374151,color:#64748b,stroke-dasharray: 3 3
   classDef hdr fill:#06080f,stroke:#1e3a5f,color:#7dd3fc
-  DOMAIN_root["📁 / · 1 route"]:::pkg
-  DOMAIN_about["📁 about · 1 route"]:::pkg
-  DOMAIN_blog["📁 blog · 1 route"]:::pkg
-  DOMAIN_root ~~~ DOMAIN_about ~~~ DOMAIN_blog"
+  T1_root["📁 / · 1 route"]:::pkg
+  T1_about["📁 /about · 1 route"]:::pkg
+  T1_blog["📁 /blog · 1 route"]:::pkg
+  T1_root ~~~ T1_about ~~~ T1_blog"
 `;
 
 exports[`Phase XI — fixture baseline snapshots (P1) > mini-sveltekit-app > Tab2 screen-component diagram 1`] = `
@@ -3485,13 +3521,13 @@ graph LR
   classDef pkg fill:#0c1018,stroke:#475569,color:#cbd5e1
   classDef muted fill:#0a0d14,stroke:#374151,color:#64748b,stroke-dasharray: 3 3
   classDef hdr fill:#06080f,stroke:#1e3a5f,color:#7dd3fc
-  route_src_routes_page["/ · SSR"]:::ssr
+  route_src_routes_page["/ · SSR<br/>🔗 /"]:::ssr
   subgraph ABOUT_T["👤 /about"]
-    route_src_routes_about_page["about · SSR"]:::ssr
+    route_src_routes_about_page["about · SSR<br/>🔗 /about"]:::ssr
   end
   subgraph BLOG_T["📝 /blog"]
     subgraph BLOG__SLUG_T["📄 /:slug"]
-      route_src_routes_blog__slug__page[":slug · SSR"]:::ssr
+      route_src_routes_blog__slug__page[":slug · SSR<br/>🔗 /blog/:slug"]:::ssr
     end
   end
   ABOUT_T ~~~ BLOG_T"
@@ -3550,10 +3586,10 @@ graph LR
   subgraph BROWSER["🌐 Browser · Client-Side App"]
     subgraph ROUTER["🧭 Vue Router · SPA"]
       subgraph VUE["💚 Vue · CSR Engine"]
-        DOMAIN_root["📁 / · 1 route"]:::pkg
-        DOMAIN_about["📁 about · 1 route"]:::pkg
-        DOMAIN_users["📁 users · 2 routes"]:::pkg
-        DOMAIN_root ~~~ DOMAIN_about ~~~ DOMAIN_users
+        T1_root["📁 / · 1 route"]:::pkg
+        T1_about["📁 /about · 1 route"]:::pkg
+        T1_users["📁 /users · 2 routes"]:::pkg
+        T1_root ~~~ T1_about ~~~ T1_users
       end
     end
   end"
@@ -3571,17 +3607,17 @@ graph LR
   classDef pkg fill:#0c1018,stroke:#475569,color:#cbd5e1
   classDef muted fill:#0a0d14,stroke:#374151,color:#64748b,stroke-dasharray: 3 3
   classDef hdr fill:#06080f,stroke:#1e3a5f,color:#7dd3fc
-  route_src_views_Home_vue__["/ · CSR"]:::csr
+  route_src_views_Home_vue__["/ · CSR<br/>🔗 /"]:::csr
   file_component_src_views_Home_vue_Home["📂 src/views<br/>📄 Home.vue"]:::pkg
   route_src_views_Home_vue__ --> file_component_src_views_Home_vue_Home
   file_component_src_views_NavBar_vue_NavBar["📂 src/views<br/>📄 NavBar.vue"]:::pkg
-  leaf_route_src_views_About_vue__about["about · CSR<br/>📂 src/views<br/>📄 About.vue"]:::csr
+  leaf_route_src_views_About_vue__about["about · CSR<br/>🔗 /about<br/>📂 src/views<br/>📄 About.vue"]:::csr
   subgraph USERS_T["📄 /users"]
-    route_src_views_Users_vue__users["users · CSR"]:::csr
+    route_src_views_Users_vue__users["users · CSR<br/>🔗 /users"]:::csr
     file_component_src_views_Users_vue_Users["📂 src/views<br/>📄 Users.vue"]:::pkg
     route_src_views_Users_vue__users --> file_component_src_views_Users_vue_Users
     file_component_src_views_UserDetail_vue_UserDetail["📂 src/views<br/>📄 UserDetail.vue"]:::pkg
-    leaf_route_src_views_UserDetail_vue__users__id[":id · CSR<br/>📂 src/views<br/>📄 UserDetail.vue"]:::csr
+    leaf_route_src_views_UserDetail_vue__users__id[":id · CSR<br/>🔗 /users/:id<br/>📂 src/views<br/>📄 UserDetail.vue"]:::csr
   end
   leaf_route_src_views_About_vue__about ~~~ USERS_T
   file_component_src_views_Home_vue_Home --> file_component_src_views_NavBar_vue_NavBar

@@ -2,7 +2,7 @@ import type { IREdge, ComponentNode, RouteNode } from '@codebase-viz/types'
 import type { NestedGroup } from '../url-grouper.js'
 import { sanitizeId, modeClass } from '../helpers/ids.js'
 import { FE_TREE_INIT, CLASS_DEFS } from '../helpers/constants.js'
-import { groupSubgraphId, sectionLabel } from './labels.js'
+import { groupSubgraphId, sectionLabel, routeUrlLine } from './labels.js'
 
 // 읽기 전용 lookup 묶음. T1 lookup table·T4 시퀀스 신규 빌더는 본 ctx에 필드 추가만으로 주입 가능.
 export interface FileTreeCtx {
@@ -59,7 +59,7 @@ export function tryComposeLeafGroup(
   const badge = r.renderingMode === 'unknown' ? '?' : r.renderingMode
   const displayPath = r.path.split('/').filter(Boolean).pop() ?? r.path
   const fileLabel = formatFileLeafLabel(comp.filePath)
-  const line = `["${displayPath} · ${badge}<br/>${fileLabel}"]:::${modeClass(r.renderingMode)}`
+  const line = `["${displayPath} · ${badge}<br/>${routeUrlLine(r)}<br/>${fileLabel}"]:::${modeClass(r.renderingMode)}`
   return { id, line: `${id}${line}`, comp, route: r }
 }
 
@@ -158,7 +158,7 @@ export function emitRouteAndFileLeaf(
 ): void {
   const badge = r.renderingMode === 'unknown' ? '?' : r.renderingMode
   const displayPath = r.path.split('/').filter(Boolean).pop() ?? r.path
-  lines.push(`${indent}${sanitizeId(r.id)}["${displayPath} · ${badge}"]:::${modeClass(r.renderingMode)}`)
+  lines.push(`${indent}${sanitizeId(r.id)}["${displayPath} · ${badge}<br/>${routeUrlLine(r)}"]:::${modeClass(r.renderingMode)}`)
 
   const edge = ctx.rendersEdges.find(e => e.from === r.id)
   if (edge === undefined) return

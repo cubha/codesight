@@ -1,5 +1,6 @@
 import type { IREdge, ComponentNode, RouteNode } from '@codebase-viz/types'
 import { sanitizeId, modeClass } from '../helpers/ids.js'
+import { routeUrlLine } from './labels.js'
 import { FE_TREE_INIT, CLASS_DEFS } from '../helpers/constants.js'
 import { joinChunks } from '../_shared/wrap-fallback.js'
 import {
@@ -128,8 +129,8 @@ export function buildFeDomainLayeredScreenDiagram(
           const leafId = `pageleaf_${sanitizeId(r.id)}`
           const badge = r.renderingMode === 'unknown' ? '?' : r.renderingMode
           const label = hasFile
-            ? `${routeDisplay(r)} · ${badge}<br/>📄 ${base}`
-            : `${routeDisplay(r)} · ${badge}`
+            ? `${routeDisplay(r)} · ${badge}<br/>${routeUrlLine(r)}<br/>📄 ${base}`
+            : `${routeDisplay(r)} · ${badge}<br/>${routeUrlLine(r)}`
           lines.push(`  ${leafId}["${label}"]:::${modeClass(r.renderingMode)}`)
           // depth 0(도메인 직속 파일)은 HDR_PAGES cluster 안에 노드만 두고 edge 생략(BE clusterRoot 동일).
           if (depth !== 0) lines.push(`  ${parentId} --> ${leafId}`)

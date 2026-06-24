@@ -207,12 +207,14 @@ describe('buildDiagrams chunk fallback integration', () => {
     const routes = Array.from({ length: 60 }, (_, i) => makeRoute(`/blog/post-${i}`))
     const graph = makeGraphWith(routes)
     const out = buildDiagrams(graph, { chunkThreshold: 500, grouping: { maxNodesPerGroup: 15, maxDepth: 8 } })
-    expect(out.rendering).toContain(CHUNK_SEPARATOR)
-    expect(out.rendering).toMatch(/%% chunk:1\/\d+/)
-    const parts = out.rendering.split(`\n${CHUNK_SEPARATOR}\n`)
+    // v1.2.55: Tab1(rendering)은 청킹 폐지(폴더 개요). 청킹 머신은 Tab2(screenComponent)에서 검증.
+    expect(out.screenComponent).toContain(CHUNK_SEPARATOR)
+    expect(out.screenComponent).toMatch(/%% chunk:1\/\d+/)
+    const parts = out.screenComponent.split(`\n${CHUNK_SEPARATOR}\n`)
     expect(parts.length).toBeGreaterThanOrEqual(2)
     for (const part of parts) {
-      expect(part).toMatch(/(graph|flowchart)\s+(TD|LR)/)
+      // Tab2 file-tree는 graph TB(세로) 방향 — TD/LR/TB/RL 모두 허용.
+      expect(part).toMatch(/(graph|flowchart)\s+(TD|TB|LR|RL)/)
     }
   })
 
@@ -224,38 +226,38 @@ describe('buildDiagrams chunk fallback integration', () => {
     expect(out.rendering).not.toContain(CHUNK_SEPARATOR)
   })
 
-  it('chunks 110 flat routes by nodeThreshold even when text < 1M chars (B2)', async () => {
+  it('chunks 110 flat routes by nodeThreshold even when text < 1M chars (B2, Tab2)', async () => {
     const { buildDiagrams } = await import('../mermaid-renderer.js')
-    // 110 routes with no shared LCP — each is its own cluster
+    // 110 routes with no shared LCP — each is its own cluster. v1.2.55: 청킹은 Tab2(screenComponent)에서 검증.
     const routes = Array.from({ length: 110 }, (_, i) => makeRoute(`/r${i}`))
     const graph = makeGraphWith(routes)
     const out = buildDiagrams(graph, {
       nodeThreshold: 80,
       grouping: { maxNodesPerGroup: 30, maxDepth: 8 },
     })
-    expect(out.rendering.length).toBeLessThan(DEFAULT_CHUNK_THRESHOLD)
-    expect(out.rendering).toContain(CHUNK_SEPARATOR)
+    expect(out.screenComponent.length).toBeLessThan(DEFAULT_CHUNK_THRESHOLD)
+    expect(out.screenComponent).toContain(CHUNK_SEPARATOR)
   })
 
-  it('row-batches flat routes when top-level groups exceed GROUPS_PER_ROW (B2)', async () => {
+  it('Tab2 chunks flat routes when nodeThreshold exceeded; Tab1은 청킹 안 함 (B2)', async () => {
     const { buildDiagrams } = await import('../mermaid-renderer.js')
-    // v1.2.51 C2: routeCount>100 OR top-level 형제>GROUPS_PER_ROW(5) 중 하나면 chunked.
-    // 110 flat routes → 110 top-level groups → 게이트 통과 → row batching kicks in.
+    // v1.2.55: Tab1(rendering)은 폴더 개요로 청킹 폐지. Tab2(screenComponent)는 nodeThreshold 초과 시 청킹.
     const routes = Array.from({ length: 110 }, (_, i) => makeRoute(`/r${i}`))
     const graph = makeGraphWith(routes)
     const out = buildDiagrams(graph, { nodeThreshold: 80 })
-    expect(out.rendering).toContain(CHUNK_SEPARATOR)
+    expect(out.rendering).not.toContain(CHUNK_SEPARATOR)
+    expect(out.screenComponent).toContain(CHUNK_SEPARATOR)
   })
 
-  it('FE 표준 v1.2 (R-T1.7): 50 flat domains여도 Tab1은 청킹하지 않고 도메인 요약 grid 단일 다이어그램', async () => {
+  it('FE 표준 v1.2.55 (R-T1.7): 50 flat domains여도 Tab1은 청킹하지 않고 폴더 개요 + ~~~ chain 단일 다이어그램', async () => {
     const { buildDiagrams } = await import('../mermaid-renderer.js')
     const routes = Array.from({ length: 50 }, (_, i) => makeRoute(`/r${i}`))
     const graph = makeGraphWith(routes)
     const out = buildDiagrams(graph, { nodeThreshold: 80 })
-    // v1.2.53: Tab1 청킹 폐지. 50 도메인 > GROUPS_PER_ROW(5) → inner-row wrapper로 줄넘김(청킹 아님).
-    // (v1.2.51 C2 청킹 게이트는 wrapper·외부분기를 폐기시켜 폐지 — docs/analysis/v1.2.52-fe-tab1-yaxis-findings.md)
+    // v1.2.55: Tab1 청킹 폐지. 50 도메인 → 폴더 카운트 박스 + top-level `~~~` chain(X축 분포).
     expect(out.rendering).not.toContain(CHUNK_SEPARATOR)
-    expect(out.rendering).toMatch(/subgraph DOMAINS_R\d/)
+    expect(out.rendering).toContain(' ~~~ ')
+    expect(out.rendering).toMatch(/📁 \/r0 ·/)
   })
 
   it('소형-소도메인: 4 flat routes (≤5 groups, <100) → single diagram 유지 (회귀 보존)', async () => {

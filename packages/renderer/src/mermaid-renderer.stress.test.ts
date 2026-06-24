@@ -109,7 +109,7 @@ describe('mermaid-renderer — 소형-다도메인 chunk 게이트 (v1.2.51 C2)'
     ]
   }
 
-  it('28 routes / 7 top-level groups (>5) → Tab1 도메인 요약 단일 다이어그램 (청킹 폐지, R-T1.7 v1.2)', () => {
+  it('28 routes / 7 top-level groups (>5) → Tab1 폴더 개요 단일 다이어그램 (청킹 폐지, R-T1.7 v1.2)', () => {
     const routes = devLogPortfolioRoutes()
     const graph = createIRGraph({
       analyzerVersion: 'codebase-viz@0.1.0',
@@ -118,9 +118,10 @@ describe('mermaid-renderer — 소형-다도메인 chunk 게이트 (v1.2.51 C2)'
       edges: [],
     })
     const { rendering } = buildDiagrams(graph)
-    // v1.2.53: Tab1 청킹 폐지. 7 도메인 > GROUPS_PER_ROW(5) → inner-row wrapper 줄넘김(청킹 아님).
+    // v1.2.55: Tab1 폴더 개요(full-depth 중첩 + 카운트 배지) — 청킹 없음, top-level은 `~~~` chain X축 분포.
     expect(chunkCountOf(rendering)).toBe(1)
-    expect(rendering).toMatch(/subgraph DOMAINS_R\d/)
+    expect(rendering).toMatch(/📁 \/blog · \d+ routes?/)
+    expect(rendering).toContain(' ~~~ ')
   })
 
   it('28 routes / 7 top-level groups → Tab2 single chunk (Tab2 게이트 미변경 — 현 scope)', () => {
@@ -170,11 +171,11 @@ describe('mermaid-renderer stress — NestJS 200 routes (v1.1.6 회귀 fixture)'
   describe('Tab1 rendering', () => {
     const { rendering } = buildDiagrams(graph)
 
-    it('v1.2.53: Tab1 도메인 요약 — 청킹·nested subgraph 없이 단일 다이어그램에 도메인 박스 emit', () => {
-      // FE 표준 v1.2 (R-T1.2/R-T1.7): /api/v1 단일 자식 통과 후 admin/auth/billing 도메인 요약 박스.
-      // 이전: chunked nested(module→resource) — v1.2.53에서 폐지(wrapper·외부분기 보존이 우선).
+    it('v1.2.55: Tab1 폴더 개요 — 청킹 없이 단일 다이어그램에 도메인 폴더 박스 emit', () => {
+      // FE 표준 v1.2.55 (R-T1.2/R-T1.7): /api/v1 단일 자식 통과 후 admin/auth/billing 폴더 박스(재귀 카운트).
+      // 이전: chunked nested(module→resource) — v1.2.53에서 폐지, v1.2.55에서 full-depth 폴더 개요로 재정의.
       expect(chunkCountOf(rendering)).toBe(1)
-      expect(rendering).toMatch(/DOMAIN_[A-Za-z0-9_]+\["📁 [a-z]+ · \d+ routes?"\]/)
+      expect(rendering).toMatch(/📁 \/[a-z]+ · \d+ routes?/)
     })
 
     it('[결함2] chunk 수가 top-level branch 수의 2배 이하 (200 routes → ≤ 10 chunks)', () => {
@@ -238,9 +239,9 @@ describe('mermaid-renderer freeze — 단일 대형 브랜치 (v1.2.49 B 회귀 
 
   it('v1.2.53: routeCount>100(112)여도 Tab1은 청킹 안 함 — 도메인 요약 단일 다이어그램 (R-T1.7 v1.2)', () => {
     const { rendering } = buildDiagrams(graph)
-    // 이전 B-6: routeCount>100이면 청킹 발동. v1.2.53: Tab1 도메인 요약은 O(도메인)이라 청킹 폐지.
+    // 이전 B-6: routeCount>100이면 청킹 발동. v1.2.55: Tab1 폴더 개요는 폴더 수준이라 청킹 폐지.
     expect(chunkCountOf(rendering)).toBe(1)
-    expect(rendering).toMatch(/DOMAIN_[A-Za-z0-9_]+\["📁 /)
+    expect(rendering).toMatch(/📁 \/[a-z]+ ·/)
   })
 
   it('B-7: Tab1 도메인 요약 노드 수 = O(도메인) ≤ 50 (단일 다이어그램)', () => {
@@ -256,5 +257,71 @@ describe('mermaid-renderer freeze — 단일 대형 브랜치 (v1.2.49 B 회귀 
   it('한 leaf subgraph 안 flat sibling < 30 (nested 보존)', () => {
     const { rendering } = buildDiagrams(graph)
     expect(maxLeafSiblingCount(rendering)).toBeLessThan(30)
+  })
+})
+
+// v1.2.55 회귀 가드 (ST4) — ST0/ST1 동작을 잠근다(이미 구현·통과, RED-first 아닌 회귀 가드).
+// 근본원인: buildDiagrams가 v1.2.53 단일 Tab1을 routeCount>DEFAULT_NODE_THRESHOLD(300)로 재청킹 →
+// wrapper 반복·findBranchingGroups 산란·도메인 누락 체감. >300 미커버 테스트 갭으로 누수됐던 것을 잠금.
+describe('mermaid-renderer — Tab1 폴더 개요 >300 routes 회귀 가드 + 누락0 (v1.2.55 ST4)', () => {
+  // react-router FE 메타 — wrapper(BROWSER/ROUTER/REACT) 분기까지 검증.
+  function feGraph(routes: RouteNode[]) {
+    return createIRGraph({
+      analyzerVersion: 'codebase-viz@0.1.0',
+      repoRoot: '/tmp/test',
+      metadata: {
+        framework: 'react-router', hasSupabase: false, hasPrisma: false,
+        hasDexie: false, hasFirebase: false, adapterCategory: 'FE',
+      },
+      nodes: routes,
+      edges: [],
+    })
+  }
+
+  const WINA_DOMAINS = [
+    'login', 'sso-login', 'sso-result', 'home', 'system', 'sample', 'publish',
+    'model', 'profile', 'reference-info', 'price', 'headOffice', 'agency',
+    'partner', 'mobile', 'template',
+  ]
+
+  it('400 routes(>300)·16 도메인: Tab1 chunkCount===1 (재청킹 게이트 누수 차단)', () => {
+    const routes = WINA_DOMAINS.flatMap(d => Array.from({ length: 25 }, (_, i) => r(`/${d}/mid${i % 5}/leaf${i}`)))
+    expect(routes.length).toBe(400)
+    const { rendering } = buildDiagrams(feGraph(routes))
+    // 핵심 회귀: >300이어도 Tab1은 단일 다이어그램(청크 0).
+    expect(chunkCountOf(rendering)).toBe(1)
+    // wrapper 1세트만(반복 없음): BROWSER subgraph가 정확히 1개.
+    expect(rendering.match(/subgraph BROWSER/g)?.length).toBe(1)
+  })
+
+  it('누락 0: 16 top-level 도메인이 전부 폴더 박스로 존재 + `~~~` chain이 정확히 16 도메인 연결', () => {
+    const routes = WINA_DOMAINS.flatMap(d => Array.from({ length: 25 }, (_, i) => r(`/${d}/mid${i % 5}/leaf${i}`)))
+    const { rendering } = buildDiagrams(feGraph(routes))
+    // 각 도메인 폴더 박스 존재(camelCase·hyphen 포함).
+    for (const d of WINA_DOMAINS) {
+      expect(rendering, `도메인 /${d} 누락`).toContain(`📁 /${d} ·`)
+    }
+    // top-level `~~~` chain은 정확히 top-level 도메인만 연결 → 참조 id 수 = 16 (누락0 결정론 게이트).
+    const chainLine = rendering.split('\n').find(l => l.includes(' ~~~ '))
+    expect(chainLine, 'top-level chain 라인 없음').toBeDefined()
+    const ids = chainLine!.trim().split(' ~~~ ')
+    expect(ids.length).toBe(WINA_DOMAINS.length)
+  })
+
+  it('재귀 카운트 합 = 전체 page route 수 (silent drop 0)', () => {
+    const routes = WINA_DOMAINS.flatMap(d => Array.from({ length: 25 }, (_, i) => r(`/${d}/mid${i % 5}/leaf${i}`)))
+    const { rendering } = buildDiagrams(feGraph(routes))
+    // top-level chain의 각 도메인 박스/subgraph 헤더 카운트를 합산 → 전체 라우트 수와 일치.
+    const chainLine = rendering.split('\n').find(l => l.includes(' ~~~ '))!
+    const topIds = chainLine.trim().split(' ~~~ ')
+    let sum = 0
+    for (const id of topIds) {
+      // `${id}["📁 /name · N routes"]` 또는 `subgraph ${id}["📁 /name · N routes"]`
+      const re = new RegExp(`(?:subgraph )?${id.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\["📁 [^"]*· (\\d+) routes?"\\]`)
+      const m = rendering.match(re)
+      expect(m, `${id} 카운트 배지 없음`).not.toBeNull()
+      sum += parseInt(m![1]!, 10)
+    }
+    expect(sum).toBe(routes.length)
   })
 })

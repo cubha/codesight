@@ -23,7 +23,7 @@ import { sanitizeId } from './helpers/ids.js'
 import { findBranchingGroups, chunkGroups, splitGroupsByNodeBound, CHUNK_ROUTE_BUDGET, SINGLE_DIAGRAM_ROUTE_THRESHOLD } from './helpers/layout.js'
 import { metadataToInfra, isFileTreeTab2Eligible, type InfraInfo } from './fe/infra.js'
 import { buildNestedSubgraphLines } from './fe/nested.js'
-import { buildDomainSummaryLines } from './fe/tab1-summary.js'
+import { buildNestedFolderOverviewLines } from './fe/tab1-tree.js'
 import { renderScreenSection } from './fe/tab2.js'
 import { buildFeFileTreeScreenDiagram } from './fe/tab2-file.js'
 import { buildFeDomainLayeredScreenDiagram, isPagesDomainEligible } from './fe/tab2-domain.js'
@@ -114,9 +114,10 @@ function buildRenderingDiagram(graph: IRGraph): string {
   const routeNodes = graph.nodes.filter(isRouteNode).filter(r => r.routeFileKind === 'page')
   if (routeNodes.length === 0) return 'graph TD\n  empty["(no routes found)"]'
 
-  // FE 표준 v1.2 (R-T1.2/R-T1.7, §9): Tab1은 top-level 도메인 요약만 표시 → 노드 수 O(도메인)라
-  // 청킹 불필요(폐지). 이전 청킹 게이트(routeCount>100 / branchingGroups>GROUPS_PER_ROW=v1.2.51 C2)는
-  // wrapper(R-T1.1)·외부분기(R-T1.5)를 폐기시켜 Tab1을 URL 트리로 전락시키던 결함이었다.
+  // FE 표준 v1.2.55 (R-T1.2 re-amendment, §9): Tab1은 단일 래퍼 안에 URL 도메인 트리를 root→대→중→소
+  // full-depth 폴더 subgraph로 중첩하고 폴더별 재귀 route 수 배지를 표시한다(개별 route leaf는 Tab2 위임).
+  // 노드 수는 폴더 수준이라 청킹 불필요(폐지). 이전 청킹 게이트(routeCount>100 / branchingGroups>
+  // GROUPS_PER_ROW=v1.2.51 C2)는 wrapper(R-T1.1)·외부분기(R-T1.5)를 폐기시켜 Tab1을 전락시키던 결함이었다.
   const branchingGroups = findBranchingGroups(groupRoutesByUrl(routeNodes))
 
   const tableNodes = graph.nodes.filter(isTableNode)
@@ -146,12 +147,12 @@ function buildRenderingDiagram(graph: IRGraph): string {
       depth++
     }
     const innerIndent = '  '.repeat(depth + 1)
-    for (const l of buildDomainSummaryLines(branchingGroups, innerIndent)) lines.push(l)
+    for (const l of buildNestedFolderOverviewLines(branchingGroups, innerIndent)) lines.push(l)
     const closeParts: string[] = []
     while (depth > 0) { closeParts.push(`${'  '.repeat(depth)}end`); depth-- }
     lines.push(closeParts.join('\n'))
   } else {
-    for (const l of buildDomainSummaryLines(branchingGroups, '  ')) lines.push(l)
+    for (const l of buildNestedFolderOverviewLines(branchingGroups, '  ')) lines.push(l)
   }
 
   // ── 2. DATA / BACKEND LAYER (always outside frontend, unconditional) ─────
@@ -497,7 +498,11 @@ export function buildDiagrams(graph: IRGraph, opts?: BuildDiagramsOptions): Diag
   const nodeThr = opts?.nodeThreshold ?? DEFAULT_NODE_THRESHOLD
   const routeCount = graph.nodes.filter(isRouteNode).length
   return {
-    rendering: buildWithChunkFallback(graph, buildRenderingDiagram, chunkOpts, threshold, routeCount, nodeThr),
+    // FE 표준 v1.2 (R-T1.7, §9): Tab1은 top-level 도메인 요약이라 노드 수 O(도메인)로 항상 단일.
+    // routeCount 기반 chunk fallback에 태우면 >300 routes(예: 516)에서 도메인 그룹별로 재청킹되어
+    // wrapper가 청크마다 반복 emit + findBranchingGroups가 부분 트리를 하강해 sub-segment로 산란된다.
+    // 직접 호출로 단일 래퍼·전체 top-level 도메인을 보장. (Tab2/Tab3는 leaf 열거라 청킹 유지.)
+    rendering: buildRenderingDiagram(graph),
     screenComponent: buildWithChunkFallback(graph, buildScreenComponentDiagram, chunkOpts, threshold, routeCount, nodeThr),
     dbScreen: buildDbScreenWithFallback(graph, chunkOpts, threshold, nodeThr),
   }
