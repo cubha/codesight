@@ -14,7 +14,7 @@ const MEDIA = path.join(ROOT, 'media')
 const TMP = path.join(ROOT, '.gif-tmp')
 
 // 시연용 데이터: extension cache.json (분석 결과). 실제 프로젝트 규모로 풍성한 다이어그램.
-const CACHE_PATH = process.env.GIF_CACHE_PATH ?? '/mnt/d/workspace/dev-log-portfolio/.codesight/cache.json'
+const CACHE_PATH = process.env.GIF_CACHE_PATH ?? '/mnt/d/workspace/dev-log-portfolio/.codebase-viz/cache.json'
 
 const VIEWER_HTML = path.join(MEDIA, 'viewer.html')
 const MERMAID_LOCAL = path.join(MEDIA, 'mermaid.min.js')

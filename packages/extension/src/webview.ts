@@ -20,8 +20,8 @@ interface ExportMessage {
   filename: string
 }
 
-export class CodeSightPanel {
-  private static instance: CodeSightPanel | undefined
+export class CodebaseVizPanel {
+  private static instance: CodebaseVizPanel | undefined
   private readonly panel: vscode.WebviewPanel
   private disposables: vscode.Disposable[] = []
   private lastParams?: ViewerParams
@@ -37,7 +37,7 @@ export class CodeSightPanel {
         if (msg.type === 'export') {
           void this.handleExport(msg as ExportMessage)
         } else if (msg.type === 'reanalyze') {
-          void vscode.commands.executeCommand('codesight.reanalyze')
+          void vscode.commands.executeCommand('codebaseViz.reanalyze')
         }
       },
       null,
@@ -45,18 +45,18 @@ export class CodeSightPanel {
     )
   }
 
-  static getInstance(): CodeSightPanel | undefined {
-    return CodeSightPanel.instance
+  static getInstance(): CodebaseVizPanel | undefined {
+    return CodebaseVizPanel.instance
   }
 
-  static createOrShow(extensionUri: vscode.Uri): CodeSightPanel {
-    if (CodeSightPanel.instance !== undefined) {
-      CodeSightPanel.instance.panel.reveal(vscode.ViewColumn.Beside)
-      return CodeSightPanel.instance
+  static createOrShow(extensionUri: vscode.Uri): CodebaseVizPanel {
+    if (CodebaseVizPanel.instance !== undefined) {
+      CodebaseVizPanel.instance.panel.reveal(vscode.ViewColumn.Beside)
+      return CodebaseVizPanel.instance
     }
 
     const panel = vscode.window.createWebviewPanel(
-      'codesight',
+      'codebaseViz',
       'Codebase Visualizer',
       vscode.ViewColumn.Beside,
       {
@@ -66,12 +66,12 @@ export class CodeSightPanel {
       },
     )
 
-    CodeSightPanel.instance = new CodeSightPanel(extensionUri, panel)
-    return CodeSightPanel.instance
+    CodebaseVizPanel.instance = new CodebaseVizPanel(extensionUri, panel)
+    return CodebaseVizPanel.instance
   }
 
   static dispose(): void {
-    CodeSightPanel.instance?.dispose()
+    CodebaseVizPanel.instance?.dispose()
   }
 
   showLoading(): void {
@@ -163,7 +163,7 @@ export class CodeSightPanel {
 
     const { projectName, routeCount, tableCount, diagrams, cachedAt } = params
     const cspSource = webview.cspSource
-    const setting = vscode.workspace.getConfiguration('codesight').get<string>('language', 'auto')
+    const setting = vscode.workspace.getConfiguration('codebaseViz').get<string>('language', 'auto')
     const locale = resolveLocale(setting, vscode.env.language)
     const dict = dictForLocale(locale)
 
@@ -252,7 +252,7 @@ renderAll();
   }
 
   private dispose(): void {
-    CodeSightPanel.instance = undefined
+    CodebaseVizPanel.instance = undefined
     this.panel.dispose()
     for (const d of this.disposables) d.dispose()
     this.disposables = []

@@ -40,7 +40,7 @@ Routes, components, and DB relationships — extracted statically from **13 fram
 
 ## What it does
 
-Open a project in VS Code → click **Analyze**. CodeSight produces:
+Open a project in VS Code → click **Analyze**. Codebase Viz produces:
 
 | Tab | Content |
 |---|---|
@@ -48,16 +48,16 @@ Open a project in VS Code → click **Analyze**. CodeSight produces:
 | **Screen–Component** | Route → component import graph, runtime tags (client / shared / server) |
 | **DB–Screen** | Table schema (Supabase, Prisma, Drizzle, TypeORM, Django ORM, SQLAlchemy, JPA, **Flyway DDL**) + 4-toggle view: **All** · **FK relations** (ERD with TH/TD distinction) · **Page queries** (route → table flow graph) · **Server actions** (action → table flow graph) |
 
-Results are cached in `.codesight/cache.json`. Re-analyze on demand.
+Results are cached in `.codebase-viz/cache.json`. Re-analyze on demand.
 
 ### Multi-project Analysis (FE↔BE)
 
-When multiple workspace folders are open (e.g. a Next.js frontend + Spring Boot backend), CodeSight supports **paired analysis**:
+When multiple workspace folders are open (e.g. a Next.js frontend + Spring Boot backend), Codebase Viz supports **paired analysis**:
 
 1. Click **Analyze** → select the main (FE) project
 2. A second prompt appears — select the paired BE project (or **Skip** for single-project mode)
 
-CodeSight statically extracts `fetch()` / `axios.*` call URLs from the FE codebase and matches them against BE route definitions. Matched routes appear as **dashed cross-edges** in the combined Rendering Architecture diagram.
+Codebase Viz statically extracts `fetch()` / `axios.*` call URLs from the FE codebase and matches them against BE route definitions. Matched routes appear as **dashed cross-edges** in the combined Rendering Architecture diagram.
 
 | | Without LLM | With LLM (BYOK) |
 |---|---|---|
@@ -83,7 +83,7 @@ Static analysis covers all 13 frameworks without any API key. LLM enrichment is 
 
 ### Supported Providers
 
-Select a provider in the CodeSight sidebar under **AI Provider**:
+Select a provider in the Codebase Viz sidebar under **AI Provider**:
 
 | Provider | Model | Cost |
 |---|---|---|
@@ -95,7 +95,7 @@ Select a provider in the CodeSight sidebar under **AI Provider**:
 
 1. Go to **[aistudio.google.com](https://aistudio.google.com/app/apikey)**
 2. Click **Create API key** → select or create a Google Cloud project
-3. Copy the key → open VS Code → CodeSight sidebar → select **Google (Gemini 무료)** → click **Set API Key**
+3. Copy the key → open VS Code → Codebase Viz sidebar → select **Google (Gemini 무료)** → click **Set API Key**
 
 > **Free Tier limits**: 1,500 requests/day · 1M tokens/min · 1M token context window.
 > Large projects (> 500 routes) may approach the daily limit. Use static-only mode for routine browsing and reserve LLM for final analysis.
@@ -156,7 +156,7 @@ detectStack(repoRoot)
   → IRGraph (RouteNode / ComponentNode / TableNode / IREdge)
   → [optional] LLM enrichment (analyzer.ts:60–90)  # BYOK, additive only
   → buildDiagrams() → 3-tab Mermaid viewer
-  → .codesight/cache.json
+  → .codebase-viz/cache.json
 
 # Pair mode (FE↔BE)
 detectStack(pairRepoRoot)
@@ -165,7 +165,7 @@ detectStack(pairRepoRoot)
   → matchFeCallsToBeRoutes(feCalls, beRoutes)  # URL matching
   → remapCrossEdgeFromIds(edges, feGraph)      # remap to real ComponentNode ids
   → buildCombinedDiagram(feGraph, beGraph, crossEdges)
-  → .codesight/cache-pair-<be-name>.json
+  → .codebase-viz/cache-pair-<be-name>.json
 ```
 
 All nodes carry `provenance` (file + line) and `confidence` (`verified` | `inferred`). The LLM enrichment block is additive — static results are never discarded.
@@ -312,4 +312,4 @@ npx vsce publish --no-dependencies -p <PAT>
 
 ## License
 
-MIT — [github.com/cubha/codesight](https://github.com/cubha/codesight)
+MIT — [github.com/cubha/codebase-viz](https://github.com/cubha/codebase-viz)

@@ -1,7 +1,7 @@
 import * as vscode from 'vscode'
 import * as path from 'node:path'
 import * as fs from 'node:fs'
-import { CodeSightPanel } from './webview.js'
+import { CodebaseVizPanel } from './webview.js'
 import { SidebarProvider, type StatusInfo } from './sidebarProvider.js'
 import { PanelProvider } from './panelProvider.js'
 import { runAnalysis } from './analyzer.js'
@@ -11,31 +11,20 @@ import type { IRGraph } from '@codebase-viz/types'
 import { t, resolveLocale } from './i18n/dict.js'
 
 function getLocale() {
-  const setting = vscode.workspace.getConfiguration('codesight').get<string>('language', 'auto')
+  const setting = vscode.workspace.getConfiguration('codebaseViz').get<string>('language', 'auto')
   return resolveLocale(setting, vscode.env.language)
 }
 
 type LLMProvider = 'anthropic' | 'google' | 'openai'
 
 function getProvider(): LLMProvider {
-  const val = vscode.workspace.getConfiguration('codesight').get<string>('llm.provider', 'anthropic')
+  const val = vscode.workspace.getConfiguration('codebaseViz').get<string>('llm.provider', 'anthropic')
   if (val === 'google' || val === 'openai') return val
   return 'anthropic'
 }
 
 function apiKeySlot(provider: LLMProvider): string {
-  return `codesight.llm.apiKey.${provider}`
-}
-
-async function migrateApiKey(context: vscode.ExtensionContext): Promise<void> {
-  const MIGRATED_FLAG = 'codesight.llm.keyMigrated'
-  if (context.globalState.get<boolean>(MIGRATED_FLAG)) return
-  const legacy = await context.secrets.get('codesight.anthropicKey')
-  if (legacy !== undefined && legacy !== '') {
-    await context.secrets.store(apiKeySlot('anthropic'), legacy)
-    await context.secrets.delete('codesight.anthropicKey')
-  }
-  await context.globalState.update(MIGRATED_FLAG, true)
+  return `codebaseViz.llm.apiKey.${provider}`
 }
 import { setWasmDir } from '@codebase-viz/core'
 import type { DiagramSet } from '@codebase-viz/renderer'
@@ -64,7 +53,7 @@ interface DiagramCache {
 let sidebarProvider: SidebarProvider | undefined
 let panelProvider: PanelProvider | undefined
 
-const STATE_KEY_SELECTED_FOLDER = 'codesight.selectedFolder'
+const STATE_KEY_SELECTED_FOLDER = 'codebaseViz.selectedFolder'
 
 function listWorkspaceFolders(): readonly vscode.WorkspaceFolder[] {
   return vscode.workspace.workspaceFolders ?? []
@@ -124,7 +113,6 @@ function cacheFileName(pairRepoRoot?: string): string {
 function readCache(repoRoot: string, pairRepoRoot?: string): DiagramCache | undefined {
   const candidates = [
     path.join(repoRoot, '.codebase-viz', cacheFileName(pairRepoRoot)),
-    path.join(repoRoot, '.codesight', cacheFileName(pairRepoRoot)),
   ]
   for (const file of candidates) {
     try {
@@ -160,9 +148,9 @@ async function doAnalyze(
   forceRefresh = false,
   pairRepoRoot?: string,
 ): Promise<void> {
-  const config = vscode.workspace.getConfiguration('codesight')
+  const config = vscode.workspace.getConfiguration('codebaseViz')
   const enableLLM = config.get<boolean>('enableLLM', false)
-  // codesight.model default는 ""(빈 문자열) — 사용자가 명시 지정한 경우만 전달.
+  // codebaseViz.model default는 ""(빈 문자열) — 사용자가 명시 지정한 경우만 전달.
   // 빈 문자열은 llm/client.ts의 provider별 DEFAULT_MODELS로 fallback.
   const modelRaw = config.get<string>('model', '')
   const model = modelRaw.trim().length > 0 ? modelRaw.trim() : undefined
@@ -178,13 +166,13 @@ async function doAnalyze(
         setKeyLabel,
       )
       if (action === setKeyLabel) {
-        await vscode.commands.executeCommand('codesight.setApiKey')
+        await vscode.commands.executeCommand('codebaseViz.setApiKey')
       }
       return
     }
   }
 
-  const panel = CodeSightPanel.createOrShow(context.extensionUri)
+  const panel = CodebaseVizPanel.createOrShow(context.extensionUri)
 
   const stackStatus = await getStackStatus(workspaceRoot)
 
@@ -211,7 +199,7 @@ async function doAnalyze(
     panelProvider?.setAnalyzing(true, path.basename(workspaceRoot))
     panel.showLoading()
 
-    const groupingCfg = vscode.workspace.getConfiguration('codesight.grouping')
+    const groupingCfg = vscode.workspace.getConfiguration('codebaseViz.grouping')
     const grouping = {
       maxNodesPerGroup: groupingCfg.get<number>('maxNodesPerGroup', 30),
       maxDepth: groupingCfg.get<number>('maxDepth', 8),
@@ -241,7 +229,7 @@ async function doAnalyze(
         setKeyLabel,
       ).then(action => {
         if (action === setKeyLabel) {
-          void vscode.commands.executeCommand('codesight.setApiKey')
+          void vscode.commands.executeCommand('codebaseViz.setApiKey')
         }
       })
     }
@@ -257,7 +245,6 @@ async function doAnalyze(
 
 export function activate(context: vscode.ExtensionContext): void {
   setWasmDir(path.join(context.extensionPath, 'dist', 'wasm'))
-  void migrateApiKey(context)
   sidebarProvider = new SidebarProvider(context.extensionUri)
   context.subscriptions.push(
     vscode.window.registerWebviewViewProvider(SidebarProvider.viewType, sidebarProvider),
@@ -271,7 +258,7 @@ export function activate(context: vscode.ExtensionContext): void {
   // Push initial status
   void (async () => {
     const hasApiKey = (await context.secrets.get(apiKeySlot(getProvider())) ?? '') !== ''
-    const llmEnabled = vscode.workspace.getConfiguration('codesight').get<boolean>('enableLLM', false)
+    const llmEnabled = vscode.workspace.getConfiguration('codebaseViz').get<boolean>('enableLLM', false)
     const workspaceRoot = getWorkspaceRoot(context)
     const cached = workspaceRoot !== undefined ? readCache(workspaceRoot) : undefined
     const stackStatus = workspaceRoot !== undefined ? await getStackStatus(workspaceRoot) : {}
@@ -303,27 +290,27 @@ export function activate(context: vscode.ExtensionContext): void {
 
   context.subscriptions.push(
     vscode.workspace.onDidChangeConfiguration(e => {
-      if (e.affectsConfiguration('codesight.enableLLM')) {
-        const llmEnabled = vscode.workspace.getConfiguration('codesight').get<boolean>('enableLLM', false)
+      if (e.affectsConfiguration('codebaseViz.enableLLM')) {
+        const llmEnabled = vscode.workspace.getConfiguration('codebaseViz').get<boolean>('enableLLM', false)
         sidebarProvider?.updateStatus({ llmEnabled })
       }
-      if (e.affectsConfiguration('codesight.llm.provider')) {
+      if (e.affectsConfiguration('codebaseViz.llm.provider')) {
         const provider = getProvider()
         void context.secrets.get(apiKeySlot(provider)).then(key => {
           sidebarProvider?.updateStatus({ provider, hasApiKey: (key ?? '') !== '' })
         })
       }
       // language 변경 시 모든 webview를 새 locale로 즉시 다시 렌더 (reload 불필요).
-      if (e.affectsConfiguration('codesight.language')) {
+      if (e.affectsConfiguration('codebaseViz.language')) {
         sidebarProvider?.refreshLocale()
-        CodeSightPanel.getInstance()?.refreshLocale()
+        CodebaseVizPanel.getInstance()?.refreshLocale()
       }
     }),
   )
 
   context.subscriptions.push(
     // 캐시 없을 때: 분석 실행 (multi-root 시 2단계 QuickPick)
-    vscode.commands.registerCommand('codesight.analyze', async () => {
+    vscode.commands.registerCommand('codebaseViz.analyze', async () => {
       const workspaceRoot = getWorkspaceRoot(context)
       if (workspaceRoot === undefined) {
         void vscode.window.showErrorMessage(t('msg.noWorkspace', getLocale()))
@@ -334,7 +321,7 @@ export function activate(context: vscode.ExtensionContext): void {
     }),
 
     // 캐시 있을 때: 강제 재분석 (multi-root 시 2단계 QuickPick)
-    vscode.commands.registerCommand('codesight.reanalyze', async () => {
+    vscode.commands.registerCommand('codebaseViz.reanalyze', async () => {
       const workspaceRoot = getWorkspaceRoot(context)
       if (workspaceRoot === undefined) {
         void vscode.window.showErrorMessage(t('msg.noWorkspace', getLocale()))
@@ -345,7 +332,7 @@ export function activate(context: vscode.ExtensionContext): void {
     }),
 
     // 캐시 있을 때: 웹뷰만 열기 (재분석 없음)
-    vscode.commands.registerCommand('codesight.openViewer', async () => {
+    vscode.commands.registerCommand('codebaseViz.openViewer', async () => {
       const workspaceRoot = getWorkspaceRoot(context)
       if (workspaceRoot === undefined) return
       const cached = readCache(workspaceRoot)
@@ -353,12 +340,12 @@ export function activate(context: vscode.ExtensionContext): void {
         void vscode.window.showInformationMessage(t('msg.noCacheRunFirst', getLocale()))
         return
       }
-      const panel = CodeSightPanel.createOrShow(context.extensionUri)
+      const panel = CodebaseVizPanel.createOrShow(context.extensionUri)
       panel.showCached(cached)
     }),
 
     // 멀티 워크스페이스: 폴더 선택
-    vscode.commands.registerCommand('codesight.selectFolder', async (fsPath?: unknown) => {
+    vscode.commands.registerCommand('codebaseViz.selectFolder', async (fsPath?: unknown) => {
       let target: vscode.WorkspaceFolder | undefined
       if (typeof fsPath === 'string') {
         target = listWorkspaceFolders().find(f => f.uri.fsPath === fsPath)
@@ -383,20 +370,20 @@ export function activate(context: vscode.ExtensionContext): void {
     }),
 
     // 사이드바 Export 버튼 → 웹뷰에 triggerExport 전달
-    vscode.commands.registerCommand('codesight.exportFromSidebar', (format: unknown) => {
+    vscode.commands.registerCommand('codebaseViz.exportFromSidebar', (format: unknown) => {
       const fmt = format as 'png' | 'svg' | 'md'
-      const panel = CodeSightPanel.getInstance()
+      const panel = CodebaseVizPanel.getInstance()
       if (panel === undefined) {
         // 웹뷰가 열려있지 않으면 먼저 열고 export
-        void vscode.commands.executeCommand('codesight.openViewer').then(() => {
-          setTimeout(() => CodeSightPanel.getInstance()?.triggerExport(fmt), 800)
+        void vscode.commands.executeCommand('codebaseViz.openViewer').then(() => {
+          setTimeout(() => CodebaseVizPanel.getInstance()?.triggerExport(fmt), 800)
         })
         return
       }
       panel.triggerExport(fmt)
     }),
 
-    vscode.commands.registerCommand('codesight.setApiKey', async () => {
+    vscode.commands.registerCommand('codebaseViz.setApiKey', async () => {
       const provider = getProvider()
       const locale = getLocale()
       const providerLabel = provider === 'google' ? 'Google Gemini' : provider === 'openai' ? 'OpenAI' : 'Anthropic'
@@ -417,7 +404,7 @@ export function activate(context: vscode.ExtensionContext): void {
       }
     }),
 
-    vscode.commands.registerCommand('codesight.clearApiKey', async () => {
+    vscode.commands.registerCommand('codebaseViz.clearApiKey', async () => {
       await context.secrets.delete(apiKeySlot(getProvider()))
       sidebarProvider?.updateStatus({ hasApiKey: false })
       void vscode.window.showInformationMessage(t('msg.apiKeyCleared', getLocale()))
@@ -426,5 +413,5 @@ export function activate(context: vscode.ExtensionContext): void {
 }
 
 export function deactivate(): void {
-  CodeSightPanel.dispose()
+  CodebaseVizPanel.dispose()
 }

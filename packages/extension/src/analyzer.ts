@@ -135,7 +135,6 @@ interface CacheEntry {
 export async function loadCachedGraph(repoRoot: string): Promise<IRGraph | null> {
   const candidates = [
     path.join(repoRoot, '.codebase-viz', 'cache.json'),
-    path.join(repoRoot, '.codesight', 'cache.json'),
   ]
   for (const file of candidates) {
     try {

@@ -3,12 +3,12 @@
 [![VS Marketplace](https://img.shields.io/visual-studio-marketplace/v/cubha.codebase-arch-viz?label=VS%20Marketplace&color=blue)](https://marketplace.visualstudio.com/items?itemName=cubha.codebase-arch-viz)
 [![Open VSX](https://img.shields.io/open-vsx/v/cubha/codebase-arch-viz?label=Open%20VSX&color=a60ee5)](https://open-vsx.org/extension/cubha/codebase-arch-viz)
 [![Downloads](https://img.shields.io/visual-studio-marketplace/d/cubha.codebase-arch-viz)](https://marketplace.visualstudio.com/items?itemName=cubha.codebase-arch-viz)
-[![License: MIT](https://img.shields.io/badge/license-MIT-green)](https://github.com/cubha/codesight/blob/master/LICENSE)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green)](https://github.com/cubha/codebase-viz/blob/master/LICENSE)
 
 **Instant architecture diagrams for 13 frameworks — no API key needed.**  
 Available on **VS Code**, **Cursor**, **VSCodium**, and any editor using the Open VSX registry.
 
-CodeSight analyzes your project statically and renders three interactive diagrams inside your editor: route hierarchy with HTTP methods, component trees, and DB schema with FK relations.
+Codebase Viz analyzes your project statically and renders three interactive diagrams inside your editor: route hierarchy with HTTP methods, component trees, and DB schema with FK relations.
 
 ---
 
@@ -18,18 +18,18 @@ CodeSight analyzes your project statically and renders three interactive diagram
 Switch tabs once and see every route, every component, with SSR/CSR/ISR/SSG labels colour-coded.
 Mouse wheel to zoom, click and drag to pan — explore freely.
 
-![Routes & Components](https://github.com/cubha/codesight/raw/master/packages/extension/media/demo-tab-switch.gif)
+![Routes & Components](https://github.com/cubha/codebase-viz/raw/master/packages/extension/media/demo-tab-switch.gif)
 
 ### DB–Screen — four views, one click
 Toggle between **All / FK Relations / Page Queries / Server Actions** to isolate what you need.
 The right sidebar shows every column, FK, and which routes/actions query the table.
 
-![DB Multi-View](https://github.com/cubha/codesight/raw/master/packages/extension/media/demo-db-toggle.gif)
+![DB Multi-View](https://github.com/cubha/codebase-viz/raw/master/packages/extension/media/demo-db-toggle.gif)
 
 ### Sidebar Panel
 Control everything from the sidebar — analyze, re-analyze, open the viewer, export diagrams, and manage your API key.
 
-![Sidebar Panel](https://github.com/cubha/codesight/raw/master/packages/extension/media/screenshot-sidebar.png)
+![Sidebar Panel](https://github.com/cubha/codebase-viz/raw/master/packages/extension/media/screenshot-sidebar.png)
 
 ---
 
@@ -112,7 +112,7 @@ Frameworks not in this list (Express, Hono, Rails, Go, etc.) use **LLM primary**
 | **LLM-enhanced** (BYOK) | Fills gaps the static parser can't reach | Required |
 
 **Quality-of-life**
-- Results **cached** in `.codesight/cache.json`
+- Results **cached** in `.codebase-viz/cache.json`
 - Offline-friendly — Mermaid bundled locally, no CDN
 - Pure Node.js — Python/Java AST via bundled WebAssembly, no native installs
 
@@ -128,19 +128,19 @@ Frameworks not in this list (Express, Hono, Rails, Go, etc.) use **LLM primary**
 ### Run
 
 1. Open your project folder (`File → Open Folder`)
-2. Click the **CodeSight icon** in the Activity Bar → **▶ Analyze Project**
+2. Click the **Codebase Viz icon** in the Activity Bar → **▶ Analyze Project**
 3. Explore the three diagram tabs
 
 Or use the Command Palette (`Ctrl+Shift+P`):
 ```
-CodeSight: Analyze Project
+Codebase Viz: Analyze Project
 ```
 
 ---
 
 ## 🤖 LLM Analysis (BYOK)
 
-CodeSight uses **Anthropic Claude** for deeper enrichment on top of static analysis. Your key is stored in VS Code's SecretStorage and never sent anywhere other than Anthropic's API.
+Codebase Viz uses **Anthropic Claude** for deeper enrichment on top of static analysis. Your key is stored in VS Code's SecretStorage and never sent anywhere other than Anthropic's API.
 
 **Setup**
 
@@ -148,7 +148,7 @@ CodeSight uses **Anthropic Claude** for deeper enrichment on top of static analy
 2. Click **🔑 Set API Key** in the sidebar
 3. Toggle **Enable LLM Analysis**
 
-**Model selection** (`codesight.model`)
+**Model selection** (`codebaseViz.model`)
 
 | Value | Description |
 |---|---|
@@ -162,8 +162,8 @@ CodeSight uses **Anthropic Claude** for deeper enrichment on top of static analy
 
 | Setting | Default | Description |
 |---|---|---|
-| `codesight.enableLLM` | `false` | Enable Claude-powered analysis |
-| `codesight.model` | `claude-sonnet-4-6` | Claude model to use |
+| `codebaseViz.enableLLM` | `false` | Enable Claude-powered analysis |
+| `codebaseViz.model` | `claude-sonnet-4-6` | Claude model to use |
 
 ---
 
@@ -171,9 +171,9 @@ CodeSight uses **Anthropic Claude** for deeper enrichment on top of static analy
 
 | Command | Description |
 |---|---|
-| `CodeSight: Analyze Project` | Run analysis and open the viewer |
-| `CodeSight: Set Anthropic API Key` | Store your API key securely |
-| `CodeSight: Clear Anthropic API Key` | Remove the stored key |
+| `Codebase Viz: Analyze Project` | Run analysis and open the viewer |
+| `Codebase Viz: Set Anthropic API Key` | Store your API key securely |
+| `Codebase Viz: Clear Anthropic API Key` | Remove the stored key |
 
 ---
 
@@ -189,10 +189,10 @@ CodeSight uses **Anthropic Claude** for deeper enrichment on top of static analy
 - Your code is **never sent anywhere** in static-only mode
 - In LLM mode, relevant source files are sent to the **Anthropic API using your own key**
 - Anthropic's data handling: [anthropic.com/privacy](https://www.anthropic.com/privacy)
-- Results cached locally in `.codesight/cache.json`
+- Results cached locally in `.codebase-viz/cache.json`
 
 ---
 
 ## 📦 Source
 
-[github.com/cubha/codesight](https://github.com/cubha/codesight) — MIT License
+[github.com/cubha/codebase-viz](https://github.com/cubha/codebase-viz) — MIT License
