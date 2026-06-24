@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.2.56] — 2026-06-24
+
+### Changed — removed leftover `codesight` naming (brand cleanup)
+
+- Command/setting/view IDs `codesight.*` → `codebaseViz.*`; view containers `codesight-{sidebar,panel}` → `codebaseViz-*`. **Breaking**: existing `codesight.*` settings, keybindings, and the stored API key reset (no migration) — re-enter the API key once.
+- Dropped the `.codesight/` cache read-fallback (now `.codebase-viz/` only) and stopped bundling stray `.codesight/` cache files in the VSIX.
+- GitHub repo renamed `cubha/codesight` → `cubha/codebase-viz`. No change to analysis behavior or diagram output.
+
 ## [1.2.55] — 2026-06-24
 
 ### Changed — Tab1 (Rendering Architecture) folder overview for large React/SPA projects

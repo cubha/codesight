@@ -4,7 +4,9 @@
 
 Routes, components, and DB relationships — extracted statically from **13 frameworks**, optionally enriched by LLM, rendered as three live diagram tabs inside VS Code.
 
-> Marketplace: [`cubha.codebase-arch-viz`](https://marketplace.visualstudio.com/items?itemName=cubha.codebase-arch-viz) · Current release: **v1.2.55**
+> Marketplace: [`cubha.codebase-arch-viz`](https://marketplace.visualstudio.com/items?itemName=cubha.codebase-arch-viz) · Current release: **v1.2.56**
+>
+> **v1.2.56 highlights** — **`codesight` 잔재 전면 제거 (브랜드 정리)**. 명령어·설정·뷰 ID `codesight.*` → `codebaseViz.*`, 캐시 `.codesight/` fallback·게시 vsix 잔재 캐시 제거, GitHub 레포 `cubha/codesight` → `cubha/codebase-viz`. **Breaking**: 기존 `codesight.*` 설정·저장된 API 키 리셋(API 키 1회 재입력 필요). 동작·다이어그램 출력 변화 없음. verify.sh PASS.
 >
 > **v1.2.55 highlights** — **WINA-FE Tab1/Tab2 재설계 — 516라우트 반복 래퍼·도메인 누락 근본 수정 + 폴더 박스 반복 완화** (사용자 보고 · 회귀 0). 실 레포(react-router 516라우트 WINA)에서 Tab1이 도메인마다 아키텍처 래퍼를 반복 그리드로 그리고 박스 granularity가 하위 세그먼트로 산란 + 도메인 누락 체감. **원인**: `buildDiagrams`가 v1.2.53에서 이미 단일·소형이 된 `buildRenderingDiagram`을 `rendering` 필드에서 routeCount(516)>300 게이트로 재청킹 → 청크마다 wrapper 반복·sub-segment 산란·도메인 누락 체감(단일 원인이 3증상). **(ST0)** `rendering`을 직접 `buildRenderingDiagram` 호출로 교체(재청킹 누수 차단). **(ST1)** Tab1을 **full-depth 폴더 개요**(신규 `fe/tab1-tree.ts`)로 재정의 — 단일 래퍼 안 root→대→중→소 중첩 폴더 subgraph + `📁 /name · N routes` 재귀 카운트 배지, top-level `~~~` chain X축. **(ST2)** Tab2 leaf에 전체 라우트 URL(`🔗 /full/path`) 병기. **(ST6·후속 피드백)** 폴더 박스 반복 완화 — collapse를 하위 재귀 라우트 수 기준으로 재정의, 단일라우트 자식 2개+는 하나의 `📄 …(M pages)` 집계 박스로 묶음(WINA Dummy 실측 "·1 route" 박스 141→17). **검증**: 사용자 제공 실 WINA 라우터로 Dummy Repo(283 route·20 도메인) 직접 분석 → wrapper 1개·청크 false·도메인 누락 0·특수패턴 전부 OK. verify.sh **PASS** · 회귀 0 · 스냅샷 Tab1만 재생성 · ST1~ST5+ST6 TDD. FE-DIAGRAM-STANDARD v1.2.55 re-amendment(§10).
 >
