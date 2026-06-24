@@ -2,7 +2,7 @@ import * as vscode from 'vscode'
 import { t, resolveLocale, dictForLocale } from './i18n/dict.js'
 
 function getLocale() {
-  const setting = vscode.workspace.getConfiguration('codesight').get<string>('language', 'auto')
+  const setting = vscode.workspace.getConfiguration('codebaseViz').get<string>('language', 'auto')
   return resolveLocale(setting, vscode.env.language)
 }
 
@@ -24,7 +24,7 @@ export interface StatusInfo {
 }
 
 export class SidebarProvider implements vscode.WebviewViewProvider {
-  public static readonly viewType = 'codesight.sidebar'
+  public static readonly viewType = 'codebaseViz.sidebar'
   private _view?: vscode.WebviewView
   private _status: StatusInfo = {}
 
@@ -46,40 +46,40 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
           this._pushStatus()
           break
         case 'analyze':
-          await vscode.commands.executeCommand('codesight.analyze')
+          await vscode.commands.executeCommand('codebaseViz.analyze')
           break
         case 'reanalyze':
-          await vscode.commands.executeCommand('codesight.reanalyze')
+          await vscode.commands.executeCommand('codebaseViz.reanalyze')
           break
         case 'openViewer':
-          await vscode.commands.executeCommand('codesight.openViewer')
+          await vscode.commands.executeCommand('codebaseViz.openViewer')
           break
         case 'exportRequest':
-          await vscode.commands.executeCommand('codesight.exportFromSidebar', msg.value)
+          await vscode.commands.executeCommand('codebaseViz.exportFromSidebar', msg.value)
           break
         case 'setApiKey':
-          await vscode.commands.executeCommand('codesight.setApiKey')
+          await vscode.commands.executeCommand('codebaseViz.setApiKey')
           break
         case 'clearApiKey':
-          await vscode.commands.executeCommand('codesight.clearApiKey')
+          await vscode.commands.executeCommand('codebaseViz.clearApiKey')
           break
         case 'toggleLLM':
           await vscode.workspace
-            .getConfiguration('codesight')
+            .getConfiguration('codebaseViz')
             .update('enableLLM', msg.value, vscode.ConfigurationTarget.Global)
           break
         case 'selectFolder':
-          await vscode.commands.executeCommand('codesight.selectFolder', msg.value)
+          await vscode.commands.executeCommand('codebaseViz.selectFolder', msg.value)
           break
         case 'setLanguage':
           await vscode.workspace
-            .getConfiguration('codesight')
+            .getConfiguration('codebaseViz')
             .update('language', msg.value, vscode.ConfigurationTarget.Global)
           // setting 변경은 onDidChangeConfiguration에서 sidebar/viewer 모두 refresh 처리.
           break
         case 'setProvider':
           await vscode.workspace
-            .getConfiguration('codesight.llm')
+            .getConfiguration('codebaseViz.llm')
             .update('provider', msg.value, vscode.ConfigurationTarget.Global)
           break
         case 'openExternal':
@@ -112,7 +112,7 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
   private _getHtml(): string {
     const locale = getLocale()
     const dict = dictForLocale(locale)
-    const langSetting = vscode.workspace.getConfiguration('codesight').get<string>('language', 'auto')
+    const langSetting = vscode.workspace.getConfiguration('codebaseViz').get<string>('language', 'auto')
     return `<!DOCTYPE html>
 <html lang="en">
 <head>

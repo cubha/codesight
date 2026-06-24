@@ -12,12 +12,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/cubha/codesight"
+    "url": "https://github.com/cubha/codebase-viz"
   },
   "bugs": {
-    "url": "https://github.com/cubha/codesight/issues"
+    "url": "https://github.com/cubha/codebase-viz/issues"
   },
-  "homepage": "https://github.com/cubha/codesight#readme",
+  "homepage": "https://github.com/cubha/codebase-viz#readme",
   "engines": {
     "vscode": "^1.90.0"
   },
@@ -47,66 +47,66 @@
   ],
   "activationEvents": [
     "onStartupFinished",
-    "onCommand:codesight.analyze",
-    "onView:codesight.sidebar",
-    "onView:codesight.panelView"
+    "onCommand:codebaseViz.analyze",
+    "onView:codebaseViz.sidebar",
+    "onView:codebaseViz.panelView"
   ],
   "main": "./dist/extension.js",
   "contributes": {
     "viewsContainers": {
       "activitybar": [
         {
-          "id": "codesight-sidebar",
+          "id": "codebaseViz-sidebar",
           "title": "Codebase Visualizer",
           "icon": "media/icon-activity.svg"
         }
       ],
       "panel": [
         {
-          "id": "codesight-panel",
+          "id": "codebaseViz-panel",
           "title": "Codebase Visualizer",
           "icon": "media/icon-activity.svg"
         }
       ]
     },
     "views": {
-      "codesight-sidebar": [
+      "codebaseViz-sidebar": [
         {
           "type": "webview",
-          "id": "codesight.sidebar",
+          "id": "codebaseViz.sidebar",
           "name": "Codebase Visualizer"
         }
       ],
-      "codesight-panel": [
+      "codebaseViz-panel": [
         {
           "type": "webview",
-          "id": "codesight.panelView",
+          "id": "codebaseViz.panelView",
           "name": "Analysis"
         }
       ]
     },
     "commands": [
       {
-        "command": "codesight.analyze",
+        "command": "codebaseViz.analyze",
         "title": "Codebase Viz: Analyze Project"
       },
       {
-        "command": "codesight.selectFolder",
+        "command": "codebaseViz.selectFolder",
         "title": "Codebase Viz: Select Workspace Folder"
       },
       {
-        "command": "codesight.setApiKey",
+        "command": "codebaseViz.setApiKey",
         "title": "Codebase Viz: Set API Key"
       },
       {
-        "command": "codesight.clearApiKey",
+        "command": "codebaseViz.clearApiKey",
         "title": "Codebase Viz: Clear API Key"
       }
     ],
     "configuration": {
       "title": "Codebase Visualizer",
       "properties": {
-        "codesight.language": {
+        "codebaseViz.language": {
           "type": "string",
           "enum": [
             "auto",
@@ -125,7 +125,7 @@
           "default": "auto",
           "description": "Display language for Codebase Viz UI (sidebar, viewer, messages). 'auto' follows VS Code display language."
         },
-        "codesight.llm.provider": {
+        "codebaseViz.llm.provider": {
           "type": "string",
           "enum": ["anthropic", "google", "openai"],
           "enumDescriptions": [
@@ -136,24 +136,24 @@
           "default": "anthropic",
           "description": "LLM provider to use for AI-powered analysis. Each provider requires its own API key."
         },
-        "codesight.model": {
+        "codebaseViz.model": {
           "type": "string",
           "default": "",
           "description": "Override the default model for the selected provider. Leave empty to use the provider default."
         },
-        "codesight.enableLLM": {
+        "codebaseViz.enableLLM": {
           "type": "boolean",
           "default": false,
           "description": "Enable AI-powered analysis (requires an API key for the selected provider)"
         },
-        "codesight.grouping.maxNodesPerGroup": {
+        "codebaseViz.grouping.maxNodesPerGroup": {
           "type": "number",
           "default": 30,
           "minimum": 5,
           "maximum": 200,
           "description": "Hierarchical grouping: max nodes per subgraph before chunking (Tab1/Tab2)"
         },
-        "codesight.grouping.maxDepth": {
+        "codebaseViz.grouping.maxDepth": {
           "type": "number",
           "default": 8,
           "minimum": 1,

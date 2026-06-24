@@ -963,7 +963,7 @@ async function exportSvg(t) {
   try {
     var str = await getSvgString(tab);
     if (!str) { alert(tr('alert.noDiagram')); return; }
-    postMsg({type:'export', format:'svg', data:str, filename:(meta.projectName||'codesight')+'-'+tab+'.svg'});
+    postMsg({type:'export', format:'svg', data:str, filename:(meta.projectName||'codebase-viz')+'-'+tab+'.svg'});
   } catch(e) { alert(tr('alert.svgFailed') + ': ' + e.message); }
 }
 
@@ -989,7 +989,7 @@ async function exportPng(t) {
         URL.revokeObjectURL(url);
         try {
           postMsg({type:'export', format:'png', data:canvas.toDataURL('image/png'),
-            filename:(meta.projectName||'codesight')+'-'+tab+'.png'});
+            filename:(meta.projectName||'codebase-viz')+'-'+tab+'.png'});
           resolve();
         } catch(e) {
           // canvas tainted → fall back to SVG
@@ -1027,7 +1027,7 @@ function exportMd() {
   var hdr = '# Codebase Viz — '+(meta.projectName||'Project')+'\n\n'+
     '> '+(meta.routeCount??'?')+tr('export.routes')+' · '+(meta.tableCount??'?')+tr('export.tables')+'\n';
   postMsg({type:'export', format:'md', data:hdr+'\n'+sections+'\n',
-    filename:(meta.projectName||'codesight')+'.md'});
+    filename:(meta.projectName||'codebase-viz')+'.md'});
 }
 
 // v1.2.49 B-8: 첫 탭 렌더를 다음 프레임으로 지연 — 탭바/헤더/"렌더링 중..." UI가 먼저

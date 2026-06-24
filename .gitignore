@@ -7,7 +7,6 @@ scratch.md
 .tmp-*/
 .gif-tmp/
 .codebase-viz/
-.codesight/
 
 # 환경변수 (토큰/시크릿) — 절대 커밋 금지
 .env.local

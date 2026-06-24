@@ -2,12 +2,12 @@ import * as vscode from 'vscode'
 import { t, resolveLocale, dictForLocale } from './i18n/dict.js'
 
 function getLocale() {
-  const setting = vscode.workspace.getConfiguration('codesight').get<string>('language', 'auto')
+  const setting = vscode.workspace.getConfiguration('codebaseViz').get<string>('language', 'auto')
   return resolveLocale(setting, vscode.env.language)
 }
 
 export class PanelProvider implements vscode.WebviewViewProvider {
-  public static readonly viewType = 'codesight.panelView'
+  public static readonly viewType = 'codebaseViz.panelView'
   private _view?: vscode.WebviewView
   private _logs: string[] = []
 
