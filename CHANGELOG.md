@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.2.56] — 2026-06-24
+
+### Changed — `codesight` 잔재 전면 제거 (브랜드 정리)
+
+- 명령어·설정·뷰 ID `codesight.*` → `codebaseViz.*`, 뷰 컨테이너 `codesight-{sidebar,panel}` → `codebaseViz-*`. **Breaking**: 기존 `codesight.*` 설정·키바인딩·저장된 API 키가 리셋됨(마이그레이션 없음) — API 키는 1회 재입력 필요.
+- 캐시 `.codesight/` read fallback 제거(`.codebase-viz/` 단일 경로). 게시 vsix에 섞이던 `.codesight/` 잔재 캐시 제거.
+- GitHub 레포 `cubha/codesight` → `cubha/codebase-viz`. 옛 vsix·legacy 키 마이그레이션 코드 제거.
+- 동작·다이어그램 출력 변화 없음. verify.sh PASS.
+
 ## [1.2.55] — 2026-06-24
 
 ### WINA-FE Tab1/Tab2 재설계 — 516라우트 반복 래퍼·도메인 누락 근본 수정 + 폴더 박스 반복 완화 (회귀 0)

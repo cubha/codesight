@@ -57,9 +57,14 @@ Frameworks not in this list (Express, Hono, Rails, Go, etc.) use **LLM primary**
 
 ---
 
-## ✨ What's new in v1.2.55
+## ✨ What's new in v1.2.56
 
-### Changed — Tab1 folder overview for large React/SPA projects
+### Changed — removed leftover `codesight` naming (brand cleanup)
+
+- Command/setting/view IDs `codesight.*` → `codebaseViz.*`; dropped the `.codesight/` cache fallback and stray VSIX cache; GitHub repo renamed to `cubha/codebase-viz`.
+- **Breaking**: existing `codesight.*` settings and the stored API key reset (re-enter the API key once). No change to analysis behavior or diagram output.
+
+### v1.2.55 — Tab1 folder overview for large React/SPA projects
 
 - **Tab1 shows the full folder directory in a single architecture wrapper.** Large multi-domain projects (500+ routes, 20+ domains) previously repeated the `Browser › Router › React` wrapper per domain and scattered box granularity onto sub-segments, making some top-level domains look missing. Tab1 now renders one wrapper containing the URL directory as a full-depth nested folder tree, each folder header carrying a recursive route-count badge (`📁 /name · N routes`).
 - **Fewer repeated boxes.** All-single-route folders collapse into one count box; in mixed folders, 2+ single-route children fold into one aggregate box (`📄 name1 · name2 · name3 +N (M pages)`). On a WINA-scale sample this cut repeated "· 1 route" boxes from 141 to 17.
