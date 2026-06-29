@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.2.57] — 2026-06-29
+
+### Changed — 백엔드 Tab1 endpoint collapse (BE-DIAGRAM-STANDARD R-T1.6 amendment)
+
+- **BE Tab1**: 컨트롤러 endpoint를 별도 `endpoints_<Ctrl>` subgraph(개별 노드 Y축 적층 + `---` 체인)에서 **leaf 컨트롤러 노드 안 markdown multiline collapse**로 전환. `📄 **ControllerName** [prefix]` + 구분선 + `**METHOD** /suffix` 1행씩. endpoint 많은 컨트롤러의 Y축 비대 해소(12-endpoint 컨트롤러 기준 다이어그램 높이 ~2.7× 단축) + 메서드 bold로 항목 구분 명확.
+- **근거**: 사용자 제기 — 최종 depth(endpoint)가 Y축 적층되어 endpoint 많은 컨트롤러 열이 무의미하게 비대. 축 회전(LR/grid)은 mermaid v11 nested subgraph LR 미지원으로 폐기, materialize 양 축소(collapse)가 정답.
+- `be/leaf.ts emitControllerFileLeaf` 재작성 + `be/tab1.ts leafCost` route당 `*2+2` → 상수 2(endpoint가 노드/엣지 아님). URL 경로 markdown 메타문자(`_ * \``) escape. viewer `htmlLabels:false`(SVG 텍스트)에서 markdown bold 정상 렌더 확인.
+- 모든 BE 어댑터(Spring Boot·Django·NestJS·FastAPI·Flask) 적용. FE 다이어그램 불변. 신규 `be/leaf.test.ts`(3 TDD), CLI fixtures 스냅샷 9건 재생성(net -188라인). 분석 문서 `docs/analysis/be-tab1-y-axis-depth-bloat.md`. verify.sh ALL PASS · 회귀 0.
+
 ## [1.2.56] — 2026-06-24
 
 ### Changed — `codesight` 잔재 전면 제거 (브랜드 정리)

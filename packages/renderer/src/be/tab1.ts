@@ -81,9 +81,10 @@ export function buildBeRenderingDiagram(graph: IRGraph): string {
 
   const tree = buildPkgTree(trimmed)
 
-  // v1.2.51 B: leaf 파일 cost = leaf 노드 + endpoints subgraph(route 노드 + `---` 엣지) + 부모 edge 근사.
-  const byFilePath = new Map(trimmed.map(f => [f.filePath, f.routes.length]))
-  const leafCost = (filePath: string): number => (byFilePath.get(filePath) ?? 0) * 2 + 2
+  // v1.2.57: endpoint collapse(R-T1.6 amendment)로 endpoints subgraph 폐기 → leaf 파일 cost는
+  // route 수와 무관한 상수 2(leaf 노드 1 + 부모 edge 1). endpoint는 노드/엣지가 아닌 노드 내부 텍스트라
+  // dagre 레이아웃 비용에 기여하지 않음.
+  const leafCost = (_filePath: string): number => 2
   const costOf = (st: PkgTreeNode): number => estimateChunkCost(st, leafCost)
 
   const topChunks = chunkByTopLevelPackage(tree)

@@ -29,7 +29,7 @@ com.wina
 | R-T1.2 공통 prefix strip | `📁 src/main/java/com.wina` 헤더 (✅) |
 | R-T1.4 트리 노드 | `pkg_<name>` + `-->` edges (✅) |
 | R-T1.5 leaf Controller | `📄 ControllerName [/api/prefix]` (✅) |
-| R-T1.6 endpoint subgraph | `subgraph endpoints_<Ctrl>` + METHOD /suffix (✅) |
+| R-T1.6 endpoint collapse (v1.2.57) | leaf 노드 안 markdown multiline `**METHOD** /suffix` (✅) |
 | R-T1.8 top-level chunking | 3 chunks: partner/agency/headoffice (✅) |
 | R-T1.9 elk.mrtree opt-in | `config: layout: elk.mrtree` (✅) |
 | R-T2.2 Tab2 DI 체인 | leaf에 Controller→Service→Repository 수직 (확인 시 screen-component.md) |

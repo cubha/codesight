@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.57] — 2026-06-29
+
+### Changed — Backend Tab1 endpoint collapse (BE diagram standard R-T1.6 amendment)
+
+- Backend Tab1 now renders a controller's endpoints as a compact markdown list **inside the controller node** (`**METHOD** /suffix`, one per line) instead of a separate stacked `endpoints` subgraph. Removes the vertical bloat caused by endpoint-heavy controllers (~2.7× shorter on a 12-endpoint controller) and keeps each endpoint clearly delimited with the HTTP method in bold.
+- Applies to all backend adapters (Spring Boot, Django, NestJS, FastAPI, Flask). Frontend diagrams unchanged. URL paths with markdown meta-characters (`_ * \``) are escaped so they render literally.
+
 ## [1.2.56] — 2026-06-24
 
 ### Changed — removed leftover `codesight` naming (brand cleanup)

@@ -129,18 +129,12 @@ graph TD
   classDef hdr fill:#06080f,stroke:#1e3a5f,color:#7dd3fc
   subgraph HDR_PKG ["📁 src/main/java/api"]
     direction TB
-  leaf_urls["📄 urls [/api]"]:::ssr
-  subgraph endpoints_urls["endpoints"]
-    direction TB
-    route_api_urls_py__api_users_include["/users"]:::ssr
-    route_api_urls_py__api_users__pk_include["/users/:pk"]:::ssr
-    route_api_urls_py__api_posts_include["/posts"]:::ssr
-    route_api_urls_py__api_posts__slug_include["/posts/:slug"]:::ssr
-    route_api_urls_py__api_users_include --- route_api_urls_py__api_users__pk_include
-    route_api_urls_py__api_users__pk_include --- route_api_urls_py__api_posts_include
-    route_api_urls_py__api_posts_include --- route_api_urls_py__api_posts__slug_include
-  end
-  leaf_urls --> endpoints_urls
+  leaf_urls["\`📄 **urls** [/api]
+─────────────
+/users
+/users/:pk
+/posts
+/posts/:slug\`"]:::ssr
   end"
 `;
 
@@ -220,24 +214,15 @@ graph TD
   classDef hdr fill:#06080f,stroke:#1e3a5f,color:#7dd3fc
   subgraph HDR_PKG ["📁 src/main/java/routers"]
     direction TB
-  leaf_users["📄 users [/api/users]"]:::ssr
-  subgraph endpoints_users["endpoints"]
-    direction TB
-    route_routers_users_py__api_users_GET["GET /"]:::ssr
-    route_routers_users_py__api_users__user_id_GET["GET /:user_id"]:::ssr
-    route_routers_users_py__api_users_POST["POST /"]:::ssr
-    route_routers_users_py__api_users_GET --- route_routers_users_py__api_users__user_id_GET
-    route_routers_users_py__api_users__user_id_GET --- route_routers_users_py__api_users_POST
-  end
-  leaf_users --> endpoints_users
-  leaf_posts["📄 posts [/api/posts]"]:::ssr
-  subgraph endpoints_posts["endpoints"]
-    direction TB
-    route_routers_posts_py__api_posts_GET["GET /"]:::ssr
-    route_routers_posts_py__api_posts__post_id_GET["GET /:post_id"]:::ssr
-    route_routers_posts_py__api_posts_GET --- route_routers_posts_py__api_posts__post_id_GET
-  end
-  leaf_posts --> endpoints_posts
+  leaf_users["\`📄 **users** [/api/users]
+─────────────
+**GET** /
+**GET** /:user\\_id
+**POST** /\`"]:::ssr
+  leaf_posts["\`📄 **posts** [/api/posts]
+─────────────
+**GET** /
+**GET** /:post\\_id\`"]:::ssr
   end
 %%--CHUNK--%%
 %% chunk:2/2
@@ -253,14 +238,10 @@ graph TD
   classDef muted fill:#0a0d14,stroke:#374151,color:#64748b,stroke-dasharray: 3 3
   classDef hdr fill:#06080f,stroke:#1e3a5f,color:#7dd3fc
   BE_ANCHOR["(root)"]:::hdr
-  leaf_main["📄 main"]:::ssr
-  subgraph endpoints_main["endpoints"]
-    direction TB
-    route_main_py___get["GET /"]:::ssr
-    route_main_py__health_get["GET /health"]:::ssr
-    route_main_py___get --- route_main_py__health_get
-  end
-  leaf_main --> endpoints_main
+  leaf_main["\`📄 **main**
+─────────────
+**GET** /
+**GET** /health\`"]:::ssr
   BE_ANCHOR --> leaf_main"
 `;
 
@@ -321,24 +302,15 @@ graph TD
   classDef hdr fill:#06080f,stroke:#1e3a5f,color:#7dd3fc
   subgraph HDR_PKG ["📁 src/main/java/blueprints"]
     direction TB
-  leaf_posts["📄 posts [/api/posts]"]:::ssr
-  subgraph endpoints_posts["endpoints"]
-    direction TB
-    route_blueprints_posts_py__api_posts["/"]:::ssr
-    route_blueprints_posts_py__api_posts__post_id["/:post_id"]:::ssr
-    route_blueprints_posts_py__api_posts --- route_blueprints_posts_py__api_posts__post_id
-  end
-  leaf_posts --> endpoints_posts
-  leaf_users["📄 users [/api/users]"]:::ssr
-  subgraph endpoints_users["endpoints"]
-    direction TB
-    route_blueprints_users_py__api_users["/"]:::ssr
-    route_blueprints_users_py__api_users__user_id["/:user_id"]:::ssr
-    route_blueprints_users_py__api_users["POST /"]:::ssr
-    route_blueprints_users_py__api_users --- route_blueprints_users_py__api_users__user_id
-    route_blueprints_users_py__api_users__user_id --- route_blueprints_users_py__api_users
-  end
-  leaf_users --> endpoints_users
+  leaf_posts["\`📄 **posts** [/api/posts]
+─────────────
+/
+/:post\\_id\`"]:::ssr
+  leaf_users["\`📄 **users** [/api/users]
+─────────────
+/
+/:user\\_id
+**POST** /\`"]:::ssr
   end
 %%--CHUNK--%%
 %% chunk:2/2
@@ -354,14 +326,10 @@ graph TD
   classDef muted fill:#0a0d14,stroke:#374151,color:#64748b,stroke-dasharray: 3 3
   classDef hdr fill:#06080f,stroke:#1e3a5f,color:#7dd3fc
   BE_ANCHOR["(root)"]:::hdr
-  leaf_app["📄 app"]:::ssr
-  subgraph endpoints_app["endpoints"]
-    direction TB
-    route_app_py__["/"]:::ssr
-    route_app_py__health["/health"]:::ssr
-    route_app_py__ --- route_app_py__health
-  end
-  leaf_app --> endpoints_app
+  leaf_app["\`📄 **app**
+─────────────
+/
+/health\`"]:::ssr
   BE_ANCHOR --> leaf_app"
 `;
 
@@ -426,18 +394,12 @@ graph TD
   classDef hdr fill:#06080f,stroke:#1e3a5f,color:#7dd3fc
   subgraph HDR_PKG ["📁 src/main/java/src.users"]
     direction TB
-  leaf_users_controller["📄 users.controller [/users]"]:::ssr
-  subgraph endpoints_users_controller["endpoints"]
-    direction TB
-    route_src_users_users_controller_ts_UsersController_findAll["GET /"]:::ssr
-    route_src_users_users_controller_ts_UsersController_findOne["GET /:id"]:::ssr
-    route_src_users_users_controller_ts_UsersController_create["POST /"]:::ssr
-    route_src_users_users_controller_ts_UsersController_remove["DELETE /:id"]:::ssr
-    route_src_users_users_controller_ts_UsersController_findAll --- route_src_users_users_controller_ts_UsersController_findOne
-    route_src_users_users_controller_ts_UsersController_findOne --- route_src_users_users_controller_ts_UsersController_create
-    route_src_users_users_controller_ts_UsersController_create --- route_src_users_users_controller_ts_UsersController_remove
-  end
-  leaf_users_controller --> endpoints_users_controller
+  leaf_users_controller["\`📄 **users.controller** [/users]
+─────────────
+**GET** /
+**GET** /:id
+**POST** /
+**DELETE** /:id\`"]:::ssr
   end"
 `;
 
@@ -1740,30 +1702,18 @@ graph TD
   classDef hdr fill:#06080f,stroke:#1e3a5f,color:#7dd3fc
   subgraph HDR_PKG ["📁 src/main/java/com.example.controller"]
     direction TB
-  leaf_PostController["📄 PostController [/api/posts]"]:::ssr
-  subgraph endpoints_PostController["endpoints"]
-    direction TB
-    route_src_main_java_com_example_controller_PostController_java__api_posts_GetMapping["GET /"]:::ssr
-    route_src_main_java_com_example_controller_PostController_java__api_posts__postId_GetMapping["GET /:postId"]:::ssr
-    route_src_main_java_com_example_controller_PostController_java__api_posts_featured_GetMapping["GET /featured"]:::ssr
-    route_src_main_java_com_example_controller_PostController_java__api_posts_pinned_GetMapping["GET /pinned"]:::ssr
-    route_src_main_java_com_example_controller_PostController_java__api_posts_GetMapping --- route_src_main_java_com_example_controller_PostController_java__api_posts__postId_GetMapping
-    route_src_main_java_com_example_controller_PostController_java__api_posts__postId_GetMapping --- route_src_main_java_com_example_controller_PostController_java__api_posts_featured_GetMapping
-    route_src_main_java_com_example_controller_PostController_java__api_posts_featured_GetMapping --- route_src_main_java_com_example_controller_PostController_java__api_posts_pinned_GetMapping
-  end
-  leaf_PostController --> endpoints_PostController
-  leaf_UserController["📄 UserController [/api/users]"]:::ssr
-  subgraph endpoints_UserController["endpoints"]
-    direction TB
-    route_src_main_java_com_example_controller_UserController_java__api_users_GetMapping["GET /"]:::ssr
-    route_src_main_java_com_example_controller_UserController_java__api_users__userId_GetMapping["GET /:userId"]:::ssr
-    route_src_main_java_com_example_controller_UserController_java__api_users_PostMapping["POST /"]:::ssr
-    route_src_main_java_com_example_controller_UserController_java__api_users__userId_DeleteMapping["DELETE /:userId"]:::ssr
-    route_src_main_java_com_example_controller_UserController_java__api_users_GetMapping --- route_src_main_java_com_example_controller_UserController_java__api_users__userId_GetMapping
-    route_src_main_java_com_example_controller_UserController_java__api_users__userId_GetMapping --- route_src_main_java_com_example_controller_UserController_java__api_users_PostMapping
-    route_src_main_java_com_example_controller_UserController_java__api_users_PostMapping --- route_src_main_java_com_example_controller_UserController_java__api_users__userId_DeleteMapping
-  end
-  leaf_UserController --> endpoints_UserController
+  leaf_PostController["\`📄 **PostController** [/api/posts]
+─────────────
+**GET** /
+**GET** /:postId
+**GET** /featured
+**GET** /pinned\`"]:::ssr
+  leaf_UserController["\`📄 **UserController** [/api/users]
+─────────────
+**GET** /
+**GET** /:userId
+**POST** /
+**DELETE** /:userId\`"]:::ssr
   end"
 `;
 
@@ -1868,14 +1818,10 @@ graph TD
   classDef hdr fill:#06080f,stroke:#1e3a5f,color:#7dd3fc
   subgraph HDR_PKG ["📁 src/main/java/com.wina.admin"]
     direction TB
-  leaf_AdminController["📄 AdminController [/api/admin]"]:::ssr
-  subgraph endpoints_AdminController["endpoints"]
-    direction TB
-    route_src_main_java_com_wina_admin_controller_AdminController_java__api_admin_users_GetMapping["GET /users"]:::ssr
-    route_src_main_java_com_wina_admin_controller_AdminController_java__api_admin_audit_PostMapping["POST /audit"]:::ssr
-    route_src_main_java_com_wina_admin_controller_AdminController_java__api_admin_users_GetMapping --- route_src_main_java_com_wina_admin_controller_AdminController_java__api_admin_audit_PostMapping
-  end
-  leaf_AdminController --> endpoints_AdminController
+  leaf_AdminController["\`📄 **AdminController** [/api/admin]
+─────────────
+**GET** /users
+**POST** /audit\`"]:::ssr
   end
 %%--CHUNK--%%
 %% chunk:2/2
@@ -1896,27 +1842,17 @@ graph TD
   pkg_matMgmt__decoSheet["decoSheet"]:::pkg
   pkg_matMgmt --> pkg_matMgmt__decoSheet
   pkg_order["order"]:::pkg
-  leaf_DecoSheetController["📄 DecoSheetController [/api/partner/decoSheet]"]:::ssr
-  subgraph endpoints_DecoSheetController["endpoints"]
-    direction TB
-    route_src_main_java_com_wina_partner_matMgmt_decoSheet_controller_DecoSheetController_java__api_partner_decoSheet_GetMapping["GET /"]:::ssr
-    route_src_main_java_com_wina_partner_matMgmt_decoSheet_controller_DecoSheetController_java__api_partner_decoSheet__id_GetMapping["GET /:id"]:::ssr
-    route_src_main_java_com_wina_partner_matMgmt_decoSheet_controller_DecoSheetController_java__api_partner_decoSheet_PostMapping["POST /"]:::ssr
-    route_src_main_java_com_wina_partner_matMgmt_decoSheet_controller_DecoSheetController_java__api_partner_decoSheet_GetMapping --- route_src_main_java_com_wina_partner_matMgmt_decoSheet_controller_DecoSheetController_java__api_partner_decoSheet__id_GetMapping
-    route_src_main_java_com_wina_partner_matMgmt_decoSheet_controller_DecoSheetController_java__api_partner_decoSheet__id_GetMapping --- route_src_main_java_com_wina_partner_matMgmt_decoSheet_controller_DecoSheetController_java__api_partner_decoSheet_PostMapping
-  end
-  leaf_DecoSheetController --> endpoints_DecoSheetController
+  leaf_DecoSheetController["\`📄 **DecoSheetController** [/api/partner/decoSheet]
+─────────────
+**GET** /
+**GET** /:id
+**POST** /\`"]:::ssr
   pkg_matMgmt__decoSheet --> leaf_DecoSheetController
-  leaf_OrderController["📄 OrderController [/api/partner/orders]"]:::ssr
-  subgraph endpoints_OrderController["endpoints"]
-    direction TB
-    route_src_main_java_com_wina_partner_order_controller_OrderController_java__api_partner_orders_GetMapping["GET /"]:::ssr
-    route_src_main_java_com_wina_partner_order_controller_OrderController_java__api_partner_orders_PostMapping["POST /"]:::ssr
-    route_src_main_java_com_wina_partner_order_controller_OrderController_java__api_partner_orders__id_cancel_PostMapping["POST /:id/cancel"]:::ssr
-    route_src_main_java_com_wina_partner_order_controller_OrderController_java__api_partner_orders_GetMapping --- route_src_main_java_com_wina_partner_order_controller_OrderController_java__api_partner_orders_PostMapping
-    route_src_main_java_com_wina_partner_order_controller_OrderController_java__api_partner_orders_PostMapping --- route_src_main_java_com_wina_partner_order_controller_OrderController_java__api_partner_orders__id_cancel_PostMapping
-  end
-  leaf_OrderController --> endpoints_OrderController
+  leaf_OrderController["\`📄 **OrderController** [/api/partner/orders]
+─────────────
+**GET** /
+**POST** /
+**POST** /:id/cancel\`"]:::ssr
   pkg_order --> leaf_OrderController
   end"
 `;
@@ -2076,16 +2012,11 @@ graph TD
   classDef hdr fill:#06080f,stroke:#1e3a5f,color:#7dd3fc
   subgraph HDR_PKG ["📁 src/main/java/com.wina.partner.common.commonPop.controller"]
     direction TB
-  leaf_CommonPopController["📄 CommonPopController [/api/v1/partner]"]:::ssr
-  subgraph endpoints_CommonPopController["endpoints"]
-    direction TB
-    route_src_main_java_com_wina_partner_common_commonPop_controller_CommonPopController_java__api_v1_partner_agency_popup_GetMapping["GET /agency-popup"]:::ssr
-    route_src_main_java_com_wina_partner_common_commonPop_controller_CommonPopController_java__api_v1_partner_label_yn_PostMapping["POST /label-yn"]:::ssr
-    route_src_main_java_com_wina_partner_common_commonPop_controller_CommonPopController_java__api_v1_partner_perf_GetMapping["GET /perf"]:::ssr
-    route_src_main_java_com_wina_partner_common_commonPop_controller_CommonPopController_java__api_v1_partner_agency_popup_GetMapping --- route_src_main_java_com_wina_partner_common_commonPop_controller_CommonPopController_java__api_v1_partner_label_yn_PostMapping
-    route_src_main_java_com_wina_partner_common_commonPop_controller_CommonPopController_java__api_v1_partner_label_yn_PostMapping --- route_src_main_java_com_wina_partner_common_commonPop_controller_CommonPopController_java__api_v1_partner_perf_GetMapping
-  end
-  leaf_CommonPopController --> endpoints_CommonPopController
+  leaf_CommonPopController["\`📄 **CommonPopController** [/api/v1/partner]
+─────────────
+**GET** /agency-popup
+**POST** /label-yn
+**GET** /perf\`"]:::ssr
   end"
 `;
 
@@ -2288,27 +2219,17 @@ graph TD
     direction TB
   pkg_contractMgmt["contractMgmt"]:::pkg
   pkg_userMgmt["userMgmt"]:::pkg
-  leaf_ContractMgmtController["📄 ContractMgmtController [/v1/agency/contractMgmt]"]:::ssr
-  subgraph endpoints_ContractMgmtController["endpoints"]
-    direction TB
-    route_src_main_java_com_wina_agency_contractMgmt_controller_ContractMgmtController_java__v1_agency_contractMgmt_list_GetMapping["GET /list"]:::ssr
-    route_src_main_java_com_wina_agency_contractMgmt_controller_ContractMgmtController_java__v1_agency_contractMgmt__contractNo_GetMapping["GET /:contractNo"]:::ssr
-    route_src_main_java_com_wina_agency_contractMgmt_controller_ContractMgmtController_java__v1_agency_contractMgmt_save_PostMapping["POST /save"]:::ssr
-    route_src_main_java_com_wina_agency_contractMgmt_controller_ContractMgmtController_java__v1_agency_contractMgmt_list_GetMapping --- route_src_main_java_com_wina_agency_contractMgmt_controller_ContractMgmtController_java__v1_agency_contractMgmt__contractNo_GetMapping
-    route_src_main_java_com_wina_agency_contractMgmt_controller_ContractMgmtController_java__v1_agency_contractMgmt__contractNo_GetMapping --- route_src_main_java_com_wina_agency_contractMgmt_controller_ContractMgmtController_java__v1_agency_contractMgmt_save_PostMapping
-  end
-  leaf_ContractMgmtController --> endpoints_ContractMgmtController
+  leaf_ContractMgmtController["\`📄 **ContractMgmtController** [/v1/agency/contractMgmt]
+─────────────
+**GET** /list
+**GET** /:contractNo
+**POST** /save\`"]:::ssr
   pkg_contractMgmt --> leaf_ContractMgmtController
-  leaf_UserMgmtController["📄 UserMgmtController [/v1/agency/userMgmt]"]:::ssr
-  subgraph endpoints_UserMgmtController["endpoints"]
-    direction TB
-    route_src_main_java_com_wina_agency_userMgmt_controller_UserMgmtController_java__v1_agency_userMgmt_list_GetMapping["GET /list"]:::ssr
-    route_src_main_java_com_wina_agency_userMgmt_controller_UserMgmtController_java__v1_agency_userMgmt_save_PostMapping["POST /save"]:::ssr
-    route_src_main_java_com_wina_agency_userMgmt_controller_UserMgmtController_java__v1_agency_userMgmt__id_DeleteMapping["DELETE /:id"]:::ssr
-    route_src_main_java_com_wina_agency_userMgmt_controller_UserMgmtController_java__v1_agency_userMgmt_list_GetMapping --- route_src_main_java_com_wina_agency_userMgmt_controller_UserMgmtController_java__v1_agency_userMgmt_save_PostMapping
-    route_src_main_java_com_wina_agency_userMgmt_controller_UserMgmtController_java__v1_agency_userMgmt_save_PostMapping --- route_src_main_java_com_wina_agency_userMgmt_controller_UserMgmtController_java__v1_agency_userMgmt__id_DeleteMapping
-  end
-  leaf_UserMgmtController --> endpoints_UserMgmtController
+  leaf_UserMgmtController["\`📄 **UserMgmtController** [/v1/agency/userMgmt]
+─────────────
+**GET** /list
+**POST** /save
+**DELETE** /:id\`"]:::ssr
   pkg_userMgmt --> leaf_UserMgmtController
   end
 %%--CHUNK--%%
@@ -2332,25 +2253,16 @@ graph TD
   pkg_partnerBaseInfo["partnerBaseInfo"]:::pkg
   pkg_partnerBaseInfo__procCodeMgmt["procCodeMgmt"]:::pkg
   pkg_partnerBaseInfo --> pkg_partnerBaseInfo__procCodeMgmt
-  leaf_CuttingPlanMgmtController["📄 CuttingPlanMgmtController [/v1/headOffice/partner/matMgmt/cuttingPlanMgmt]"]:::ssr
-  subgraph endpoints_CuttingPlanMgmtController["endpoints"]
-    direction TB
-    route_src_main_java_com_wina_headoffice_materialMgmt_cuttingPlanInfoMgmt_controller_CuttingPlanMgmtController_java__v1_headOffice_partner_matMgmt_cuttingPlanMgmt_moldList_GetMapping["GET /moldList"]:::ssr
-    route_src_main_java_com_wina_headoffice_materialMgmt_cuttingPlanInfoMgmt_controller_CuttingPlanMgmtController_java__v1_headOffice_partner_matMgmt_cuttingPlanMgmt_moldNrmList_GetMapping["GET /moldNrmList"]:::ssr
-    route_src_main_java_com_wina_headoffice_materialMgmt_cuttingPlanInfoMgmt_controller_CuttingPlanMgmtController_java__v1_headOffice_partner_matMgmt_cuttingPlanMgmt_save_PostMapping["POST /save"]:::ssr
-    route_src_main_java_com_wina_headoffice_materialMgmt_cuttingPlanInfoMgmt_controller_CuttingPlanMgmtController_java__v1_headOffice_partner_matMgmt_cuttingPlanMgmt_moldList_GetMapping --- route_src_main_java_com_wina_headoffice_materialMgmt_cuttingPlanInfoMgmt_controller_CuttingPlanMgmtController_java__v1_headOffice_partner_matMgmt_cuttingPlanMgmt_moldNrmList_GetMapping
-    route_src_main_java_com_wina_headoffice_materialMgmt_cuttingPlanInfoMgmt_controller_CuttingPlanMgmtController_java__v1_headOffice_partner_matMgmt_cuttingPlanMgmt_moldNrmList_GetMapping --- route_src_main_java_com_wina_headoffice_materialMgmt_cuttingPlanInfoMgmt_controller_CuttingPlanMgmtController_java__v1_headOffice_partner_matMgmt_cuttingPlanMgmt_save_PostMapping
-  end
-  leaf_CuttingPlanMgmtController --> endpoints_CuttingPlanMgmtController
+  leaf_CuttingPlanMgmtController["\`📄 **CuttingPlanMgmtController** [/v1/headOffice/partner/matMgmt/cuttingPlanMgmt]
+─────────────
+**GET** /moldList
+**GET** /moldNrmList
+**POST** /save\`"]:::ssr
   pkg_materialMgmt__cuttingPlanInfoMgmt --> leaf_CuttingPlanMgmtController
-  leaf_ProcCodeMgmtController["📄 ProcCodeMgmtController [/v1/headOffice/partner/partnerBaseInfo/procCodeMgmt]"]:::ssr
-  subgraph endpoints_ProcCodeMgmtController["endpoints"]
-    direction TB
-    route_src_main_java_com_wina_headoffice_partnerBaseInfo_procCodeMgmt_controller_ProcCodeMgmtController_java__v1_headOffice_partner_partnerBaseInfo_procCodeMgmt_list_GetMapping["GET /list"]:::ssr
-    route_src_main_java_com_wina_headoffice_partnerBaseInfo_procCodeMgmt_controller_ProcCodeMgmtController_java__v1_headOffice_partner_partnerBaseInfo_procCodeMgmt_save_PostMapping["POST /save"]:::ssr
-    route_src_main_java_com_wina_headoffice_partnerBaseInfo_procCodeMgmt_controller_ProcCodeMgmtController_java__v1_headOffice_partner_partnerBaseInfo_procCodeMgmt_list_GetMapping --- route_src_main_java_com_wina_headoffice_partnerBaseInfo_procCodeMgmt_controller_ProcCodeMgmtController_java__v1_headOffice_partner_partnerBaseInfo_procCodeMgmt_save_PostMapping
-  end
-  leaf_ProcCodeMgmtController --> endpoints_ProcCodeMgmtController
+  leaf_ProcCodeMgmtController["\`📄 **ProcCodeMgmtController** [/v1/headOffice/partner/partnerBaseInfo/procCodeMgmt]
+─────────────
+**GET** /list
+**POST** /save\`"]:::ssr
   pkg_partnerBaseInfo__procCodeMgmt --> leaf_ProcCodeMgmtController
   end
 %%--CHUNK--%%
@@ -2377,40 +2289,24 @@ graph TD
   pkg_perfMgmt["perfMgmt"]:::pkg
   pkg_perfMgmt__transStmt["transStmt"]:::pkg
   pkg_perfMgmt --> pkg_perfMgmt__transStmt
-  leaf_DecoSheetController["📄 DecoSheetController [/v1/partner/matMgmt/DecoSheet]"]:::ssr
-  subgraph endpoints_DecoSheetController["endpoints"]
-    direction TB
-    route_src_main_java_com_wina_partner_matMgmt_decoSheet_controller_DecoSheetController_java__v1_partner_matMgmt_DecoSheet_list_GetMapping["GET /list"]:::ssr
-    route_src_main_java_com_wina_partner_matMgmt_decoSheet_controller_DecoSheetController_java__v1_partner_matMgmt_DecoSheet_excel_PostMapping["POST /excel"]:::ssr
-    route_src_main_java_com_wina_partner_matMgmt_decoSheet_controller_DecoSheetController_java__v1_partner_matMgmt_DecoSheet_a_create_PostMapping["POST /a/create"]:::ssr
-    route_src_main_java_com_wina_partner_matMgmt_decoSheet_controller_DecoSheetController_java__v1_partner_matMgmt_DecoSheet_b_create_PostMapping["POST /b/create"]:::ssr
-    route_src_main_java_com_wina_partner_matMgmt_decoSheet_controller_DecoSheetController_java__v1_partner_matMgmt_DecoSheet_list_GetMapping --- route_src_main_java_com_wina_partner_matMgmt_decoSheet_controller_DecoSheetController_java__v1_partner_matMgmt_DecoSheet_excel_PostMapping
-    route_src_main_java_com_wina_partner_matMgmt_decoSheet_controller_DecoSheetController_java__v1_partner_matMgmt_DecoSheet_excel_PostMapping --- route_src_main_java_com_wina_partner_matMgmt_decoSheet_controller_DecoSheetController_java__v1_partner_matMgmt_DecoSheet_a_create_PostMapping
-    route_src_main_java_com_wina_partner_matMgmt_decoSheet_controller_DecoSheetController_java__v1_partner_matMgmt_DecoSheet_a_create_PostMapping --- route_src_main_java_com_wina_partner_matMgmt_decoSheet_controller_DecoSheetController_java__v1_partner_matMgmt_DecoSheet_b_create_PostMapping
-  end
-  leaf_DecoSheetController --> endpoints_DecoSheetController
+  leaf_DecoSheetController["\`📄 **DecoSheetController** [/v1/partner/matMgmt/DecoSheet]
+─────────────
+**GET** /list
+**POST** /excel
+**POST** /a/create
+**POST** /b/create\`"]:::ssr
   pkg_matMgmt__decoSheet --> leaf_DecoSheetController
-  leaf_ProdOrdSpecController["📄 ProdOrdSpecController [/v1/partner/ordProdPlanMgmt/prodOrdSpec]"]:::ssr
-  subgraph endpoints_ProdOrdSpecController["endpoints"]
-    direction TB
-    route_src_main_java_com_wina_partner_ordProdPlanMgmt_prodOrdSpec_controller_ProdOrdSpecController_java__v1_partner_ordProdPlanMgmt_prodOrdSpec_list_GetMapping["GET /list"]:::ssr
-    route_src_main_java_com_wina_partner_ordProdPlanMgmt_prodOrdSpec_controller_ProdOrdSpecController_java__v1_partner_ordProdPlanMgmt_prodOrdSpec_production_instruction_GetMapping["GET /production-instruction"]:::ssr
-    route_src_main_java_com_wina_partner_ordProdPlanMgmt_prodOrdSpec_controller_ProdOrdSpecController_java__v1_partner_ordProdPlanMgmt_prodOrdSpec_handle_info_GetMapping["GET /handle-info"]:::ssr
-    route_src_main_java_com_wina_partner_ordProdPlanMgmt_prodOrdSpec_controller_ProdOrdSpecController_java__v1_partner_ordProdPlanMgmt_prodOrdSpec_list_GetMapping --- route_src_main_java_com_wina_partner_ordProdPlanMgmt_prodOrdSpec_controller_ProdOrdSpecController_java__v1_partner_ordProdPlanMgmt_prodOrdSpec_production_instruction_GetMapping
-    route_src_main_java_com_wina_partner_ordProdPlanMgmt_prodOrdSpec_controller_ProdOrdSpecController_java__v1_partner_ordProdPlanMgmt_prodOrdSpec_production_instruction_GetMapping --- route_src_main_java_com_wina_partner_ordProdPlanMgmt_prodOrdSpec_controller_ProdOrdSpecController_java__v1_partner_ordProdPlanMgmt_prodOrdSpec_handle_info_GetMapping
-  end
-  leaf_ProdOrdSpecController --> endpoints_ProdOrdSpecController
+  leaf_ProdOrdSpecController["\`📄 **ProdOrdSpecController** [/v1/partner/ordProdPlanMgmt/prodOrdSpec]
+─────────────
+**GET** /list
+**GET** /production-instruction
+**GET** /handle-info\`"]:::ssr
   pkg_ordProdPlanMgmt__prodOrdSpec --> leaf_ProdOrdSpecController
-  leaf_TransStmtController["📄 TransStmtController [/v1/partner/perfMgmt/transStmt]"]:::ssr
-  subgraph endpoints_TransStmtController["endpoints"]
-    direction TB
-    route_src_main_java_com_wina_partner_perfMgmt_transStmt_controller_TransStmtController_java__v1_partner_perfMgmt_transStmt_list_GetMapping["GET /list"]:::ssr
-    route_src_main_java_com_wina_partner_perfMgmt_transStmt_controller_TransStmtController_java__v1_partner_perfMgmt_transStmt_detail_GetMapping["GET /detail"]:::ssr
-    route_src_main_java_com_wina_partner_perfMgmt_transStmt_controller_TransStmtController_java__v1_partner_perfMgmt_transStmt_excel_PostMapping["POST /excel"]:::ssr
-    route_src_main_java_com_wina_partner_perfMgmt_transStmt_controller_TransStmtController_java__v1_partner_perfMgmt_transStmt_list_GetMapping --- route_src_main_java_com_wina_partner_perfMgmt_transStmt_controller_TransStmtController_java__v1_partner_perfMgmt_transStmt_detail_GetMapping
-    route_src_main_java_com_wina_partner_perfMgmt_transStmt_controller_TransStmtController_java__v1_partner_perfMgmt_transStmt_detail_GetMapping --- route_src_main_java_com_wina_partner_perfMgmt_transStmt_controller_TransStmtController_java__v1_partner_perfMgmt_transStmt_excel_PostMapping
-  end
-  leaf_TransStmtController --> endpoints_TransStmtController
+  leaf_TransStmtController["\`📄 **TransStmtController** [/v1/partner/perfMgmt/transStmt]
+─────────────
+**GET** /list
+**GET** /detail
+**POST** /excel\`"]:::ssr
   pkg_perfMgmt__transStmt --> leaf_TransStmtController
   end"
 `;
@@ -2843,14 +2739,10 @@ graph TD
   subgraph HDR_PKG ["📁 src/main/java/com.wina.agency"]
     direction TB
   pkg_main["main"]:::pkg
-  leaf_MainController["📄 MainController [/api/agency/main]"]:::ssr
-  subgraph endpoints_MainController["endpoints"]
-    direction TB
-    route_src_main_java_com_wina_agency_main_controller_MainController_java__api_agency_main_list_GetMapping["GET /list"]:::ssr
-    route_src_main_java_com_wina_agency_main_controller_MainController_java__api_agency_main_create_PostMapping["POST /create"]:::ssr
-    route_src_main_java_com_wina_agency_main_controller_MainController_java__api_agency_main_list_GetMapping --- route_src_main_java_com_wina_agency_main_controller_MainController_java__api_agency_main_create_PostMapping
-  end
-  leaf_MainController --> endpoints_MainController
+  leaf_MainController["\`📄 **MainController** [/api/agency/main]
+─────────────
+**GET** /list
+**POST** /create\`"]:::ssr
   pkg_main --> leaf_MainController
   end
 %%--CHUNK--%%
@@ -2888,185 +2780,105 @@ graph TD
   pkg_shipment["shipment"]:::pkg
   pkg_stock["stock"]:::pkg
   pkg_vendor["vendor"]:::pkg
-  leaf_BillingController["📄 BillingController [/api/partner/billing]"]:::ssr
-  subgraph endpoints_BillingController["endpoints"]
-    direction TB
-    route_src_main_java_com_wina_partner_billing_controller_BillingController_java__api_partner_billing_list_GetMapping["GET /list"]:::ssr
-    route_src_main_java_com_wina_partner_billing_controller_BillingController_java__api_partner_billing_create_PostMapping["POST /create"]:::ssr
-    route_src_main_java_com_wina_partner_billing_controller_BillingController_java__api_partner_billing_list_GetMapping --- route_src_main_java_com_wina_partner_billing_controller_BillingController_java__api_partner_billing_create_PostMapping
-  end
-  leaf_BillingController --> endpoints_BillingController
+  leaf_BillingController["\`📄 **BillingController** [/api/partner/billing]
+─────────────
+**GET** /list
+**POST** /create\`"]:::ssr
   pkg_billing --> leaf_BillingController
-  leaf_CampaignController["📄 CampaignController [/api/partner/campaign]"]:::ssr
-  subgraph endpoints_CampaignController["endpoints"]
-    direction TB
-    route_src_main_java_com_wina_partner_campaign_controller_CampaignController_java__api_partner_campaign_list_GetMapping["GET /list"]:::ssr
-    route_src_main_java_com_wina_partner_campaign_controller_CampaignController_java__api_partner_campaign_create_PostMapping["POST /create"]:::ssr
-    route_src_main_java_com_wina_partner_campaign_controller_CampaignController_java__api_partner_campaign_list_GetMapping --- route_src_main_java_com_wina_partner_campaign_controller_CampaignController_java__api_partner_campaign_create_PostMapping
-  end
-  leaf_CampaignController --> endpoints_CampaignController
+  leaf_CampaignController["\`📄 **CampaignController** [/api/partner/campaign]
+─────────────
+**GET** /list
+**POST** /create\`"]:::ssr
   pkg_campaign --> leaf_CampaignController
-  leaf_ContractController["📄 ContractController [/api/partner/contract]"]:::ssr
-  subgraph endpoints_ContractController["endpoints"]
-    direction TB
-    route_src_main_java_com_wina_partner_contract_controller_ContractController_java__api_partner_contract_list_GetMapping["GET /list"]:::ssr
-    route_src_main_java_com_wina_partner_contract_controller_ContractController_java__api_partner_contract_create_PostMapping["POST /create"]:::ssr
-    route_src_main_java_com_wina_partner_contract_controller_ContractController_java__api_partner_contract_list_GetMapping --- route_src_main_java_com_wina_partner_contract_controller_ContractController_java__api_partner_contract_create_PostMapping
-  end
-  leaf_ContractController --> endpoints_ContractController
+  leaf_ContractController["\`📄 **ContractController** [/api/partner/contract]
+─────────────
+**GET** /list
+**POST** /create\`"]:::ssr
   pkg_contract --> leaf_ContractController
-  leaf_DashboardController["📄 DashboardController [/api/partner/dashboard]"]:::ssr
-  subgraph endpoints_DashboardController["endpoints"]
-    direction TB
-    route_src_main_java_com_wina_partner_dashboard_controller_DashboardController_java__api_partner_dashboard_list_GetMapping["GET /list"]:::ssr
-    route_src_main_java_com_wina_partner_dashboard_controller_DashboardController_java__api_partner_dashboard_create_PostMapping["POST /create"]:::ssr
-    route_src_main_java_com_wina_partner_dashboard_controller_DashboardController_java__api_partner_dashboard_list_GetMapping --- route_src_main_java_com_wina_partner_dashboard_controller_DashboardController_java__api_partner_dashboard_create_PostMapping
-  end
-  leaf_DashboardController --> endpoints_DashboardController
+  leaf_DashboardController["\`📄 **DashboardController** [/api/partner/dashboard]
+─────────────
+**GET** /list
+**POST** /create\`"]:::ssr
   pkg_dashboard --> leaf_DashboardController
-  leaf_DecosheetController["📄 DecosheetController [/api/partner/decoSheet]"]:::ssr
-  subgraph endpoints_DecosheetController["endpoints"]
-    direction TB
-    route_src_main_java_com_wina_partner_decoSheet_controller_DecosheetController_java__api_partner_decoSheet_list_GetMapping["GET /list"]:::ssr
-    route_src_main_java_com_wina_partner_decoSheet_controller_DecosheetController_java__api_partner_decoSheet_create_PostMapping["POST /create"]:::ssr
-    route_src_main_java_com_wina_partner_decoSheet_controller_DecosheetController_java__api_partner_decoSheet_list_GetMapping --- route_src_main_java_com_wina_partner_decoSheet_controller_DecosheetController_java__api_partner_decoSheet_create_PostMapping
-  end
-  leaf_DecosheetController --> endpoints_DecosheetController
+  leaf_DecosheetController["\`📄 **DecosheetController** [/api/partner/decoSheet]
+─────────────
+**GET** /list
+**POST** /create\`"]:::ssr
   pkg_decoSheet --> leaf_DecosheetController
-  leaf_InvController["📄 InvController [/api/partner/inv]"]:::ssr
-  subgraph endpoints_InvController["endpoints"]
-    direction TB
-    route_src_main_java_com_wina_partner_inv_controller_InvController_java__api_partner_inv_list_GetMapping["GET /list"]:::ssr
-    route_src_main_java_com_wina_partner_inv_controller_InvController_java__api_partner_inv_create_PostMapping["POST /create"]:::ssr
-    route_src_main_java_com_wina_partner_inv_controller_InvController_java__api_partner_inv_list_GetMapping --- route_src_main_java_com_wina_partner_inv_controller_InvController_java__api_partner_inv_create_PostMapping
-  end
-  leaf_InvController --> endpoints_InvController
+  leaf_InvController["\`📄 **InvController** [/api/partner/inv]
+─────────────
+**GET** /list
+**POST** /create\`"]:::ssr
   pkg_inv --> leaf_InvController
-  leaf_InventoryController["📄 InventoryController [/api/partner/inventory]"]:::ssr
-  subgraph endpoints_InventoryController["endpoints"]
-    direction TB
-    route_src_main_java_com_wina_partner_inventory_controller_InventoryController_java__api_partner_inventory_list_GetMapping["GET /list"]:::ssr
-    route_src_main_java_com_wina_partner_inventory_controller_InventoryController_java__api_partner_inventory_create_PostMapping["POST /create"]:::ssr
-    route_src_main_java_com_wina_partner_inventory_controller_InventoryController_java__api_partner_inventory_list_GetMapping --- route_src_main_java_com_wina_partner_inventory_controller_InventoryController_java__api_partner_inventory_create_PostMapping
-  end
-  leaf_InventoryController --> endpoints_InventoryController
+  leaf_InventoryController["\`📄 **InventoryController** [/api/partner/inventory]
+─────────────
+**GET** /list
+**POST** /create\`"]:::ssr
   pkg_inventory --> leaf_InventoryController
-  leaf_InvoiceController["📄 InvoiceController [/api/partner/invoice]"]:::ssr
-  subgraph endpoints_InvoiceController["endpoints"]
-    direction TB
-    route_src_main_java_com_wina_partner_invoice_controller_InvoiceController_java__api_partner_invoice_list_GetMapping["GET /list"]:::ssr
-    route_src_main_java_com_wina_partner_invoice_controller_InvoiceController_java__api_partner_invoice_create_PostMapping["POST /create"]:::ssr
-    route_src_main_java_com_wina_partner_invoice_controller_InvoiceController_java__api_partner_invoice_list_GetMapping --- route_src_main_java_com_wina_partner_invoice_controller_InvoiceController_java__api_partner_invoice_create_PostMapping
-  end
-  leaf_InvoiceController --> endpoints_InvoiceController
+  leaf_InvoiceController["\`📄 **InvoiceController** [/api/partner/invoice]
+─────────────
+**GET** /list
+**POST** /create\`"]:::ssr
   pkg_invoice --> leaf_InvoiceController
-  leaf_LoyaltyController["📄 LoyaltyController [/api/partner/loyalty]"]:::ssr
-  subgraph endpoints_LoyaltyController["endpoints"]
-    direction TB
-    route_src_main_java_com_wina_partner_loyalty_controller_LoyaltyController_java__api_partner_loyalty_list_GetMapping["GET /list"]:::ssr
-    route_src_main_java_com_wina_partner_loyalty_controller_LoyaltyController_java__api_partner_loyalty_create_PostMapping["POST /create"]:::ssr
-    route_src_main_java_com_wina_partner_loyalty_controller_LoyaltyController_java__api_partner_loyalty_list_GetMapping --- route_src_main_java_com_wina_partner_loyalty_controller_LoyaltyController_java__api_partner_loyalty_create_PostMapping
-  end
-  leaf_LoyaltyController --> endpoints_LoyaltyController
+  leaf_LoyaltyController["\`📄 **LoyaltyController** [/api/partner/loyalty]
+─────────────
+**GET** /list
+**POST** /create\`"]:::ssr
   pkg_loyalty --> leaf_LoyaltyController
-  leaf_MatController["📄 MatController [/api/partner/mat]"]:::ssr
-  subgraph endpoints_MatController["endpoints"]
-    direction TB
-    route_src_main_java_com_wina_partner_mat_controller_MatController_java__api_partner_mat_list_GetMapping["GET /list"]:::ssr
-    route_src_main_java_com_wina_partner_mat_controller_MatController_java__api_partner_mat_create_PostMapping["POST /create"]:::ssr
-    route_src_main_java_com_wina_partner_mat_controller_MatController_java__api_partner_mat_list_GetMapping --- route_src_main_java_com_wina_partner_mat_controller_MatController_java__api_partner_mat_create_PostMapping
-  end
-  leaf_MatController --> endpoints_MatController
+  leaf_MatController["\`📄 **MatController** [/api/partner/mat]
+─────────────
+**GET** /list
+**POST** /create\`"]:::ssr
   pkg_mat --> leaf_MatController
-  leaf_MemberController["📄 MemberController [/api/partner/member]"]:::ssr
-  subgraph endpoints_MemberController["endpoints"]
-    direction TB
-    route_src_main_java_com_wina_partner_member_controller_MemberController_java__api_partner_member_list_GetMapping["GET /list"]:::ssr
-    route_src_main_java_com_wina_partner_member_controller_MemberController_java__api_partner_member_create_PostMapping["POST /create"]:::ssr
-    route_src_main_java_com_wina_partner_member_controller_MemberController_java__api_partner_member_list_GetMapping --- route_src_main_java_com_wina_partner_member_controller_MemberController_java__api_partner_member_create_PostMapping
-  end
-  leaf_MemberController --> endpoints_MemberController
+  leaf_MemberController["\`📄 **MemberController** [/api/partner/member]
+─────────────
+**GET** /list
+**POST** /create\`"]:::ssr
   pkg_member --> leaf_MemberController
-  leaf_OrderController["📄 OrderController [/api/partner/order]"]:::ssr
-  subgraph endpoints_OrderController["endpoints"]
-    direction TB
-    route_src_main_java_com_wina_partner_order_controller_OrderController_java__api_partner_order_list_GetMapping["GET /list"]:::ssr
-    route_src_main_java_com_wina_partner_order_controller_OrderController_java__api_partner_order_create_PostMapping["POST /create"]:::ssr
-    route_src_main_java_com_wina_partner_order_controller_OrderController_java__api_partner_order_list_GetMapping --- route_src_main_java_com_wina_partner_order_controller_OrderController_java__api_partner_order_create_PostMapping
-  end
-  leaf_OrderController --> endpoints_OrderController
+  leaf_OrderController["\`📄 **OrderController** [/api/partner/order]
+─────────────
+**GET** /list
+**POST** /create\`"]:::ssr
   pkg_order --> leaf_OrderController
-  leaf_PricingController["📄 PricingController [/api/partner/pricing]"]:::ssr
-  subgraph endpoints_PricingController["endpoints"]
-    direction TB
-    route_src_main_java_com_wina_partner_pricing_controller_PricingController_java__api_partner_pricing_list_GetMapping["GET /list"]:::ssr
-    route_src_main_java_com_wina_partner_pricing_controller_PricingController_java__api_partner_pricing_create_PostMapping["POST /create"]:::ssr
-    route_src_main_java_com_wina_partner_pricing_controller_PricingController_java__api_partner_pricing_list_GetMapping --- route_src_main_java_com_wina_partner_pricing_controller_PricingController_java__api_partner_pricing_create_PostMapping
-  end
-  leaf_PricingController --> endpoints_PricingController
+  leaf_PricingController["\`📄 **PricingController** [/api/partner/pricing]
+─────────────
+**GET** /list
+**POST** /create\`"]:::ssr
   pkg_pricing --> leaf_PricingController
-  leaf_ProcurementController["📄 ProcurementController [/api/partner/procurement]"]:::ssr
-  subgraph endpoints_ProcurementController["endpoints"]
-    direction TB
-    route_src_main_java_com_wina_partner_procurement_controller_ProcurementController_java__api_partner_procurement_list_GetMapping["GET /list"]:::ssr
-    route_src_main_java_com_wina_partner_procurement_controller_ProcurementController_java__api_partner_procurement_create_PostMapping["POST /create"]:::ssr
-    route_src_main_java_com_wina_partner_procurement_controller_ProcurementController_java__api_partner_procurement_list_GetMapping --- route_src_main_java_com_wina_partner_procurement_controller_ProcurementController_java__api_partner_procurement_create_PostMapping
-  end
-  leaf_ProcurementController --> endpoints_ProcurementController
+  leaf_ProcurementController["\`📄 **ProcurementController** [/api/partner/procurement]
+─────────────
+**GET** /list
+**POST** /create\`"]:::ssr
   pkg_procurement --> leaf_ProcurementController
-  leaf_QualityController["📄 QualityController [/api/partner/quality]"]:::ssr
-  subgraph endpoints_QualityController["endpoints"]
-    direction TB
-    route_src_main_java_com_wina_partner_quality_controller_QualityController_java__api_partner_quality_list_GetMapping["GET /list"]:::ssr
-    route_src_main_java_com_wina_partner_quality_controller_QualityController_java__api_partner_quality_create_PostMapping["POST /create"]:::ssr
-    route_src_main_java_com_wina_partner_quality_controller_QualityController_java__api_partner_quality_list_GetMapping --- route_src_main_java_com_wina_partner_quality_controller_QualityController_java__api_partner_quality_create_PostMapping
-  end
-  leaf_QualityController --> endpoints_QualityController
+  leaf_QualityController["\`📄 **QualityController** [/api/partner/quality]
+─────────────
+**GET** /list
+**POST** /create\`"]:::ssr
   pkg_quality --> leaf_QualityController
-  leaf_ReportController["📄 ReportController [/api/partner/report]"]:::ssr
-  subgraph endpoints_ReportController["endpoints"]
-    direction TB
-    route_src_main_java_com_wina_partner_report_controller_ReportController_java__api_partner_report_list_GetMapping["GET /list"]:::ssr
-    route_src_main_java_com_wina_partner_report_controller_ReportController_java__api_partner_report_create_PostMapping["POST /create"]:::ssr
-    route_src_main_java_com_wina_partner_report_controller_ReportController_java__api_partner_report_list_GetMapping --- route_src_main_java_com_wina_partner_report_controller_ReportController_java__api_partner_report_create_PostMapping
-  end
-  leaf_ReportController --> endpoints_ReportController
+  leaf_ReportController["\`📄 **ReportController** [/api/partner/report]
+─────────────
+**GET** /list
+**POST** /create\`"]:::ssr
   pkg_report --> leaf_ReportController
-  leaf_SettingsController["📄 SettingsController [/api/partner/settings]"]:::ssr
-  subgraph endpoints_SettingsController["endpoints"]
-    direction TB
-    route_src_main_java_com_wina_partner_settings_controller_SettingsController_java__api_partner_settings_list_GetMapping["GET /list"]:::ssr
-    route_src_main_java_com_wina_partner_settings_controller_SettingsController_java__api_partner_settings_create_PostMapping["POST /create"]:::ssr
-    route_src_main_java_com_wina_partner_settings_controller_SettingsController_java__api_partner_settings_list_GetMapping --- route_src_main_java_com_wina_partner_settings_controller_SettingsController_java__api_partner_settings_create_PostMapping
-  end
-  leaf_SettingsController --> endpoints_SettingsController
+  leaf_SettingsController["\`📄 **SettingsController** [/api/partner/settings]
+─────────────
+**GET** /list
+**POST** /create\`"]:::ssr
   pkg_settings --> leaf_SettingsController
-  leaf_ShipmentController["📄 ShipmentController [/api/partner/shipment]"]:::ssr
-  subgraph endpoints_ShipmentController["endpoints"]
-    direction TB
-    route_src_main_java_com_wina_partner_shipment_controller_ShipmentController_java__api_partner_shipment_list_GetMapping["GET /list"]:::ssr
-    route_src_main_java_com_wina_partner_shipment_controller_ShipmentController_java__api_partner_shipment_create_PostMapping["POST /create"]:::ssr
-    route_src_main_java_com_wina_partner_shipment_controller_ShipmentController_java__api_partner_shipment_list_GetMapping --- route_src_main_java_com_wina_partner_shipment_controller_ShipmentController_java__api_partner_shipment_create_PostMapping
-  end
-  leaf_ShipmentController --> endpoints_ShipmentController
+  leaf_ShipmentController["\`📄 **ShipmentController** [/api/partner/shipment]
+─────────────
+**GET** /list
+**POST** /create\`"]:::ssr
   pkg_shipment --> leaf_ShipmentController
-  leaf_StockController["📄 StockController [/api/partner/stock]"]:::ssr
-  subgraph endpoints_StockController["endpoints"]
-    direction TB
-    route_src_main_java_com_wina_partner_stock_controller_StockController_java__api_partner_stock_list_GetMapping["GET /list"]:::ssr
-    route_src_main_java_com_wina_partner_stock_controller_StockController_java__api_partner_stock_create_PostMapping["POST /create"]:::ssr
-    route_src_main_java_com_wina_partner_stock_controller_StockController_java__api_partner_stock_list_GetMapping --- route_src_main_java_com_wina_partner_stock_controller_StockController_java__api_partner_stock_create_PostMapping
-  end
-  leaf_StockController --> endpoints_StockController
+  leaf_StockController["\`📄 **StockController** [/api/partner/stock]
+─────────────
+**GET** /list
+**POST** /create\`"]:::ssr
   pkg_stock --> leaf_StockController
-  leaf_VendorController["📄 VendorController [/api/partner/vendor]"]:::ssr
-  subgraph endpoints_VendorController["endpoints"]
-    direction TB
-    route_src_main_java_com_wina_partner_vendor_controller_VendorController_java__api_partner_vendor_list_GetMapping["GET /list"]:::ssr
-    route_src_main_java_com_wina_partner_vendor_controller_VendorController_java__api_partner_vendor_create_PostMapping["POST /create"]:::ssr
-    route_src_main_java_com_wina_partner_vendor_controller_VendorController_java__api_partner_vendor_list_GetMapping --- route_src_main_java_com_wina_partner_vendor_controller_VendorController_java__api_partner_vendor_create_PostMapping
-  end
-  leaf_VendorController --> endpoints_VendorController
+  leaf_VendorController["\`📄 **VendorController** [/api/partner/vendor]
+─────────────
+**GET** /list
+**POST** /create\`"]:::ssr
   pkg_vendor --> leaf_VendorController
   end"
 `;
