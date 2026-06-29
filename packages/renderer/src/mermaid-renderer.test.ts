@@ -606,9 +606,10 @@ describe('BE 렌더러 — Tab1 (BE-C, v1.2.40 표준)', () => {
 
     expect(content).toContain('graph TD')
     expect(content).toContain('📁 src/main/java/com.example.svc.user.profile') // 헤더 = LCP+topSeg (R-T1.2 + R-T1.8)
-    expect(content).toContain('📄 PhotoController')
-    expect(content).toContain('📄 AccountController')
-    expect(content).toMatch(/subgraph endpoints_/) // endpoint subgraph (R-T1.6)
+    expect(content).toContain('📄 **PhotoController**')
+    expect(content).toContain('📄 **AccountController**')
+    expect(content).not.toMatch(/subgraph endpoints_/) // v1.2.57: endpoint subgraph 폐기(collapse)
+    expect(content).toContain('**GET** /') // endpoint = leaf 노드 안 markdown bold 라인 (R-T1.6 amendment)
     expect(content).toContain(':::pkg') // 패키지 트리 노드 (R-T1.4)
     expect(content).not.toContain('BE_ROOT') // 구 outer subgraph 폐기 확인 (D7)
   })

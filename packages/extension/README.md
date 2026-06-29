@@ -57,42 +57,14 @@ Frameworks not in this list (Express, Hono, Rails, Go, etc.) use **LLM primary**
 
 ---
 
-## ✨ What's new in v1.2.56
+## ✨ What's new in v1.2.57
 
-### Changed — removed leftover `codesight` naming (brand cleanup)
+### Backend Tab1 — endpoints collapsed into the controller node
 
-- Command/setting/view IDs `codesight.*` → `codebaseViz.*`; dropped the `.codesight/` cache fallback and stray VSIX cache; GitHub repo renamed to `cubha/codebase-viz`.
-- **Breaking**: existing `codesight.*` settings and the stored API key reset (re-enter the API key once). No change to analysis behavior or diagram output.
+- **A controller's endpoints now render as a compact list inside the controller node** (`**GET** /`, `**GET** /:id`, `**POST** /` …) instead of a separate stacked `endpoints` box. Controllers with many endpoints no longer stretch the diagram vertically — on a 12-endpoint controller the diagram height drops ~2.7×, and each endpoint reads on its own line with the HTTP method in **bold**.
+- Applies to every backend adapter (Spring Boot, Django, NestJS, FastAPI, Flask, …). Frontend diagrams are unchanged.
 
-### v1.2.55 — Tab1 folder overview for large React/SPA projects
-
-- **Tab1 shows the full folder directory in a single architecture wrapper.** Large multi-domain projects (500+ routes, 20+ domains) previously repeated the `Browser › Router › React` wrapper per domain and scattered box granularity onto sub-segments, making some top-level domains look missing. Tab1 now renders one wrapper containing the URL directory as a full-depth nested folder tree, each folder header carrying a recursive route-count badge (`📁 /name · N routes`).
-- **Fewer repeated boxes.** All-single-route folders collapse into one count box; in mixed folders, 2+ single-route children fold into one aggregate box (`📄 name1 · name2 · name3 +N (M pages)`). On a WINA-scale sample this cut repeated "· 1 route" boxes from 141 to 17.
-- **Tab2 leaves now show the full route URL** (`🔗 /full/path`) next to the file/component name. Zero missing domains guaranteed.
-
-### Previous highlights
-
-**v1.2.54** — LLM mode no longer mislabels a web app as mobile or invents a backend (deployTarget back-door + backend-hallucination corroboration gate)
-
-**v1.2.53** — Tab1 architecture layers restored on large projects (domain-summary redefinition) + standardized Tab2 vertical spacing
-
-**v1.2.52** — Large-project viewer loads ~4× sooner (progressive chunk streaming) and scrolls smoother (`content-visibility`); viewer-only
-
-**v1.2.51** — React Router bulk route omission (tsconfig path alias resolution) · Spring Boot large-domain "maximum size" sub-chunking · Tab1 many-domain readability grid
-
-**v1.2.50** — Spring DI chain 5-level fan-out (Lombok `@RequiredArgsConstructor` · MyBatis XML mapper) · React Router template-literal paths · `src/pages` domain layering
-
-**v1.2.49** — React Router parser fixes (pathless · dedup · array spread) · large-webview freeze fix (node-bound chunking + frame yield)
-
-**v1.2.47** — React Router alias/barrel/lazy import route tracing · full `src` code-quality pass
-
-**v1.2.45** — FE diagram standard v1.1 (top-level X-axis · nested Y-stack) · brand/folder unification
-
-**v1.2.44** — React Router `.map()` pattern regression fix · Vue/Angular Tab2 standard · Data Flow promotion
-
-**v1.2.42** — React Tab1/2/3 redesign · file-based FE adapters (6) Tab2 file-path nodes
-
-**v1.2.40** — Backend Tab1/Tab2 package tree standard (Spring · NestJS · Django · FastAPI · Flask)
+> Full version history lives in the [CHANGELOG](CHANGELOG.md).
 
 ---
 

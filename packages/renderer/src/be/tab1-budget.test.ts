@@ -45,8 +45,9 @@ describe('BE Tab1 대형 도메인 — budget sub-chunk (v1.2.51 B 게이트)', 
     const diagram = buildBeRenderingDiagram(graph)
     const chunks = splitChunks(diagram)
 
-    expect(chunks.length).toBeGreaterThan(2) // bigdomain ≥다수 + admin
-    expect(countEdges(diagram)).toBeGreaterThan(MAX_EDGES) // 미분할 시 단일 청크가 터졌을 증거
+    expect(chunks.length).toBeGreaterThan(2) // bigdomain ≥다수 + admin → cost-budget sub-chunk 발동 증거
+    // v1.2.57: endpoint collapse로 endpoint가 노드/엣지가 아닌 노드 내부 텍스트가 됨 → raw edge 수는
+    // cap 미만으로 급감. 청킹은 이제 edge가 아닌 cost-budget(노드 수) 기반이라 chunks.length로 증명.
     for (const c of chunks) {
       expect(countEdges(c)).toBeLessThan(MAX_EDGES)
       expect(c.length).toBeLessThan(MAX_TEXT_SIZE)
